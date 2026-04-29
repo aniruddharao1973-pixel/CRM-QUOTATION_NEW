@@ -1,4 +1,4 @@
-// src\features\quotations\pdf\QuotationPdfDocument.jsx
+// src\features\quotations\pdf\QuotationPdfDocumentV2.jsx
 import React from "react";
 import {
   Document,
@@ -13,26 +13,26 @@ import { proposalData } from "./data/proposalData";
 
 const styles = StyleSheet.create({
   page: {
-    paddingTop: 24,
-    paddingBottom: 22,
-    paddingHorizontal: 26,
+    paddingTop: 28,
+    paddingBottom: 24,
+    paddingHorizontal: 28,
     fontSize: 9,
     fontFamily: "Helvetica",
-    color: "#374151",
+    color: "#1F2937",
     display: "flex",
     flexDirection: "column",
     backgroundColor: "#FFFFFF",
   },
   header: {
-    paddingBottom: 10,
-    marginBottom: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E2E8F0",
+    paddingBottom: 12,
+    marginBottom: 16,
+    borderBottomWidth: 2,
+    borderBottomColor: "#DBEAFE",
   },
   logoRow: {
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 4,
+    marginBottom: 6,
   },
   logoImage: {
     width: 110,
@@ -40,161 +40,170 @@ const styles = StyleSheet.create({
     objectFit: "contain",
   },
   tagline: {
-    fontSize: 8,
-    color: "#2563EB",
-    marginTop: 2,
-    letterSpacing: 0.5,
+    fontSize: 8.5,
+    color: "#3B82F6",
+    marginTop: 3,
+    letterSpacing: 0.8,
   },
   metaRow: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
+    gap: 8,
   },
   metaBox: {
     flexDirection: "row",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    borderRadius: 3,
+    borderWidth: 1.5,
+    borderColor: "#BFDBFE",
+    borderRadius: 4,
     overflow: "hidden",
-    marginHorizontal: 3,
+    marginHorizontal: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
   },
   metaLabel: {
-    backgroundColor: "#F1F5F9",
-    paddingVertical: 3,
-    paddingHorizontal: 6,
-    fontSize: 8,
+    backgroundColor: "#EFF6FF",
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    fontSize: 8.5,
     fontWeight: "bold",
-    color: "#4B5563",
-    borderRightWidth: 1,
-    borderRightColor: "#E5E7EB",
+    color: "#1E40AF",
+    borderRightWidth: 1.5,
+    borderRightColor: "#BFDBFE",
   },
   metaValue: {
-    paddingVertical: 3,
-    paddingHorizontal: 6,
-    fontSize: 8,
-    color: "#2563EB",
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    fontSize: 8.5,
+    color: "#3B82F6",
+    fontWeight: "medium",
   },
   pageTitleWrap: {
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 14,
   },
   pageTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "bold",
     color: "#0F172A",
-    letterSpacing: 1,
+    letterSpacing: 1.5,
     textAlign: "center",
   },
   titleUnderline: {
-    width: 60,
-    height: 3,
-    backgroundColor: "#2563EB",
-    marginTop: 6,
+    width: 70,
+    height: 3.5,
+    backgroundColor: "#3B82F6",
+    marginTop: 7,
     borderRadius: 2,
   },
   sectionCard: {
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: "#DBEAFE",
+    borderRadius: 8,
     overflow: "hidden",
-    marginBottom: 12,
+    marginBottom: 14,
     backgroundColor: "#FFFFFF",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
   },
   sectionCardSoft: {
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: "#DBEAFE",
+    borderRadius: 8,
     overflow: "hidden",
-    marginBottom: 12,
-    backgroundColor: "#F9FBFF",
+    marginBottom: 14,
+    backgroundColor: "#F8FAFC",
   },
   sectionHeaderBlue: {
-    backgroundColor: "#EFF6FF",
-    paddingVertical: 6,
-    paddingHorizontal: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
-  },
-  sectionHeaderSoft: {
-    backgroundColor: "#EEF2FF",
+    backgroundColor: "#DBEAFE",
     paddingVertical: 7,
     paddingHorizontal: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
+    borderBottomWidth: 1.5,
+    borderBottomColor: "#BFDBFE",
+  },
+  sectionHeaderSoft: {
+    backgroundColor: "#EFF6FF",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1.5,
+    borderBottomColor: "#BFDBFE",
     borderLeftWidth: 4,
-    borderLeftColor: "#2563EB",
+    borderLeftColor: "#3B82F6",
   },
   sectionHeaderTextBlue: {
-    fontSize: 9,
-    fontWeight: "bold",
-    color: "#2563EB",
-  },
-  sectionHeaderTextDark: {
     fontSize: 9.5,
     fontWeight: "bold",
-    color: "#1E3A8A",
+    color: "#1E40AF",
     letterSpacing: 0.3,
   },
+  sectionHeaderTextDark: {
+    fontSize: 10,
+    fontWeight: "bold",
+    color: "#0F172A",
+    letterSpacing: 0.4,
+  },
   cardBody: {
-    paddingVertical: 10,
-    paddingHorizontal: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
   },
   infoRow: {
     flexDirection: "row",
-    marginBottom: 4,
+    marginBottom: 5,
   },
   infoRowNoGap: {
     flexDirection: "row",
   },
   infoLabel: {
-    width: "28%",
-    fontSize: 8.5,
+    width: "30%",
+    fontSize: 9,
     fontWeight: "bold",
-    color: "#111827",
-    paddingRight: 6,
+    color: "#0F172A",
+    paddingRight: 8,
   },
   infoValueText: {
-    width: "72%",
-    fontSize: 8.5,
-    color: "#4B5563",
-    lineHeight: 1.35,
+    width: "70%",
+    fontSize: 9,
+    color: "#374151",
+    lineHeight: 1.4,
   },
   infoValueNode: {
     width: "70%",
   },
   paragraph: {
-    fontSize: 8.5,
-    lineHeight: 1.45,
-    color: "#4B5563",
-    marginBottom: 6,
+    fontSize: 9,
+    lineHeight: 1.5,
+    color: "#374151",
+    marginBottom: 7,
     textAlign: "justify",
   },
   highlightBox: {
     borderLeftWidth: 4,
     borderLeftColor: "#F59E0B",
-    backgroundColor: "#FFFBEB",
-    borderRadius: 4,
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-    marginTop: 6,
-    marginBottom: 8,
+    backgroundColor: "#FEF3C7",
+    borderRadius: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    marginTop: 8,
+    marginBottom: 10,
   },
   highlightText: {
-    fontSize: 8.3,
-    lineHeight: 1.4,
+    fontSize: 8.5,
+    lineHeight: 1.45,
     color: "#92400E",
     fontWeight: "bold",
   },
   tableWrap: {
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    borderRadius: 4,
+    borderWidth: 1.5,
+    borderColor: "#BFDBFE",
+    borderRadius: 6,
     overflow: "hidden",
-    marginBottom: 8,
+    marginBottom: 10,
   },
   tableHeader: {
     flexDirection: "row",
-    backgroundColor: "#2563EB",
+    backgroundColor: "#1E40AF",
   },
   tableRow: {
     flexDirection: "row",
@@ -205,53 +214,53 @@ const styles = StyleSheet.create({
     flexDirection: "row",
   },
   tableCellHeader: {
-    paddingVertical: 5,
-    paddingHorizontal: 5,
-    fontSize: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 6,
+    fontSize: 8.5,
     fontWeight: "bold",
     color: "#FFFFFF",
     borderRightWidth: 1,
-    borderRightColor: "rgba(255,255,255,0.22)",
+    borderRightColor: "rgba(255,255,255,0.3)",
   },
   tableCell: {
-    paddingVertical: 5,
-    paddingHorizontal: 5,
-    fontSize: 8,
-    color: "#4B5563",
+    paddingVertical: 6,
+    paddingHorizontal: 6,
+    fontSize: 8.5,
+    color: "#374151",
     borderRightWidth: 1,
     borderRightColor: "#E5E7EB",
-    lineHeight: 1.35,
+    lineHeight: 1.4,
   },
   tableCellLast: {
-    paddingVertical: 5,
-    paddingHorizontal: 5,
-    fontSize: 8,
-    color: "#4B5563",
-    lineHeight: 1.35,
+    paddingVertical: 6,
+    paddingHorizontal: 6,
+    fontSize: 8.5,
+    color: "#374151",
+    lineHeight: 1.4,
   },
   tableCellHighlighted: {
-    paddingVertical: 5,
-    paddingHorizontal: 5,
-    fontSize: 8,
-    color: "#2563EB",
+    paddingVertical: 6,
+    paddingHorizontal: 6,
+    fontSize: 8.5,
+    color: "#1E40AF",
     fontWeight: "bold",
     borderRightWidth: 1,
     borderRightColor: "#E5E7EB",
-    lineHeight: 1.35,
+    lineHeight: 1.4,
   },
   tableCellHighlightedLast: {
-    paddingVertical: 5,
-    paddingHorizontal: 5,
-    fontSize: 8,
-    color: "#2563EB",
+    paddingVertical: 6,
+    paddingHorizontal: 6,
+    fontSize: 8.5,
+    color: "#1E40AF",
     fontWeight: "bold",
-    lineHeight: 1.35,
+    lineHeight: 1.4,
   },
   footer: {
     marginTop: "auto",
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
+    paddingTop: 10,
+    borderTopWidth: 2,
+    borderTopColor: "#DBEAFE",
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
@@ -264,37 +273,38 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
   },
   footerMain: {
-    fontSize: 8.5,
+    fontSize: 9,
     fontWeight: "bold",
-    color: "#111827",
+    color: "#0F172A",
     marginBottom: 2,
   },
   footerSub: {
-    fontSize: 7.8,
-    color: "#9CA3AF",
+    fontSize: 8,
+    color: "#6B7280",
     fontStyle: "italic",
     marginBottom: 1,
   },
   footerRightText: {
-    fontSize: 7.8,
-    color: "#9CA3AF",
+    fontSize: 8,
+    color: "#6B7280",
     fontStyle: "italic",
     marginBottom: 1,
     textAlign: "right",
   },
   bulletLine: {
     flexDirection: "row",
-    marginBottom: 4,
+    marginBottom: 5,
   },
   bulletMark: {
-    width: 10,
-    fontSize: 8,
-    color: "#4B5563",
+    width: 12,
+    fontSize: 8.5,
+    color: "#3B82F6",
+    fontWeight: "bold",
   },
   bulletText: {
     flex: 1,
-    fontSize: 8.5,
-    color: "#374151",
+    fontSize: 9,
+    color: "#1F2937",
     lineHeight: 1.5,
   },
   twoColGrid: {
@@ -303,181 +313,171 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   modelCard: {
-    width: "49%",
+    width: "48.5%",
     backgroundColor: "#F8FAFC",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    borderRadius: 4,
-    padding: 8,
-    marginBottom: 8,
+    borderWidth: 1.5,
+    borderColor: "#BFDBFE",
+    borderRadius: 6,
+    padding: 10,
+    marginBottom: 10,
   },
   modelTitle: {
-    fontSize: 8.3,
+    fontSize: 9,
     fontWeight: "bold",
-    color: "#2563EB",
-    marginBottom: 4,
+    color: "#1E40AF",
+    marginBottom: 5,
   },
   modelDesc: {
-    fontSize: 8,
-    color: "#4B5563",
-    lineHeight: 1.35,
+    fontSize: 8.5,
+    color: "#374151",
+    lineHeight: 1.4,
   },
   stepWrap: {
     backgroundColor: "#F8FAFC",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    borderRadius: 5,
-    padding: 10,
+    borderWidth: 1.5,
+    borderColor: "#BFDBFE",
+    borderRadius: 6,
+    padding: 12,
   },
   stepRow: {
     flexDirection: "row",
-    marginBottom: 9,
+    marginBottom: 10,
   },
   stepCircleWrap: {
-    width: 22,
+    width: 24,
     alignItems: "center",
   },
   stepCircle: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: "#2563EB",
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: "#3B82F6",
     alignItems: "center",
     justifyContent: "center",
   },
   stepNum: {
     color: "#FFFFFF",
-    fontSize: 7.5,
+    fontSize: 8,
     fontWeight: "bold",
   },
   stepLine: {
-    width: 1,
+    width: 2,
     flex: 1,
-    backgroundColor: "#DBEAFE",
+    backgroundColor: "#BFDBFE",
     marginTop: -1,
   },
   stepContent: {
     flex: 1,
-    paddingLeft: 8,
+    paddingLeft: 10,
   },
   stepTitle: {
-    fontSize: 8.5,
+    fontSize: 9,
     fontWeight: "bold",
-    color: "#111827",
-    marginBottom: 2,
+    color: "#0F172A",
+    marginBottom: 3,
   },
   stepDesc: {
-    fontSize: 8,
-    color: "#4B5563",
-    lineHeight: 1.35,
+    fontSize: 8.5,
+    color: "#374151",
+    lineHeight: 1.4,
   },
   centeredIntro: {
-    fontSize: 8.2,
-    color: "#4B5563",
-    lineHeight: 1.4,
-    marginBottom: 8,
+    fontSize: 8.5,
+    color: "#374151",
+    lineHeight: 1.45,
+    marginBottom: 10,
   },
   categoryBox: {
-    backgroundColor: "#F1F5F9",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    padding: 7,
-    marginBottom: 8,
+    backgroundColor: "#EFF6FF",
+    borderWidth: 1.5,
+    borderColor: "#BFDBFE",
+    borderRadius: 4,
+    padding: 8,
+    marginBottom: 10,
   },
   categoryText: {
-    fontSize: 8.3,
+    fontSize: 9,
     fontWeight: "bold",
-    color: "#2563EB",
+    color: "#1E40AF",
   },
   tinyMuted: {
-    fontSize: 7.8,
-    color: "#4B5563",
-    lineHeight: 1.35,
+    fontSize: 8,
+    color: "#374151",
+    lineHeight: 1.4,
   },
   gstSummaryWrap: {
-    marginTop: 10,
+    marginTop: 12,
     alignItems: "flex-end",
   },
-
   gstBox: {
-    width: "45%",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    borderRadius: 6,
+    width: "48%",
+    borderWidth: 1.5,
+    borderColor: "#BFDBFE",
+    borderRadius: 8,
     overflow: "hidden",
   },
-
   gstRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: 5,
-    paddingHorizontal: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
     borderBottomWidth: 1,
     borderBottomColor: "#E5E7EB",
   },
-
   gstRowLast: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: 7,
-    paddingHorizontal: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
   },
-
   gstLabel: {
-    fontSize: 8.5,
-    color: "#374151",
+    fontSize: 9,
+    color: "#1F2937",
   },
-
   gstValue: {
-    fontSize: 8.5,
-    color: "#111827",
+    fontSize: 9,
+    color: "#0F172A",
     fontWeight: "bold",
   },
-
   gstGrandRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-    backgroundColor: "#ECFDF5",
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    backgroundColor: "#D1FAE5",
   },
-
   gstGrandLabel: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: "bold",
     color: "#065F46",
   },
-
   gstGrandValue: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: "bold",
-    color: "#059669",
+    color: "#047857",
   },
   endDocWrap: {
-    marginTop: 18,
+    marginTop: 20,
     alignItems: "center",
   },
-
   endDocLine: {
-    fontSize: 8,
+    fontSize: 8.5,
     color: "#6B7280",
-    letterSpacing: 1,
+    letterSpacing: 1.2,
   },
-
   divider: {
-    height: 1,
-    backgroundColor: "#CBD5F5",
-    marginTop: 10,
+    height: 1.5,
+    backgroundColor: "#BFDBFE",
+    marginTop: 12,
   },
 });
 
 const bankTableRows = [
   { no: "1", label: "ACCOUNT DETAILS", value: "" },
-
   { no: "1.1", label: "Name of the Bank", value: "Kotak Mahindra Bank" },
   {
     no: "1.2",
-    label: "Account Holder’s Name",
+    label: "Account Holder's Name",
     value: "MICROLOGIC INTEGRATED SYSTEMS PRIVATE LIMITED",
   },
   { no: "1.3", label: "Name of the Branch", value: "Sadashivanagar Branch" },
@@ -501,16 +501,13 @@ const bankTableRows = [
     value: "7650258829 (As appearing on the Cheque book/pass book)",
   },
   { no: "1.10", label: "Account Type", value: "Overdraft Account" },
-
   {
     no: "2",
     label: "Micrologic Payment Cheque / DD / Pay Order",
     value:
       "In favor of Micrologic Integrated Systems Pvt. Ltd.\nPayable at Bangalore only",
   },
-
   { no: "3", label: "Micrologic Registration Numbers", value: "" },
-
   {
     no: "3.1",
     label: "Company Identity Number (CIN)",
@@ -660,7 +657,7 @@ const commercialTermsRows = [
     lines: [
       "Please make the purchase order on:",
       "Micrologic Integrated Systems (P) Limited",
-      "#22-D1, “Micrologic Drive”, KIADB Industrial Area, Phase 1, Kumbalagodu (Bengaluru-Mysuru Highway), Bengaluru-560 074, India",
+      '#22-D1, "Micrologic Drive", KIADB Industrial Area, Phase 1, Kumbalagodu (Bengaluru-Mysuru Highway), Bengaluru-560 074, India',
     ],
   },
   {
@@ -675,10 +672,10 @@ const commercialTermsRows = [
 const delayedDeliveryRow = {
   no: "12",
   heading:
-    "Delayed Delivery of the Project due to delays at customer’s end or force majeure",
+    "Delayed Delivery of the Project due to delays at customer's end or force majeure",
   lines: [
-    "In the event the customer does not take the delivery of the Project beyond 3 weeks of the readiness of the project at our factory or hold from the customer’s end for any other reason, the customer is liable to make the payment that is due as per the agreed terms with applicable taxes. Micrologic will intimate the readiness of the project with an internal test report.",
-    "The reasons for such delays could be due to customer’s changed timelines, Lockdown/Curfew due to pandemic or any reasons causing a delay for the customer to take the delivery.",
+    "In the event the customer does not take the delivery of the Project beyond 3 weeks of the readiness of the project at our factory or hold from the customer's end for any other reason, the customer is liable to make the payment that is due as per the agreed terms with applicable taxes. Micrologic will intimate the readiness of the project with an internal test report.",
+    "The reasons for such delays could be due to customer's changed timelines, Lockdown/Curfew due to pandemic or any reasons causing a delay for the customer to take the delivery.",
   ],
 };
 
@@ -736,7 +733,7 @@ const engagementRows = [
     no: "1.4",
     heading: "Time and Effort",
     lines: [
-      "In this engagement model, the software will be built for a given specification and the software will be the buyer’s property. Micrologic will charge on a Time and Effort basis, wherein the Man-hours spent on software development will be charged. The software can either be developed at Micrologic or at the buyer’s premises as necessary. The source code will be the property of the buyer.",
+      "In this engagement model, the software will be built for a given specification and the software will be the buyer's property. Micrologic will charge on a Time and Effort basis, wherein the Man-hours spent on software development will be charged. The software can either be developed at Micrologic or at the buyer's premises as necessary. The source code will be the property of the buyer.",
     ],
   },
   {
@@ -751,7 +748,7 @@ const engagementRows = [
     no: "1.6",
     heading: "Time lines",
     lines: [
-      "Time lines quoted will be adhered by Micrologic. Where the buyer has to provide details like drawings, information, samples, if delayed from the buyer’s end, which would affect the project time lines, the affect of the delays will be borne by the buyer.",
+      "Time lines quoted will be adhered by Micrologic. Where the buyer has to provide details like drawings, information, samples, if delayed from the buyer's end, which would affect the project time lines, the affect of the delays will be borne by the buyer.",
       "If the equipment is not taken by the buyer after readiness, within a reasonable time, the buyer shall have to pay the full balance amount and Micrologic is entitled to impose demurrage charges to the buyer for keeping the equipment at Micrologic.",
     ],
   },
@@ -759,7 +756,7 @@ const engagementRows = [
     no: "1.7",
     heading: "Pre-Shipping Acceptance",
     lines: [
-      "The buyer will validate the line/equipment before dispatch at his discretion and a ‘Dispatch Clearance’ is necessary for Micrologic to arrange dispatch.",
+      "The buyer will validate the line/equipment before dispatch at his discretion and a 'Dispatch Clearance' is necessary for Micrologic to arrange dispatch.",
     ],
   },
   {
@@ -785,7 +782,6 @@ function PdfHeader({ refNo, revNo, date }) {
     <View style={styles.header}>
       <View style={styles.logoRow}>
         <Image src={logo} style={styles.logoImage} />
-        {/* <Text style={styles.tagline}>Efficiency Enhanced</Text> */}
       </View>
 
       <View style={styles.metaRow}>
@@ -969,97 +965,23 @@ function BulletList({ items }) {
 }
 
 function StepFlow({ steps }) {
-  const leftColors = [
-    "#2563EB",
-    "#6366F1",
-    "#0EA5E9",
-    "#8B5CF6",
-    "#2563EB",
-    "#6366F1",
-    "#0EA5E9",
-    "#8B5CF6",
-  ];
-
   return (
-    <View style={{ gap: 6 }}>
+    <View style={styles.stepWrap}>
       {steps.map((step, index) => {
         const isLast = index === steps.length - 1;
-        const accentColor = leftColors[index % leftColors.length];
 
         return (
-          <View
-            key={`${step.title}-${index}`}
-            style={{ flexDirection: "row", alignItems: "stretch" }}
-          >
-            {/* Left: number column with connecting line */}
-            <View style={{ width: 32, alignItems: "center" }}>
-              <View
-                style={{
-                  width: 22,
-                  height: 22,
-                  borderRadius: 11,
-                  backgroundColor: accentColor,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  borderWidth: 2,
-                  borderColor: "#DBEAFE",
-                }}
-              >
-                <Text
-                  style={{ color: "#FFFFFF", fontSize: 8, fontWeight: "bold" }}
-                >
-                  {index + 1}
-                </Text>
+          <View key={`${step.title}-${index}`} style={styles.stepRow}>
+            <View style={styles.stepCircleWrap}>
+              <View style={styles.stepCircle}>
+                <Text style={styles.stepNum}>{index + 1}</Text>
               </View>
-              {!isLast && (
-                <View
-                  style={{
-                    width: 2,
-                    flex: 1,
-                    backgroundColor: "#DBEAFE",
-                    marginTop: 3,
-                    borderRadius: 1,
-                    minHeight: 10,
-                  }}
-                />
-              )}
+              {!isLast ? <View style={styles.stepLine} /> : null}
             </View>
 
-            {/* Right: content card */}
-            <View
-              style={{
-                flex: 1,
-                marginLeft: 8,
-                marginBottom: isLast ? 0 : 6,
-                borderLeftWidth: 3,
-                borderLeftColor: accentColor,
-                backgroundColor: "#F8FAFC",
-                borderRadius: 4,
-                borderWidth: 1,
-                borderColor: "#E2E8F0",
-                paddingVertical: 7,
-                paddingHorizontal: 10,
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 8.5,
-                  fontWeight: "bold",
-                  color: "#0F172A",
-                  marginBottom: 2,
-                }}
-              >
-                {step.title}
-              </Text>
-              <Text
-                style={{
-                  fontSize: 8,
-                  color: "#4B5563",
-                  lineHeight: 1.4,
-                }}
-              >
-                {step.description}
-              </Text>
+            <View style={styles.stepContent}>
+              <Text style={styles.stepTitle}>{step.title}</Text>
+              <Text style={styles.stepDesc}>{step.description}</Text>
             </View>
           </View>
         );
@@ -1088,21 +1010,12 @@ const formatCurrency = (value) => {
 const cleanPdfText = (value) => {
   if (value == null) return "-";
 
-  return (
-    String(value)
-      .normalize("NFKC")
-
-      // 🔥 remove ALL superscripts explicitly
-      .replace(/[\u00B9\u00B2\u00B3\u2070-\u2079]/g, "")
-
-      // 🔥 remove invisible / zero-width chars
-      .replace(/[\u200B-\u200D\uFEFF\u00AD]/g, "")
-
-      // 🔥 remove leading junk like quotes, symbols, etc.
-      .replace(/^[^a-zA-Z0-9↳]+/, "")
-
-      .trim()
-  );
+  return String(value)
+    .normalize("NFKC")
+    .replace(/[\u00B9\u00B2\u00B3\u2070-\u2079]/g, "")
+    .replace(/[\u200B-\u200D\uFEFF\u00AD]/g, "")
+    .replace(/^[^a-zA-Z0-9↳]+/, "")
+    .trim();
 };
 
 const cleanNumber = (value) => {
@@ -1150,29 +1063,29 @@ function NumberedTermsTable({ title, rows }) {
             <View
               style={{
                 width: "7%",
-                paddingVertical: 5,
-                paddingHorizontal: 5,
+                paddingVertical: 6,
+                paddingHorizontal: 6,
                 borderRightWidth: 1,
                 borderRightColor: "#E5E7EB",
               }}
             >
               <Text
-                style={{ fontSize: 8, fontWeight: "bold", color: "#111827" }}
+                style={{ fontSize: 8.5, fontWeight: "bold", color: "#0F172A" }}
               >
                 {row.no}
               </Text>
             </View>
 
             <View
-              style={{ width: "93%", paddingVertical: 5, paddingHorizontal: 5 }}
+              style={{ width: "93%", paddingVertical: 6, paddingHorizontal: 6 }}
             >
               {row.heading ? (
                 <Text
                   style={{
-                    fontSize: 8.2,
+                    fontSize: 9,
                     fontWeight: "bold",
-                    color: "#111827",
-                    marginBottom: row.lines && row.lines.length ? 2 : 0,
+                    color: "#0F172A",
+                    marginBottom: row.lines && row.lines.length ? 3 : 0,
                   }}
                 >
                   {row.heading}
@@ -1183,9 +1096,9 @@ function NumberedTermsTable({ title, rows }) {
                 <Text
                   key={i}
                   style={{
-                    fontSize: 8,
-                    color: "#374151",
-                    lineHeight: 1.35,
+                    fontSize: 8.5,
+                    color: "#1F2937",
+                    lineHeight: 1.4,
                     marginBottom: 2,
                   }}
                 >
@@ -1201,7 +1114,7 @@ function NumberedTermsTable({ title, rows }) {
 }
 
 export function ProposalPDF({ quotation, totals }) {
-  const HSN_SAC = "90318000"; // ✅
+  const HSN_SAC = "90318000";
   const categories = [
     ...new Set(
       (quotation?.items || []).flatMap((item) => [
@@ -1212,6 +1125,7 @@ export function ProposalPDF({ quotation, totals }) {
   ]
     .filter(Boolean)
     .join(", ");
+
   const metadata = {
     ref: "MISPL/COMM/F2425.1150",
     rev: quotation?.version || "01",
@@ -1259,7 +1173,7 @@ export function ProposalPDF({ quotation, totals }) {
           (sub.description || sub.name || "-").replace(
             /^[\u00B9\u00B2\u00B3\u2070-\u2079]+/,
             "",
-          ), // 🔥 kill leading superscript HARD
+          ),
         )}`,
         qty: cleanNumber(sub.quantity || 0),
         unitPrice: sub.price != null ? formatCurrency(sub.price) : "-",
@@ -1273,6 +1187,7 @@ export function ProposalPDF({ quotation, totals }) {
       });
     });
   });
+
   const warranty = proposalData.warranty;
   const softwareSupport = proposalData.softwareSupport;
   const revisionHistory = proposalData.revisionHistory;
@@ -1294,24 +1209,20 @@ export function ProposalPDF({ quotation, totals }) {
       label: "Customer",
       value: quotation?.account?.accountName || "-",
     },
-
     {
       label: "Address",
       value: fullAddress || "-",
     },
-
     {
       label: "Contact",
       value: contact
         ? `${contact.firstName || ""} ${contact.lastName || ""}`.trim()
         : "-",
     },
-
     {
       label: "Phone No.",
       value: quotation?.account?.phone || contact?.phone || "-",
     },
-
     {
       label: "Email",
       value: contact?.email || "-",
@@ -1330,21 +1241,16 @@ export function ProposalPDF({ quotation, totals }) {
     { key: "sl", title: "SL#", width: "6%", align: "center" },
     { key: "sku", title: "SKU", width: "10%", align: "center" },
     { key: "hsn", title: "HSN/SAC", width: "10%", align: "center" },
-
     { key: "description", title: "Description", width: "30%" },
-
     { key: "qty", title: "QTY", width: "6%", align: "center" },
-
     {
       key: "unitPrice",
       title: "Unit Price",
       width: "10%",
       align: "right",
     },
-
     { key: "discount", title: "Disc %", width: "8%", align: "center" },
     { key: "gst", title: "GST %", width: "8%", align: "center" },
-
     {
       key: "total",
       title: "Total",
@@ -1365,10 +1271,9 @@ export function ProposalPDF({ quotation, totals }) {
     return sum + qty * price * (1 - discount / 100);
   }, 0);
 
-  const gstRate = 18; // assuming fixed for now
+  const gstRate = 18;
   const cgst = subtotal * (gstRate / 2 / 100);
   const sgst = subtotal * (gstRate / 2 / 100);
-
   const grandTotal = subtotal + cgst + sgst;
 
   return (
@@ -1380,332 +1285,87 @@ export function ProposalPDF({ quotation, totals }) {
           date={metadata.date}
         />
 
+        <View style={styles.pageTitleWrap}>
+          <Text style={styles.pageTitle}>COMMERCIAL PROPOSAL</Text>
+          <View style={styles.titleUnderline} />
+        </View>
+
+        <InfoCard title="Proposal Submitted to:" items={customerItems} />
+        <InfoCard title="Project Details:" items={projectItems} />
+
         <View
           style={{
-            alignItems: "center",
-            marginBottom: 14,
-            paddingVertical: 12,
-            borderTopWidth: 1,
-            borderBottomWidth: 1,
-            borderColor: "#DBEAFE",
-            backgroundColor: "#F0F7FF",
+            marginTop: "auto",
+            borderTopWidth: 2,
+            borderTopColor: "#DBEAFE",
+            paddingTop: 12,
           }}
         >
           <Text
             style={{
-              fontSize: 16,
+              fontSize: 10,
               fontWeight: "bold",
               color: "#0F172A",
-              letterSpacing: 2,
-              textTransform: "uppercase",
+              marginBottom: 4,
+              textAlign: "center",
+              letterSpacing: 0.6,
             }}
           >
-            COMMERCIAL PROPOSAL
+            {company.name}
           </Text>
-          <View
+          <Text
             style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginTop: 5,
-              gap: 6,
+              fontSize: 8.5,
+              color: "#374151",
+              marginBottom: 2,
+              textAlign: "center",
+              lineHeight: 1.45,
             }}
           >
-            <View
-              style={{
-                width: 24,
-                height: 2,
-                backgroundColor: "#93C5FD",
-                borderRadius: 2,
-              }}
-            />
-            <Text
-              style={{ fontSize: 7.5, color: "#2563EB", letterSpacing: 1.5 }}
-            >
-              CONFIDENTIAL · PREPARED EXCLUSIVELY FOR THE ADDRESSEE
-            </Text>
-            <View
-              style={{
-                width: 24,
-                height: 2,
-                backgroundColor: "#93C5FD",
-                borderRadius: 2,
-              }}
-            />
-          </View>
-        </View>
-
-        {/* ── Proposal Submitted To ── */}
-        <View
-          style={{
-            borderWidth: 1,
-            borderColor: "#DBEAFE",
-            borderRadius: 6,
-            overflow: "hidden",
-            marginBottom: 10,
-          }}
-        >
-          <View
+            {company.address}
+          </Text>
+          <Text
             style={{
-              backgroundColor: "#1E3A8A",
-              paddingVertical: 7,
-              paddingHorizontal: 10,
-              flexDirection: "row",
-              alignItems: "center",
+              fontSize: 8.5,
+              color: "#3B82F6",
+              fontWeight: "bold",
+              textAlign: "center",
+              marginBottom: 5,
             }}
           >
-            <View
-              style={{
-                width: 3,
-                height: 13,
-                backgroundColor: "#60A5FA",
-                borderRadius: 2,
-                marginRight: 8,
-              }}
-            />
-            <Text
-              style={{
-                fontSize: 9,
-                fontWeight: "bold",
-                color: "#FFFFFF",
-                letterSpacing: 0.4,
-              }}
-            >
-              Proposal Submitted to:
-            </Text>
-          </View>
-          {customerItems.map((item, index) => (
-            <View
-              key={index}
-              style={{
-                flexDirection: "row",
-                backgroundColor: index % 2 === 0 ? "#F8FAFC" : "#FFFFFF",
-                borderBottomWidth: index < customerItems.length - 1 ? 1 : 0,
-                borderBottomColor: "#EFF6FF",
-                paddingVertical: 6,
-                paddingHorizontal: 10,
-                alignItems: "flex-start",
-              }}
-            >
-              <Text
-                style={{
-                  width: "28%",
-                  fontSize: 8.5,
-                  fontWeight: "bold",
-                  color: "#1E3A8A",
-                }}
-              >
-                {item.label}
-              </Text>
-              <Text style={{ width: "2%", fontSize: 8.5, color: "#94A3B8" }}>
-                :
-              </Text>
-              <Text
-                style={{
-                  width: "70%",
-                  fontSize: 8.5,
-                  color: "#374151",
-                  lineHeight: 1.4,
-                }}
-              >
-                {typeof item.value === "string" ? item.value : ""}
-              </Text>
-            </View>
-          ))}
-        </View>
+            {company.website} | M: {company.phone}
+          </Text>
 
-        {/* ── Project Details ── */}
-        <View
-          style={{
-            borderWidth: 1,
-            borderColor: "#DBEAFE",
-            borderRadius: 6,
-            overflow: "hidden",
-            marginBottom: 10,
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: "#1E3A8A",
-              paddingVertical: 7,
-              paddingHorizontal: 10,
-              flexDirection: "row",
-              alignItems: "center",
-            }}
-          >
-            <View
-              style={{
-                width: 3,
-                height: 13,
-                backgroundColor: "#60A5FA",
-                borderRadius: 2,
-                marginRight: 8,
-              }}
-            />
-            <Text
-              style={{
-                fontSize: 9,
-                fontWeight: "bold",
-                color: "#FFFFFF",
-                letterSpacing: 0.4,
-              }}
-            >
-              Project Details:
-            </Text>
-          </View>
-          {projectItems.map((item, index) => {
-            const isBadge =
-              item.label === "Doc Owner" || item.label === "Approved By";
-            return (
-              <View
-                key={index}
-                style={{
-                  flexDirection: "row",
-                  backgroundColor: index % 2 === 0 ? "#F8FAFC" : "#FFFFFF",
-                  borderBottomWidth: index < projectItems.length - 1 ? 1 : 0,
-                  borderBottomColor: "#EFF6FF",
-                  paddingVertical: 6,
-                  paddingHorizontal: 10,
-                  alignItems: "center",
-                }}
-              >
-                <Text
-                  style={{
-                    width: "28%",
-                    fontSize: 8.5,
-                    fontWeight: "bold",
-                    color: "#1E3A8A",
-                  }}
-                >
-                  {item.label}
-                </Text>
-                <Text style={{ width: "2%", fontSize: 8.5, color: "#94A3B8" }}>
-                  :
-                </Text>
-                {isBadge ? (
-                  <View
-                    style={{
-                      backgroundColor: "#EFF6FF",
-                      borderWidth: 1,
-                      borderColor: "#BFDBFE",
-                      borderRadius: 10,
-                      paddingVertical: 2,
-                      paddingHorizontal: 8,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        fontSize: 7.8,
-                        color: "#1D4ED8",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      {item.value}
-                    </Text>
-                  </View>
-                ) : (
-                  <Text
-                    style={{
-                      width: "70%",
-                      fontSize: 8.5,
-                      color: "#374151",
-                      lineHeight: 1.4,
-                    }}
-                  >
-                    {item.value}
-                  </Text>
-                )}
-              </View>
-            );
-          })}
-        </View>
-
-        <View style={{ marginTop: "auto" }}>
-          {/* Top blue divider bar */}
-          <View
-            style={{
-              height: 2,
-              backgroundColor: "#2563EB",
-              borderRadius: 1,
-              marginBottom: 10,
-            }}
-          />
-
-          {/* Company info centered */}
-          <View style={{ alignItems: "center", marginBottom: 10 }}>
-            <Text
-              style={{
-                fontSize: 9.5,
-                fontWeight: "bold",
-                color: "#0F172A",
-                letterSpacing: 0.5,
-                marginBottom: 3,
-              }}
-            >
-              {company.name}
-            </Text>
-            <Text
-              style={{
-                fontSize: 7.8,
-                color: "#64748B",
-                textAlign: "center",
-                lineHeight: 1.4,
-                marginBottom: 3,
-              }}
-            >
-              {company.address}
-            </Text>
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Text
-                style={{ fontSize: 8, color: "#2563EB", fontWeight: "bold" }}
-              >
-                {company.website}
-              </Text>
-              <Text
-                style={{ fontSize: 8, color: "#94A3B8", marginHorizontal: 4 }}
-              >
-                |
-              </Text>
-              <Text
-                style={{ fontSize: 8, color: "#2563EB", fontWeight: "bold" }}
-              >
-                M: {company.phone}
-              </Text>
-            </View>
-          </View>
-
-          {/* Contact cards */}
-          <View style={{ flexDirection: "row" }}>
+          <View style={{ flexDirection: "row", marginTop: 10 }}>
             {company.contacts.map((contact, index) => (
               <View
                 key={`${contact.name}-${index}`}
                 style={{
                   flex: 1,
-                  borderWidth: 1,
-                  borderColor: "#DBEAFE",
-                  borderRadius: 5,
-                  borderLeftWidth: 3,
-                  borderLeftColor: "#2563EB",
-                  backgroundColor: "#F0F7FF",
-                  padding: 8,
-                  marginRight: index === company.contacts.length - 1 ? 0 : 6,
+                  backgroundColor: "#EFF6FF",
+                  padding: 9,
+                  borderWidth: 1.5,
+                  borderColor: "#BFDBFE",
+                  borderRadius: 6,
+                  marginRight: index === company.contacts.length - 1 ? 0 : 8,
                 }}
               >
                 <Text
                   style={{
-                    fontSize: 8.5,
+                    fontSize: 9,
                     fontWeight: "bold",
-                    color: "#1E3A8A",
+                    color: "#0F172A",
                     marginBottom: 3,
                   }}
                 >
                   {contact.name}
                 </Text>
                 <Text
-                  style={{ fontSize: 7.3, color: "#475569", marginBottom: 1 }}
+                  style={{ fontSize: 7.5, color: "#374151", marginBottom: 1 }}
                 >
                   {contact.email}
                 </Text>
-                <Text style={{ fontSize: 7.3, color: "#475569" }}>
+                <Text style={{ fontSize: 7.5, color: "#374151" }}>
                   {contact.phone}
                 </Text>
               </View>
@@ -1724,10 +1384,10 @@ export function ProposalPDF({ quotation, totals }) {
         />
         <Text
           style={{
-            fontSize: 15,
+            fontSize: 16,
             fontWeight: "bold",
-            color: "#111827",
-            marginBottom: 10,
+            color: "#0F172A",
+            marginBottom: 12,
           }}
         >
           Revision History
@@ -1752,147 +1412,63 @@ export function ProposalPDF({ quotation, totals }) {
           revNo={metadata.rev}
           date={metadata.date}
         />
-        <View
+        <Text
           style={{
-            alignItems: "center",
-            marginBottom: 14,
-            paddingVertical: 10,
-            borderTopWidth: 1,
-            borderBottomWidth: 1,
-            borderColor: "#DBEAFE",
-            backgroundColor: "#F0F7FF",
+            fontSize: 12,
+            fontWeight: "bold",
+            color: "#0F172A",
+            marginBottom: 12,
+            textAlign: "center",
+            textDecoration: "underline",
           }}
         >
-          <Text
-            style={{
-              fontSize: 12,
-              fontWeight: "bold",
-              color: "#0F172A",
-              letterSpacing: 1,
-            }}
-          >
-            Confidentiality &amp; General Conditions
-          </Text>
-          <View
-            style={{
-              width: 40,
-              height: 2,
-              backgroundColor: "#2563EB",
-              borderRadius: 2,
-              marginTop: 5,
-            }}
-          />
-        </View>
+          Confidentiality &amp; General Conditions
+        </Text>
 
-        {[
-          `This techno commercial proposal (the "Proposal") is submitted with the intent of executing a definitive and legally binding agreement (the "Agreement") following an award of business to Micrologic Integrated Systems (P) Limited (Micrologic).`,
+        <Text style={styles.paragraph}>
+          This techno commercial proposal (the &quot;Proposal&quot;) is
+          submitted with the intent of executing a definitive and legally
+          binding agreement (the &quot;Agreement&quot;) following an award of
+          business to Micrologic Integrated Systems (P) Limited (Micrologic).
+        </Text>
+        <Text style={styles.paragraph}>
+          The Proposal itself is a legally binding offer to contract and in the
+          event of an award to Micrologic, it shall execute an Agreement that
+          will be the complete agreement between the parties, however, where the
+          parties do not execute any such Agreement, then the terms and
+          conditions mentioned in this Proposal shall govern any purchase
+          order(s) issued by the Customer in reference to the specific project.
+        </Text>
+        <Text style={styles.paragraph}>
+          This Proposal constitutes confidential and proprietary information of
+          Micrologic and requires that Customer treat the information contained
+          in this Proposal as confidential. Customer may use the information
+          contained in this Proposal solely for the purposes of evaluating this
+          Proposal and executing the Agreement with Micrologic. This Proposal
+          and all supporting documentation and drawings, Images and concepts
+          provided to Customer in connection with this Proposal shall remain the
+          property of Micrologic and must be returned immediately upon request.
+        </Text>
+        <Text style={styles.paragraph}>
+          This Proposal is based upon the set of requirements provided by
+          Customer to Micrologic, and certain reasonable assumptions taken by
+          Micrologic. If Customer alters the requirements or if any assumption
+          stated herein are false or inaccurate, then this Proposal, including
+          pricing, may change. Implementation of any services detailed in this
+          Proposal is subject to applicable legal and regulatory norms and
+          requirements in force as on the date when services are to be
+          implemented and such implementation may vary to cater to the
+          requirements of such applicable legal and regulatory norms and
+          requirements.
+        </Text>
 
-          `The Proposal itself is a legally binding offer to contract and in the event of an award to Micrologic, it shall execute an Agreement that will be the complete agreement between the parties, however, where the parties do not execute any such Agreement, then the terms and conditions mentioned in this Proposal shall govern any purchase order(s) issued by the Customer in reference to the specific project.`,
-
-          `This Proposal constitutes confidential and proprietary information of Micrologic and requires that Customer treat the information contained in this Proposal as confidential. Customer may use the information contained in this Proposal solely for the purposes of evaluating this Proposal and executing the Agreement with Micrologic. This Proposal and all supporting documentation and drawings, Images and concepts provided to Customer in connection with this Proposal shall remain the property of Micrologic and must be returned immediately upon request.`,
-
-          `This Proposal is based upon the set of requirements provided by Customer to Micrologic, and certain reasonable assumptions taken by Micrologic. If Customer alters the requirements or if any assumption stated herein are false or inaccurate, then this Proposal, including pricing, may change. Implementation of any services detailed in this Proposal is subject to applicable legal and regulatory norms and requirements in force as on the date when services are to be implemented and such implementation may vary to cater to the requirements of such applicable legal and regulatory norms and requirements.`,
-        ].map((text, index) => (
-          <View
-            key={index}
-            style={{
-              flexDirection: "row",
-              marginBottom: 8,
-              borderLeftWidth: 3,
-              borderLeftColor:
-                index === 0
-                  ? "#2563EB"
-                  : index === 1
-                    ? "#6366F1"
-                    : index === 2
-                      ? "#0EA5E9"
-                      : "#8B5CF6",
-              backgroundColor: "#F8FAFC",
-              borderRadius: 4,
-              paddingVertical: 8,
-              paddingHorizontal: 10,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 8.5,
-                lineHeight: 1.55,
-                color: "#374151",
-                textAlign: "justify",
-                flex: 1,
-              }}
-            >
-              {text}
-            </Text>
-          </View>
-        ))}
-
-        <View
-          style={{
-            marginTop: 10,
-            borderRadius: 5,
-            borderWidth: 1,
-            borderColor: "#FCD34D",
-            backgroundColor: "#FFFBEB",
-            overflow: "hidden",
-          }}
-        >
-          {/* Colored top bar */}
-          <View style={{ height: 3, backgroundColor: "#F59E0B" }} />
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "flex-start",
-              paddingVertical: 10,
-              paddingHorizontal: 10,
-            }}
-          >
-            {/* Icon box */}
-            <View
-              style={{
-                width: 18,
-                height: 18,
-                backgroundColor: "#F59E0B",
-                borderRadius: 9,
-                alignItems: "center",
-                justifyContent: "center",
-                marginRight: 8,
-                marginTop: 1,
-              }}
-            >
-              <Text
-                style={{ fontSize: 9, fontWeight: "bold", color: "#FFFFFF" }}
-              >
-                !
-              </Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text
-                style={{
-                  fontSize: 8,
-                  fontWeight: "bold",
-                  color: "#92400E",
-                  marginBottom: 3,
-                }}
-              >
-                IMPORTANT NOTICE
-              </Text>
-              <Text
-                style={{ fontSize: 8.3, lineHeight: 1.5, color: "#78350F" }}
-              >
-                These are customized equipment, this proposal is indicative of
-                the concept there could be changes during the detailed design
-                which will be dealt during Design Approval Process (DAP) &amp;
-                will be subjected to the customer approval.
-              </Text>
-            </View>
-          </View>
-        </View>
+        <HighlightBox text="These are customized equipment, this proposal is indicative of the concept there could be changes during the detailed design which will be dealt during Design Approval Process (DAP) & will be subjected to the customer approval." />
 
         <PdfFooter pageNumber={3} />
       </Page>
 
-      <Page size="A4" style={styles.page}>
+      {/* Pricing Page - Page 4 */}
+      <Page size="A4" style={styles.page} wrap>
         <PdfHeader
           refNo={metadata.ref}
           revNo={metadata.rev}
@@ -1900,10 +1476,10 @@ export function ProposalPDF({ quotation, totals }) {
         />
         <Text
           style={{
-            fontSize: 15,
+            fontSize: 16,
             fontWeight: "bold",
-            color: "#111827",
-            marginBottom: 8,
+            color: "#0F172A",
+            marginBottom: 10,
           }}
         >
           PRICE:
@@ -1919,96 +1495,97 @@ export function ProposalPDF({ quotation, totals }) {
         </Text>
         <Text
           style={{
-            fontSize: 8.5,
+            fontSize: 9,
             fontWeight: "bold",
-            color: "#2563EB",
-            marginBottom: 8,
+            color: "#1E40AF",
+            marginBottom: 10,
           }}
         >
           {quotation?.deal?.dealName || proposalData.project.name}
         </Text>
 
-        <>
+        <View wrap={false}>
           <TableBlock columns={pricingColumns} data={pricingRows} />
+        </View>
 
-          <View style={styles.gstSummaryWrap}>
-            <View style={styles.gstBox}>
-              <View style={styles.gstRow}>
-                <Text style={styles.gstLabel}>Subtotal</Text>
-                <Text style={styles.gstValue}>{formatCurrency(subtotal)}</Text>
-              </View>
+        <View style={styles.gstSummaryWrap} wrap={false}>
+          <View style={styles.gstBox}>
+            <View style={styles.gstRow}>
+              <Text style={styles.gstLabel}>Subtotal</Text>
+              <Text style={styles.gstValue}>{formatCurrency(subtotal)}</Text>
+            </View>
 
-              <View style={styles.gstRow}>
-                <Text style={styles.gstLabel}>Taxable Value</Text>
-                <Text style={styles.gstValue}>{formatCurrency(subtotal)}</Text>
-              </View>
+            <View style={styles.gstRow}>
+              <Text style={styles.gstLabel}>Taxable Value</Text>
+              <Text style={styles.gstValue}>{formatCurrency(subtotal)}</Text>
+            </View>
 
-              <View style={styles.gstRow}>
-                <Text style={styles.gstLabel}>CGST (9%)</Text>
-                <Text style={styles.gstValue}>{formatCurrency(cgst)}</Text>
-              </View>
+            <View style={styles.gstRow}>
+              <Text style={styles.gstLabel}>CGST (9%)</Text>
+              <Text style={styles.gstValue}>{formatCurrency(cgst)}</Text>
+            </View>
 
-              <View style={styles.gstRowLast}>
-                <Text style={styles.gstLabel}>SGST (9%)</Text>
-                <Text style={styles.gstValue}>{formatCurrency(sgst)}</Text>
-              </View>
+            <View style={styles.gstRowLast}>
+              <Text style={styles.gstLabel}>SGST (9%)</Text>
+              <Text style={styles.gstValue}>{formatCurrency(sgst)}</Text>
+            </View>
 
-              <View style={styles.gstGrandRow}>
-                <Text style={styles.gstGrandLabel}>Grand Total</Text>
-                <Text style={styles.gstGrandValue}>
-                  {formatCurrency(grandTotal)}
-                </Text>
-              </View>
+            <View style={styles.gstGrandRow}>
+              <Text style={styles.gstGrandLabel}>Grand Total</Text>
+              <Text style={styles.gstGrandValue}>
+                {formatCurrency(grandTotal)}
+              </Text>
             </View>
           </View>
-        </>
+        </View>
 
         <PdfFooter pageNumber={4} totalPages={12} />
+      </Page>
 
-        <View break>
-          <PdfHeader
-            refNo={metadata.ref}
-            revNo={metadata.rev}
-            date={metadata.date}
-          />
+      {/* Price Basis & Delivery - Page 5 */}
+      <Page size="A4" style={styles.page}>
+        <PdfHeader
+          refNo={metadata.ref}
+          revNo={metadata.rev}
+          date={metadata.date}
+        />
 
-          <HighlightBox
-            text={
-              quotation?.notes ||
-              "These are customized equipment; final design may change during DAP with customer approval."
+        <HighlightBox
+          text={
+            quotation?.notes ||
+            "These are customized equipment; final design may change during DAP with customer approval."
+          }
+        />
+
+        <SectionCard title="Price Basis & Delivery" soft>
+          <Text
+            style={{
+              fontSize: 9,
+              fontWeight: "bold",
+              color: "#374151",
+              marginBottom: 7,
+            }}
+          >
+            {quotation?.priceBasis ||
+              "Ex-Works Micrologic, Duties, Taxes, Freight, Insurance Extra"}
+          </Text>
+
+          <TableBlock
+            columns={deliveryColumns}
+            data={
+              quotation?.deliveryTimeline || [
+                {
+                  sl: "1",
+                  desc: "10-12 Weeks from the date of receipt of Purchase Order and Advance",
+                },
+                {
+                  sl: "2",
+                  desc: "Delivery depends on customer dependent activities like receipt of Advance, DAP approval, etc. Timeline will be finalized after project kickoff.",
+                },
+              ]
             }
           />
-
-          <SectionCard title="Price Basis & Delivery" soft>
-            <Text
-              style={{
-                fontSize: 8.5,
-                fontWeight: "bold",
-                color: "#4B5563",
-                marginBottom: 6,
-              }}
-            >
-              {quotation?.priceBasis ||
-                "Ex-Works Micrologic, Duties, Taxes, Freight, Insurance Extra"}
-            </Text>
-
-            <TableBlock
-              columns={deliveryColumns}
-              data={
-                quotation?.deliveryTimeline || [
-                  {
-                    sl: "1",
-                    desc: "10-12 Weeks from the date of receipt of Purchase Order and Advance",
-                  },
-                  {
-                    sl: "2",
-                    desc: "Delivery depends on customer dependent activities like receipt of Advance, DAP approval, etc. Timeline will be finalized after project kickoff.",
-                  },
-                ]
-              }
-            />
-          </SectionCard>
-        </View>
+        </SectionCard>
 
         <SectionCard title="Important Notes" soft>
           {pricing.generalNotes.map((note, index) => (
@@ -2022,6 +1599,7 @@ export function ProposalPDF({ quotation, totals }) {
         <PdfFooter pageNumber={5} totalPages={12} />
       </Page>
 
+      {/* Warranty Page - Page 6 */}
       <Page size="A4" style={styles.page}>
         <PdfHeader
           refNo={metadata.ref}
@@ -2033,19 +1611,17 @@ export function ProposalPDF({ quotation, totals }) {
           <BulletList items={warranty} />
           <View
             style={{
-              backgroundColor: "#EFF6FF",
-              paddingVertical: 8,
-              paddingHorizontal: 10,
-              borderRadius: 5,
-              marginTop: 10,
+              backgroundColor: "#DBEAFE",
+              paddingVertical: 9,
+              paddingHorizontal: 12,
+              borderRadius: 6,
+              marginTop: 12,
               alignItems: "center",
-              borderWidth: 1,
-              borderColor: "#BFDBFE",
+              borderWidth: 1.5,
+              borderColor: "#93C5FD",
             }}
           >
-            <Text
-              style={{ fontSize: 8.7, fontWeight: "bold", color: "#1E40AF" }}
-            >
+            <Text style={{ fontSize: 9, fontWeight: "bold", color: "#1E40AF" }}>
               Subject to Bangalore Jurisdiction only
             </Text>
           </View>
@@ -2067,10 +1643,10 @@ export function ProposalPDF({ quotation, totals }) {
 
         <Text
           style={{
-            fontSize: 15,
+            fontSize: 16,
             fontWeight: "bold",
-            color: "#111827",
-            marginBottom: 4,
+            color: "#0F172A",
+            marginBottom: 5,
           }}
         >
           Engagement Model
@@ -2103,48 +1679,20 @@ export function ProposalPDF({ quotation, totals }) {
           date={metadata.date}
         />
 
-        <View
+        <Text
           style={{
-            alignItems: "center",
-            marginBottom: 14,
-            paddingVertical: 10,
-            borderTopWidth: 1,
-            borderBottomWidth: 1,
-            borderColor: "#DBEAFE",
-            backgroundColor: "#F0F7FF",
+            fontSize: 16,
+            fontWeight: "bold",
+            color: "#0F172A",
+            marginBottom: 5,
           }}
         >
-          <Text
-            style={{
-              fontSize: 12,
-              fontWeight: "bold",
-              color: "#0F172A",
-              letterSpacing: 1,
-            }}
-          >
-            Project Execution Process Flow
-          </Text>
-          <View
-            style={{
-              width: 40,
-              height: 2,
-              backgroundColor: "#2563EB",
-              borderRadius: 2,
-              marginTop: 5,
-            }}
-          />
-          <Text
-            style={{
-              fontSize: 7.8,
-              color: "#64748B",
-              marginTop: 5,
-              letterSpacing: 0.3,
-            }}
-          >
-            Standard operating procedure for the successful delivery of the
-            proposed solution
-          </Text>
-        </View>
+          Project Execution Process Flow
+        </Text>
+        <Text style={styles.centeredIntro}>
+          Standard operating procedure for the successful delivery of the
+          proposed solution.
+        </Text>
 
         <StepFlow steps={processSteps} />
 
@@ -2180,11 +1728,11 @@ export function ProposalPDF({ quotation, totals }) {
 
         <Text
           style={{
-            fontSize: 11,
+            fontSize: 12,
             fontWeight: "bold",
-            color: "#111827",
-            marginTop: 14,
-            marginBottom: 8,
+            color: "#0F172A",
+            marginTop: 16,
+            marginBottom: 10,
             textDecoration: "underline",
           }}
         >
@@ -2195,10 +1743,10 @@ export function ProposalPDF({ quotation, totals }) {
           <Text
             key={index}
             style={{
-              fontSize: 8.4,
-              color: "#374151",
-              lineHeight: 1.45,
-              marginBottom: 8,
+              fontSize: 9,
+              color: "#1F2937",
+              lineHeight: 1.5,
+              marginBottom: 9,
               textAlign: "justify",
             }}
           >
@@ -2206,21 +1754,21 @@ export function ProposalPDF({ quotation, totals }) {
           </Text>
         ))}
 
-        <View style={{ marginLeft: 6, marginTop: 2 }}>
+        <View style={{ marginLeft: 8, marginTop: 3 }}>
           {cancellationItems.map((item) => (
             <View
               key={item.no}
-              style={{ flexDirection: "row", marginBottom: 6 }}
+              style={{ flexDirection: "row", marginBottom: 7 }}
             >
-              <Text style={{ width: 12, fontSize: 8.4, color: "#111827" }}>
+              <Text style={{ width: 14, fontSize: 9, color: "#0F172A" }}>
                 {item.no}.
               </Text>
               <Text
                 style={{
                   flex: 1,
-                  fontSize: 8.4,
-                  color: "#374151",
-                  lineHeight: 1.4,
+                  fontSize: 9,
+                  color: "#1F2937",
+                  lineHeight: 1.45,
                 }}
               >
                 {item.text}
@@ -2231,10 +1779,10 @@ export function ProposalPDF({ quotation, totals }) {
 
         <Text
           style={{
-            fontSize: 8.4,
-            color: "#374151",
-            marginTop: 2,
-            marginBottom: 8,
+            fontSize: 9,
+            color: "#1F2937",
+            marginTop: 3,
+            marginBottom: 10,
           }}
         >
           The dates of the activity will be shared in the timelines released by
@@ -2243,29 +1791,29 @@ export function ProposalPDF({ quotation, totals }) {
 
         <Text
           style={{
-            fontSize: 11,
+            fontSize: 12,
             fontWeight: "bold",
-            color: "#111827",
-            marginTop: 8,
-            marginBottom: 6,
+            color: "#0F172A",
+            marginTop: 10,
+            marginBottom: 7,
             textDecoration: "underline",
           }}
         >
           Note:
         </Text>
 
-        <View style={{ marginLeft: 6 }}>
+        <View style={{ marginLeft: 8 }}>
           {noteItems.map((line, index) => (
-            <View key={index} style={{ flexDirection: "row", marginBottom: 6 }}>
-              <Text style={{ width: 12, fontSize: 8.4, color: "#111827" }}>
+            <View key={index} style={{ flexDirection: "row", marginBottom: 7 }}>
+              <Text style={{ width: 14, fontSize: 9, color: "#0F172A" }}>
                 {index + 1}.
               </Text>
               <Text
                 style={{
                   flex: 1,
-                  fontSize: 8.4,
-                  color: "#374151",
-                  lineHeight: 1.4,
+                  fontSize: 9,
+                  color: "#1F2937",
+                  lineHeight: 1.45,
                 }}
               >
                 {line}
@@ -2300,20 +1848,14 @@ export function ProposalPDF({ quotation, totals }) {
         />
 
         <View style={styles.tableWrap}>
-          {/* HEADER */}
-          <View
-            style={[
-              styles.tableHeader,
-              { backgroundColor: "#1E40AF" }, // deeper premium blue
-            ]}
-          >
+          <View style={[styles.tableHeader, { backgroundColor: "#1E40AF" }]}>
             <Text
               style={[
                 styles.tableCellHeader,
                 {
                   width: "15%",
                   textAlign: "center",
-                  color: "transparent", // 🔥 removes "#" visually
+                  color: "transparent",
                 },
               ]}
             >
@@ -2323,7 +1865,7 @@ export function ProposalPDF({ quotation, totals }) {
             <Text
               style={[
                 styles.tableCellHeader,
-                { width: "35%", letterSpacing: 0.3 },
+                { width: "35%", letterSpacing: 0.4 },
               ]}
             >
               Description
@@ -2332,7 +1874,7 @@ export function ProposalPDF({ quotation, totals }) {
             <Text
               style={[
                 styles.tableCellHeader,
-                { width: "50%", letterSpacing: 0.3 },
+                { width: "50%", letterSpacing: 0.4 },
               ]}
             >
               Details
@@ -2348,8 +1890,8 @@ export function ProposalPDF({ quotation, totals }) {
                 style={{
                   flexDirection: "row",
                   borderBottomWidth: 1,
-                  borderBottomColor: "#E2E8F0",
-                  backgroundColor: isSection ? "#EEF2FF" : "#FFFFFF",
+                  borderBottomColor: "#E5E7EB",
+                  backgroundColor: isSection ? "#EFF6FF" : "#FFFFFF",
                 }}
               >
                 <Text
@@ -2359,8 +1901,8 @@ export function ProposalPDF({ quotation, totals }) {
                       width: "15%",
                       textAlign: "center",
                       fontWeight: "bold",
-                      color: "#1E3A8A",
-                      fontSize: 8.5,
+                      color: "#1E40AF",
+                      fontSize: 9,
                     },
                   ]}
                 >
@@ -2373,7 +1915,7 @@ export function ProposalPDF({ quotation, totals }) {
                     {
                       width: "35%",
                       fontWeight: isSection ? "bold" : "medium",
-                      color: isSection ? "#1E3A8A" : "#334155",
+                      color: isSection ? "#1E40AF" : "#1F2937",
                     },
                   ]}
                 >
@@ -2385,7 +1927,7 @@ export function ProposalPDF({ quotation, totals }) {
                     styles.tableCell,
                     {
                       width: "50%",
-                      color: isSection ? "#1E3A8A" : "#0F172A",
+                      color: isSection ? "#1E40AF" : "#0F172A",
                       fontWeight: isSection ? "bold" : "medium",
                       lineHeight: 1.5,
                     },
@@ -2420,16 +1962,14 @@ export function ProposalPDF({ quotation, totals }) {
 
           <View
             style={{
-              backgroundColor: "#F1F5F9",
-              paddingVertical: 7,
-              paddingHorizontal: 8,
-              borderRadius: 4,
-              marginTop: 8,
+              backgroundColor: "#EFF6FF",
+              paddingVertical: 8,
+              paddingHorizontal: 10,
+              borderRadius: 5,
+              marginTop: 10,
             }}
           >
-            <Text
-              style={{ fontSize: 8.3, fontWeight: "bold", color: "#4B5563" }}
-            >
+            <Text style={{ fontSize: 9, fontWeight: "bold", color: "#374151" }}>
               Note: All payments should be made via NEFT/RTGS to the
               above-mentioned bank account.
             </Text>

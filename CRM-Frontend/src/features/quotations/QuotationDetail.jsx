@@ -1643,6 +1643,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import QuotationPdfDocument from "./pdf/QuotationPdfDocument";
+import QuotationPdfV2 from "./pdf/QuotationPdfDocumentV2";
 import {
   Download,
   Pencil,
@@ -1704,6 +1705,30 @@ export default function QuotationDetail() {
     };
   }, [data]);
 
+  const stripJunk = (value) => {
+    if (value == null) return value;
+    return String(value)
+      .normalize("NFKC")
+      .replace(/\u00B9/g, "") // ¹ (misencoded ₹)
+      .replace(/[\u00B2\u00B3\u2070-\u2079]/g, "") // other superscripts
+      .trim();
+  };
+
+  const sanitizeItems = (items = []) =>
+    items.map((item) => ({
+      ...item,
+      description: stripJunk(item.description),
+      price: stripJunk(item.price),
+      sku: stripJunk(item.sku),
+      subItems: (item.subItems || []).map((sub) => ({
+        ...sub,
+        description: stripJunk(sub.description),
+        name: stripJunk(sub.name),
+        price: stripJunk(sub.price),
+        sku: stripJunk(sub.sku),
+      })),
+    }));
+
   const itemCount = data?.items?.length || 0;
   const categoryCount = useMemo(() => {
     const categories = new Set();
@@ -1738,70 +1763,160 @@ export default function QuotationDetail() {
     <div className="min-h-[calc(100vh-64px)] bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,0.10),_transparent_25%),radial-gradient(circle_at_top_right,_rgba(14,165,233,0.10),_transparent_24%),linear-gradient(to_bottom,_#f8fafc,_#f8fafc,_#eef2ff_120%)] px-3 py-4 sm:px-5 sm:py-5">
       <div className="mx-auto w-full max-w-[1700px] space-y-5">
         {/* ================= TOP BAR ================= */}
-        <div className="rounded-[28px] border border-white/70 bg-white/85 px-5 py-5 shadow-[0_12px_40px_rgba(15,23,42,0.06)] backdrop-blur-xl sm:px-6 lg:px-7">
-          <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-            <div>
-              <button
-                onClick={() => navigate(-1)}
-                className="mb-4 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 shadow-sm transition hover:border-slate-300 hover:text-slate-900"
-              >
-                <ChevronLeft className="h-4 w-4" />
-                Back to Quotations
-              </button>
-
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-indigo-700">
-                <FileText className="h-3.5 w-3.5" />
-                Quotation Details
+        <div className="rounded-[28px] border border-white/60 bg-white/95 px-6 py-6 shadow-[0_8px_32px_rgba(15,23,42,0.10)] backdrop-blur-xl">
+          <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+            <div className="flex flex-col gap-4">
+              {/* Back + Badge */}
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => navigate(-1)}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-500 shadow-sm transition hover:border-indigo-300 hover:text-indigo-600"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                  Back
+                </button>
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.24em] text-indigo-600">
+                  <FileText className="h-3 w-3" />
+                  Quotation Details
+                </div>
               </div>
 
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:gap-4">
+              {/* Title + Status */}
+              <div className="flex items-center gap-4">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-[0_8px_20px_rgba(99,102,241,0.35)]">
+                  <FileText className="h-6 w-6" />
+                </div>
                 <div>
                   <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">
                     {data.quotationNo}
                   </h1>
-                  <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 sm:text-[15px]">
-                    {data.account?.accountName || "-"} · Created on{" "}
-                    {formatDate(data.createdAt)}
+                  <p className="mt-1 text-sm text-slate-500">
+                    {data.account?.accountName || "-"}
+                    <span className="mx-2 text-slate-300">·</span>
+                    Created {formatDate(data.createdAt)}
                   </p>
                 </div>
-
                 <span
-                  className={`inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold uppercase tracking-[0.18em] ${statusColor}`}
+                  className={`ml-1 inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] ${statusColor}`}
                 >
-                  <span className="h-2 w-2 rounded-full bg-current" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-current" />
                   {status}
                 </span>
               </div>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <PDFDownloadLink
-                document={
-                  data ? (
-                    <QuotationPdfDocument
-                      quotation={data}
-                      totals={totals || {}}
-                    />
-                  ) : null
-                }
-                fileName={`${
-                  data?.quotationNo || data?.quotationNumber || "quotation"
-                }.pdf`}
-              >
-                {({ loading: pdfLoading }) => (
-                  <button
-                    disabled={pdfLoading}
-                    className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-bold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
+            {/* Buttons */}
+            <div className="flex items-center gap-3">
+              <div className="relative group">
+                <button className="inline-flex h-11 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 shadow-[0_2px_8px_rgba(15,23,42,0.06)] transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700">
+                  <Download className="h-4 w-4" />
+                  Export Proposal
+                </button>
+
+                {/* DROPDOWN - keep exactly as before */}
+                <div className="absolute right-0 mt-3 w-80 rounded-3xl border border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.18)] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 overflow-hidden">
+                  <div className="px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-indigo-50 via-white to-indigo-50">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+                      Export Options
+                    </p>
+                    <p className="text-sm font-semibold text-slate-800 mt-1">
+                      Choose proposal format
+                    </p>
+                  </div>
+                  <PDFDownloadLink
+                    document={
+                      data ? (
+                        <QuotationPdfDocument
+                          quotation={{
+                            ...data,
+                            items: sanitizeItems(data.items),
+                          }}
+                          totals={totals || {}}
+                        />
+                      ) : null
+                    }
+                    fileName={`${data?.quotationNo || "quotation"}-COMMERCIAL_V1.pdf`}
+                    className="group/item flex items-start gap-3 px-5 py-4 hover:bg-indigo-50/60 transition"
                   >
-                    <Download className="h-4 w-4" />
-                    {pdfLoading ? "Preparing PDF..." : "Export Proposal"}
-                  </button>
-                )}
-              </PDFDownloadLink>
+                    {({ loading }) => (
+                      <>
+                        <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
+                          📄
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-semibold text-slate-900 group-hover/item:text-indigo-700">
+                              Commercial Proposal — V1
+                            </span>
+                            {loading ? (
+                              <span className="text-[11px] font-medium text-indigo-500">
+                                Generating...
+                              </span>
+                            ) : (
+                              <span className="text-[11px] text-slate-400 group-hover/item:text-indigo-500">
+                                Download
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                            Clean, minimal layout for client presentation
+                          </p>
+                        </div>
+                      </>
+                    )}
+                  </PDFDownloadLink>
+                  <div className="h-px bg-slate-100 mx-4" />
+                  <PDFDownloadLink
+                    document={
+                      data ? (
+                        <QuotationPdfV2
+                          quotation={{
+                            ...data,
+                            items: sanitizeItems(data.items),
+                          }}
+                          totals={totals || {}}
+                        />
+                      ) : null
+                    }
+                    fileName={`${data?.quotationNo || "quotation"}-COMMERCIAL_V2.pdf`}
+                    className="group/item flex items-start gap-3 px-5 py-4 hover:bg-indigo-50/60 transition"
+                  >
+                    {({ loading }) => (
+                      <>
+                        <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+                          📊
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-semibold text-slate-900 group-hover/item:text-indigo-700">
+                              Commercial Proposal — V2
+                            </span>
+                            {loading ? (
+                              <span className="text-[11px] font-medium text-indigo-500">
+                                Generating...
+                              </span>
+                            ) : (
+                              <span className="text-[11px] text-slate-400 group-hover/item:text-indigo-500">
+                                Download
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                            Detailed version with pricing & technical breakdown
+                          </p>
+                        </div>
+                      </>
+                    )}
+                  </PDFDownloadLink>
+                  <div className="px-5 py-3 border-t border-slate-100 bg-slate-50 text-[11px] text-slate-500">
+                    Tip: Use V1 for clients, V2 for internal review
+                  </div>
+                </div>
+              </div>
 
               <button
                 onClick={() => navigate(`/quotations/${id}/edit`)}
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-600 to-violet-600 px-5 text-sm font-bold text-white shadow-[0_12px_30px_rgba(79,70,229,0.28)] transition hover:from-indigo-700 hover:via-indigo-700 hover:to-violet-700 hover:shadow-[0_16px_34px_rgba(79,70,229,0.34)]"
+                className="inline-flex h-11 items-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 px-6 text-sm font-bold text-white shadow-[0_4px_16px_rgba(99,102,241,0.35)] transition hover:brightness-110 hover:shadow-[0_6px_24px_rgba(99,102,241,0.45)] active:scale-[0.98]"
               >
                 <Pencil className="h-4 w-4" />
                 Edit Quotation
@@ -1816,11 +1931,11 @@ export default function QuotationDetail() {
           <div className="space-y-6">
             {/* OVERVIEW CARD */}
             <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_14px_45px_rgba(15,23,42,0.06)]">
-              <div className="border-b border-slate-100 bg-[linear-gradient(135deg,rgba(99,102,241,0.08),rgba(59,130,246,0.05),rgba(255,255,255,0.9))] px-5 py-5 sm:px-6">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="flex items-start gap-4">
-                    <div className="rounded-2xl bg-indigo-50 p-3 text-indigo-600 ring-1 ring-inset ring-indigo-100">
-                      <FileText className="h-6 w-6" />
+              <div className="border-b border-slate-100 bg-gradient-to-br from-indigo-50/50 via-white to-slate-50/30 px-6 py-6">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-[0_6px_16px_rgba(99,102,241,0.28)]">
+                      <FileText className="h-5 w-5" />
                     </div>
                     <div>
                       <h2 className="text-xl font-bold tracking-tight text-slate-900">
@@ -1852,7 +1967,7 @@ export default function QuotationDetail() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 border-b border-slate-100 bg-slate-50/60 px-5 py-4 sm:grid-cols-4 sm:px-6">
+              <div className="grid grid-cols-2 gap-3 border-b border-slate-100 bg-white px-6 py-4 sm:grid-cols-4">
                 <QuickStat
                   icon={<Layers className="h-4 w-4" />}
                   label="Items"
@@ -1881,17 +1996,18 @@ export default function QuotationDetail() {
             </div>
 
             {/* ITEMS TABLE */}
-            <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_14px_45px_rgba(15,23,42,0.06)]">
-              <div className="flex flex-col gap-4 border-b border-slate-100 bg-slate-50/80 px-5 py-5 sm:px-6 md:flex-row md:items-end md:justify-between">
-                <div className="flex items-start gap-3">
-                  <div className="rounded-2xl bg-slate-200 p-2.5 text-slate-700">
+            <div className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-[0_20px_70px_rgba(15,23,42,0.08)]">
+              {/* HEADER */}
+              <div className="flex flex-col gap-4 border-b border-slate-100 bg-gradient-to-br from-slate-50 to-white px-7 py-6 md:flex-row md:items-center md:justify-between">
+                <div className="flex items-start gap-3.5">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/20">
                     <Package className="h-5 w-5" />
                   </div>
                   <div>
                     <h2 className="text-lg font-bold text-slate-900">
                       Line Items
                     </h2>
-                    <p className="mt-0.5 text-sm text-slate-600">
+                    <p className="mt-0.5 text-sm font-medium text-slate-500">
                       {itemCount} {itemCount === 1 ? "item" : "items"}
                     </p>
                   </div>
@@ -1913,68 +2029,64 @@ export default function QuotationDetail() {
                 </div>
               </div>
 
-              <div className="max-h-[400px] sm:max-h-[450px] lg:max-h-[520px] overflow-auto">
+              {/* TABLE CONTAINER */}
+              <div className="max-h-[400px] overflow-auto sm:max-h-[450px] lg:max-h-[520px]">
                 <table className="w-full table-fixed text-sm">
-                  <thead className="sticky top-0 z-10 bg-slate-50/95 text-slate-500 backdrop-blur">
-                    <tr className="border-b border-slate-200">
-                      <th className="px-5 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] w-[10%]">
-                        SKU
-                      </th>
-                      <th className="px-5 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] w-[28%]">
-                        Description
-                      </th>
-                      <th className="px-5 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] w-[12%]">
-                        Category
-                      </th>
-                      <th className="px-5 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] w-[10%]">
-                        Make
-                      </th>
-                      <th className="px-5 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] w-[12%]">
-                        Mfg PN
-                      </th>
-                      <th className="px-5 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] w-[6%]">
-                        UOM
-                      </th>
-                      <th className="px-5 py-4 text-right text-[11px] font-bold uppercase tracking-[0.18em] w-[6%]">
-                        Qty
-                      </th>
-                      <th className="px-5 py-4 text-right text-[11px] font-bold uppercase tracking-[0.18em] w-[8%]">
-                        Price
-                      </th>
-                      <th className="px-5 py-4 text-right text-[11px] font-bold uppercase tracking-[0.18em] w-[8%]">
-                        Discount
-                      </th>
-                      <th className="px-5 py-4 text-right text-[11px] font-bold uppercase tracking-[0.18em] w-[10%]">
-                        Total
-                      </th>
-                      <th className="px-5 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em] w-[10%]">
-                        Remarks
-                      </th>
+                  {/* THEAD */}
+                  <thead className="sticky top-0 z-10 border-b-2 border-slate-200 bg-gradient-to-br from-slate-50 to-slate-100 backdrop-blur-sm">
+                    <tr>
+                      {[
+                        { label: "SKU", w: "w-[10%]", align: "text-left" },
+                        {
+                          label: "Description",
+                          w: "w-[28%]",
+                          align: "text-left",
+                        },
+                        { label: "Category", w: "w-[12%]", align: "text-left" },
+                        { label: "Make", w: "w-[10%]", align: "text-left" },
+                        { label: "Mfg PN", w: "w-[12%]", align: "text-left" },
+                        { label: "UOM", w: "w-[6%]", align: "text-left" },
+                        { label: "Qty", w: "w-[6%]", align: "text-right" },
+                        { label: "Price", w: "w-[8%]", align: "text-right" },
+                        { label: "Discount", w: "w-[8%]", align: "text-right" },
+                        { label: "Total", w: "w-[10%]", align: "text-right" },
+                        { label: "Remarks", w: "w-[10%]", align: "text-left" },
+                      ].map(({ label, w, align }) => (
+                        <th
+                          key={label}
+                          className={`px-5 py-4 ${align} ${w} text-[10px] font-black uppercase tracking-[0.2em] text-slate-500`}
+                        >
+                          {label}
+                        </th>
+                      ))}
                     </tr>
                   </thead>
 
+                  {/* TBODY */}
                   <tbody className="divide-y divide-slate-100">
                     {(data.items || []).map((item) => (
                       <Fragment key={item.id}>
                         {/* PARENT ROW */}
-                        <tr className="bg-white hover:bg-indigo-50/30 transition">
+                        <tr className="group bg-white transition-all duration-200 hover:bg-emerald-50/30">
+                          {/* SKU */}
                           <td className="px-5 py-4 align-top">
-                            <div className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 font-mono text-xs font-semibold text-slate-800">
-                              <Tag className="h-3 w-3" />
+                            <div className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 font-mono text-[11px] font-bold text-slate-700 shadow-sm">
+                              <Tag className="h-3 w-3 text-slate-400" />
                               {item.sku || "-"}
                             </div>
                           </td>
 
-                          {/* ✅ JUSTIFIED DESCRIPTION */}
+                          {/* DESCRIPTION */}
                           <td className="px-5 py-4 align-top">
-                            <div className="text-justify leading-7 text-slate-900 font-medium">
+                            <div className="text-justify text-sm font-medium leading-relaxed text-slate-900">
                               {item.description || "-"}
                             </div>
                           </td>
 
+                          {/* CATEGORY */}
                           <td className="px-5 py-4 align-top">
                             {item.category ? (
-                              <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-100 px-3 py-1.5 text-xs font-semibold text-indigo-700">
+                              <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-br from-emerald-100 to-teal-100 px-3 py-1.5 text-xs font-semibold text-emerald-800 shadow-sm">
                                 <Layers className="h-3 w-3" />
                                 {item.category}
                               </span>
@@ -1983,27 +2095,35 @@ export default function QuotationDetail() {
                             )}
                           </td>
 
-                          <td className="px-5 py-4 text-slate-700">
+                          {/* MAKE */}
+                          <td className="px-5 py-4 align-top font-medium text-slate-700">
                             {item.make || "-"}
                           </td>
-                          <td className="px-5 py-4 text-slate-700">
+
+                          {/* MFG PN */}
+                          <td className="px-5 py-4 align-top font-medium text-slate-700">
                             {item.mfgPartNo || "-"}
                           </td>
-                          <td className="px-5 py-4 text-slate-700">
+
+                          {/* UOM */}
+                          <td className="px-5 py-4 align-top font-medium text-slate-700">
                             {item.uom || "-"}
                           </td>
 
-                          <td className="px-5 py-4 text-right font-semibold">
+                          {/* QTY */}
+                          <td className="px-5 py-4 align-top text-right font-bold text-slate-900">
                             {item.quantity ?? "-"}
                           </td>
 
-                          <td className="px-5 py-4 text-right text-slate-700">
+                          {/* PRICE */}
+                          <td className="px-5 py-4 align-top text-right font-semibold text-slate-700">
                             {item.price ? formatINR(item.price) : "-"}
                           </td>
 
-                          <td className="px-5 py-4 text-right">
+                          {/* DISCOUNT */}
+                          <td className="px-5 py-4 align-top text-right">
                             {item.discount > 0 ? (
-                              <span className="text-xs font-semibold text-rose-600">
+                              <span className="inline-flex items-center gap-1 rounded-md bg-rose-50 px-2 py-1 text-xs font-bold text-rose-600">
                                 {item.discount}%
                               </span>
                             ) : (
@@ -2011,13 +2131,19 @@ export default function QuotationDetail() {
                             )}
                           </td>
 
-                          <td className="px-5 py-4 text-right">
-                            <div className="inline-flex rounded-xl bg-emerald-50 px-3 py-1.5 text-sm font-bold text-emerald-700">
-                              {formatINR(item.lineTotal)}
+                          {/* TOTAL */}
+                          <td className="px-5 py-4 align-top text-right">
+                            <div className="inline-flex rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 px-3.5 py-2 text-sm font-black text-emerald-800 shadow-sm">
+                              {formatINR(
+                                Number(item.quantity || 1) *
+                                  Number(item.price || 0) *
+                                  (1 - Number(item.discount || 0) / 100),
+                              )}
                             </div>
                           </td>
 
-                          <td className="px-5 py-4 text-slate-600">
+                          {/* REMARKS */}
+                          <td className="px-5 py-4 align-top text-sm text-slate-600">
                             <div className="max-w-[180px] truncate">
                               {item.remarks || "-"}
                             </div>
@@ -2028,21 +2154,24 @@ export default function QuotationDetail() {
                         {item.subItems?.map((sub) => (
                           <tr
                             key={sub.id}
-                            className="bg-slate-50/40 hover:bg-indigo-50/20 transition"
+                            className="group bg-slate-50/50 transition-all duration-200 hover:bg-emerald-50/20"
                           >
-                            <td className="px-5 py-4 pl-10 text-xs text-slate-500 font-mono">
+                            {/* SKU */}
+                            <td className="px-5 py-4 pl-10 align-top font-mono text-xs text-slate-500">
                               ↳ {sub.sku || "-"}
                             </td>
 
-                            <td className="px-5 py-4">
-                              <div className="text-justify text-sm text-slate-800 leading-6">
+                            {/* DESCRIPTION */}
+                            <td className="px-5 py-4 align-top">
+                              <div className="text-justify text-sm leading-relaxed text-slate-800">
                                 {sub.name || "-"}
                               </div>
                             </td>
 
-                            <td className="px-5 py-4">
+                            {/* CATEGORY */}
+                            <td className="px-5 py-4 align-top">
                               {sub.category ? (
-                                <span className="inline-flex rounded-full bg-indigo-50 px-2.5 py-1 text-xs text-indigo-700">
+                                <span className="inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
                                   {sub.category}
                                 </span>
                               ) : (
@@ -2052,26 +2181,35 @@ export default function QuotationDetail() {
                               )}
                             </td>
 
-                            <td className="px-5 py-4 text-slate-700">
+                            {/* MAKE */}
+                            <td className="px-5 py-4 align-top text-sm text-slate-700">
                               {sub.make || "-"}
                             </td>
-                            <td className="px-5 py-4 text-slate-700">
+
+                            {/* MFG PN */}
+                            <td className="px-5 py-4 align-top text-sm text-slate-700">
                               {sub.mfgPartNo || "-"}
                             </td>
-                            <td className="px-5 py-4 text-slate-700">
+
+                            {/* UOM */}
+                            <td className="px-5 py-4 align-top text-sm text-slate-700">
                               {sub.uom || "-"}
                             </td>
 
-                            <td className="px-5 py-4 text-right">
+                            {/* QTY */}
+                            <td className="px-5 py-4 align-top text-right font-semibold text-slate-800">
                               {sub.quantity}
                             </td>
-                            <td className="px-5 py-4 text-right">
+
+                            {/* PRICE */}
+                            <td className="px-5 py-4 align-top text-right font-semibold text-slate-700">
                               {formatINR(sub.price)}
                             </td>
 
-                            <td className="px-5 py-4 text-right">
+                            {/* DISCOUNT */}
+                            <td className="px-5 py-4 align-top text-right">
                               {sub.discount > 0 ? (
-                                <span className="text-xs text-rose-500">
+                                <span className="inline-flex rounded-md bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-600">
                                   {sub.discount}%
                                 </span>
                               ) : (
@@ -2081,11 +2219,13 @@ export default function QuotationDetail() {
                               )}
                             </td>
 
-                            <td className="px-5 py-4 text-right font-semibold">
+                            {/* TOTAL */}
+                            <td className="px-5 py-4 align-top text-right font-bold text-slate-900">
                               {formatINR(sub.lineTotal)}
                             </td>
 
-                            <td className="px-5 py-4 text-xs text-slate-400">
+                            {/* REMARKS */}
+                            <td className="px-5 py-4 align-top text-xs text-slate-400">
                               -
                             </td>
                           </tr>
@@ -2094,86 +2234,92 @@ export default function QuotationDetail() {
                     ))}
                   </tbody>
 
-                  {/* FOOTER unchanged */}
-                  <tfoot className="border-t border-slate-200 bg-slate-50">
-                    <tr>
+                  {/* TFOOT */}
+                  <tfoot className="border-t-2 border-slate-200 bg-gradient-to-br from-slate-50 to-white">
+                    {/* SUBTOTAL */}
+                    <tr className="border-b border-slate-100">
                       <td
                         colSpan={9}
-                        className="px-5 py-3 text-right font-semibold text-slate-600"
+                        className="px-5 py-4 text-right text-sm font-semibold uppercase tracking-wide text-slate-600"
                       >
                         Subtotal
                       </td>
-                      <td className="px-5 py-3 text-right font-bold">
+                      <td className="px-5 py-4 text-right text-base font-bold text-slate-900">
                         {formatINR(totals.subtotal)}
                       </td>
                       <td />
                     </tr>
 
+                    {/* DISCOUNT */}
                     {totals.discount > 0 && (
-                      <tr>
+                      <tr className="border-b border-slate-100">
                         <td
                           colSpan={9}
-                          className="px-5 py-2.5 text-right text-rose-600"
+                          className="px-5 py-3 text-right text-sm font-medium uppercase tracking-wide text-rose-600"
                         >
                           Discount
                         </td>
-                        <td className="px-5 py-2.5 text-right text-rose-600 font-semibold">
+                        <td className="px-5 py-3 text-right text-sm font-bold text-rose-700">
                           -{formatINR(totals.discount)}
                         </td>
                         <td />
                       </tr>
                     )}
 
-                    <tr>
+                    {/* TAXABLE VALUE */}
+                    <tr className="border-b border-slate-100">
                       <td
                         colSpan={9}
-                        className="px-5 py-2.5 text-right text-slate-500"
+                        className="px-5 py-3 text-right text-sm font-medium uppercase tracking-wide text-slate-600"
                       >
                         Taxable Value
                       </td>
-                      <td className="px-5 py-2.5 text-right font-semibold">
+                      <td className="px-5 py-3 text-right text-sm font-bold text-slate-900">
                         {formatINR(totals.taxable)}
                       </td>
                       <td />
                     </tr>
 
-                    <tr>
+                    {/* CGST */}
+                    <tr className="border-b border-slate-50 bg-slate-50/40">
                       <td
                         colSpan={9}
-                        className="px-5 py-2 text-right text-xs text-slate-500"
+                        className="px-5 py-2.5 text-right text-xs font-medium uppercase tracking-wider text-slate-500"
                       >
                         CGST (9%)
                       </td>
-                      <td className="px-5 py-2 text-right">
+                      <td className="px-5 py-2.5 text-right text-xs font-bold text-slate-700">
                         {formatINR(totals.cgst)}
                       </td>
                       <td />
                     </tr>
 
-                    <tr>
+                    {/* SGST */}
+                    <tr className="border-b border-slate-100 bg-slate-50/40">
                       <td
                         colSpan={9}
-                        className="px-5 py-2 text-right text-xs text-slate-500"
+                        className="px-5 py-2.5 text-right text-xs font-medium uppercase tracking-wider text-slate-500"
                       >
                         SGST (9%)
                       </td>
-                      <td className="px-5 py-2 text-right">
+                      <td className="px-5 py-2.5 text-right text-xs font-bold text-slate-700">
                         {formatINR(totals.sgst)}
                       </td>
                       <td />
                     </tr>
 
-                    <tr className="bg-slate-100 border-t">
+                    {/* GRAND TOTAL */}
+                    <tr className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 shadow-lg shadow-emerald-500/20">
                       <td
                         colSpan={9}
-                        className="px-5 py-4 text-right font-bold"
+                        className="px-5 py-5 text-right text-sm font-bold uppercase tracking-[0.15em] text-white/95"
                       >
                         Grand Total
                       </td>
-                      <td className="px-5 py-4 text-right text-xl font-black text-emerald-600">
+                      <td className="px-5 py-5 text-right text-2xl font-black text-white drop-shadow-md">
                         {formatINR(totals.grandTotal)}
                       </td>
-                      <td />
+                      <td className="bg-gradient-to-r from-cyan-600 to-cyan-600" />
                     </tr>
                   </tfoot>
                 </table>
@@ -2181,7 +2327,7 @@ export default function QuotationDetail() {
             </div>
 
             {/* NOTES */}
-            <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_14px_45px_rgba(15,23,42,0.06)]">
+            {/* <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_14px_45px_rgba(15,23,42,0.06)]">
               <div className="border-b border-slate-100 bg-[linear-gradient(135deg,rgba(251,191,36,0.12),rgba(255,237,213,0.85))] px-5 py-5 sm:px-6">
                 <div className="flex items-start gap-3">
                   <div className="rounded-2xl bg-amber-100 p-2.5 text-amber-700">
@@ -2212,7 +2358,7 @@ export default function QuotationDetail() {
                   </p>
                 </div>
               </div>
-            </div>
+            </div> */}
           </div>
 
           {/* RIGHT SUMMARY PANEL */}
@@ -2378,12 +2524,12 @@ function InfoItem({ icon, label, value }) {
 
 function MiniStat({ icon, label, value }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
-      <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
-        <span className="text-slate-400">{icon}</span>
+    <div className="rounded-2xl border border-slate-100 bg-white/90 px-4 py-3.5 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+      <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">
+        <span className="text-indigo-400">{icon}</span>
         {label}
       </div>
-      <div className="mt-2 text-sm font-semibold text-slate-900">
+      <div className="mt-2 text-sm font-semibold text-slate-800 leading-tight">
         {value || "-"}
       </div>
     </div>
