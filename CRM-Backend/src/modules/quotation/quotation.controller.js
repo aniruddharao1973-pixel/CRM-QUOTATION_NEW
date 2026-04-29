@@ -303,7 +303,10 @@ export const createQuotationController = async (req, res) => {
       })),
     };
 
-    const quotation = await createQuotation(normalizedBody);
+    const quotation = await createQuotation({
+      ...normalizedBody,
+      userId: req.user.id,
+    });
 
     res.status(201).json(quotation);
   } catch (error) {
@@ -426,6 +429,20 @@ export const deleteQuotationController = async (req, res) => {
   try {
     const { id } = req.params;
 
+    // 🔥 DEBUG
+    console.log("========== DELETE DEBUG ==========");
+    console.log("REQ.USER:", req.user);
+    console.log("ROLE:", req.user?.role);
+    console.log("==================================");
+
+    // 🔒 RBAC CHECK
+    if (req.user?.role !== "ADMIN") {
+      return res.status(403).json({
+        message: "Only admin can delete quotation",
+      });
+    }
+
+    // ✅ SIMPLE + RELIABLE (CASCADE HANDLES CHILDREN)
     await prisma.quotation.delete({
       where: { id },
     });
@@ -442,6 +459,16 @@ export const updateQuotationController = async (req, res) => {
   try {
     const { id } = req.params;
 
+    // 🔒 OPTIONAL OWNERSHIP CHECK
+    const existing = await prisma.quotation.findUnique({
+      where: { id },
+      select: { createdBy: true },
+    });
+
+    if (req.user?.role !== "admin" && existing?.createdBy !== req.user.id) {
+      return res.status(403).json({ message: "Not allowed" });
+    }
+
     const {
       issueDate,
       validUntil,
@@ -449,6 +476,7 @@ export const updateQuotationController = async (req, res) => {
       terms,
       items,
       headerDiscount = 0,
+      userId,
     } = req.body;
 
     // ✅ normalize items (keep your existing fix)
@@ -465,6 +493,7 @@ export const updateQuotationController = async (req, res) => {
       terms,
       items: normalizedItems,
       headerDiscount,
+      userId: req.user.id, // ✅ ADD THIS
     });
 
     res.json(result);
@@ -502,5 +531,147 @@ export const getQuotationHistoryController = async (req, res) => {
     res.status(500).json({
       message: "Failed to fetch quotation history",
     });
+  }
+};
+
+/* ================= SUBMIT ================= */
+export const submitQuotationController = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // 🔒 ONLY SALES REP
+    if (req.user?.role !== "SALES_REP") {
+      return res.status(403).json({ message: "Only sales rep can submit" });
+    }
+
+    const quotation = await prisma.quotation.findUnique({
+      where: { id },
+    });
+
+    if (!quotation) {
+      return res.status(404).json({ message: "Quotation not found" });
+    }
+
+    if (quotation.status !== "DRAFT" && quotation.status !== "REJECTED") {
+      return res.status(400).json({
+        message: "Only draft/rejected quotations can be submitted",
+      });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // 1️⃣ update status
+      await tx.quotation.update({
+        where: { id },
+        data: { status: "SUBMITTED" },
+      });
+
+      // 2️⃣ approval log
+      await tx.quotationApproval.create({
+        data: {
+          quotationId: id,
+          action: quotation.status === "REJECTED" ? "RESUBMITTED" : "SUBMITTED",
+          actedById: req.user.id,
+        },
+      });
+    });
+
+    res.json({ message: "Quotation submitted for approval" });
+  } catch (error) {
+    console.error("❌ Submit quotation error:", error);
+    res.status(500).json({ message: "Failed to submit quotation" });
+  }
+};
+
+/* ================= APPROVE ================= */
+export const approveQuotationController = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // 🔒 ONLY ADMIN
+    if (req.user?.role !== "ADMIN") {
+      return res.status(403).json({ message: "Only admin can approve" });
+    }
+
+    const quotation = await prisma.quotation.findUnique({
+      where: { id },
+    });
+
+    if (!quotation) {
+      return res.status(404).json({ message: "Quotation not found" });
+    }
+
+    if (quotation.status !== "SUBMITTED") {
+      return res.status(400).json({
+        message: "Only submitted quotations can be approved",
+      });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.quotation.update({
+        where: { id },
+        data: { status: "APPROVED" },
+      });
+
+      await tx.quotationApproval.create({
+        data: {
+          quotationId: id,
+          action: "APPROVED",
+          actedById: req.user.id,
+        },
+      });
+    });
+
+    res.json({ message: "Quotation approved" });
+  } catch (error) {
+    console.error("❌ Approve quotation error:", error);
+    res.status(500).json({ message: "Failed to approve quotation" });
+  }
+};
+
+/* ================= REJECT ================= */
+export const rejectQuotationController = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { comment } = req.body;
+
+    // 🔒 ONLY ADMIN
+    if (req.user?.role !== "ADMIN") {
+      return res.status(403).json({ message: "Only admin can reject" });
+    }
+
+    const quotation = await prisma.quotation.findUnique({
+      where: { id },
+    });
+
+    if (!quotation) {
+      return res.status(404).json({ message: "Quotation not found" });
+    }
+
+    if (quotation.status !== "SUBMITTED") {
+      return res.status(400).json({
+        message: "Only submitted quotations can be rejected",
+      });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.quotation.update({
+        where: { id },
+        data: { status: "REJECTED" },
+      });
+
+      await tx.quotationApproval.create({
+        data: {
+          quotationId: id,
+          action: "REJECTED",
+          comment: comment || null,
+          actedById: req.user.id,
+        },
+      });
+    });
+
+    res.json({ message: "Quotation rejected" });
+  } catch (error) {
+    console.error("❌ Reject quotation error:", error);
+    res.status(500).json({ message: "Failed to reject quotation" });
   }
 };

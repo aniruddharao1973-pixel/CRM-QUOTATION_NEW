@@ -121,11 +121,14 @@ export const updateItem = async (req, res) => {
 };
 
 /* ================= DELETE ================= */
+/* ================= DELETE ================= */
 export const deleteItem = async (req, res) => {
   try {
     await deleteItemService(req.params.id);
+
     res.json({ message: "Item deleted successfully" });
   } catch (err) {
+    console.error("❌ Delete item error:", err);
     res.status(500).json({ message: err.message });
   }
 };

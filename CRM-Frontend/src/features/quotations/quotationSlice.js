@@ -115,7 +115,13 @@ export const createQuotation = createAsyncThunk(
 ========================================================= */
 export const deleteQuotation = createAsyncThunk(
   "quotations/delete",
-  async (id, { rejectWithValue }) => {
+  async (id, { getState, rejectWithValue }) => {
+    const user = getState().auth?.user; // 🔥 FIX PATH
+
+    if (user?.role?.toLowerCase() !== "admin") {
+      return rejectWithValue("Only admin can delete");
+    }
+
     try {
       await API.delete(`/quotations/${id}`);
       return id;
@@ -133,6 +139,45 @@ export const updateQuotation = createAsyncThunk(
       return normalize(res);
     } catch (err) {
       return rejectWithValue(err.response?.data || "Update failed");
+    }
+  },
+);
+
+/* ================= SUBMIT ================= */
+export const submitQuotation = createAsyncThunk(
+  "quotations/submit",
+  async (id, { rejectWithValue }) => {
+    try {
+      const res = await API.post(`/quotations/${id}/submit`);
+      return { id, ...normalize(res) };
+    } catch (err) {
+      return rejectWithValue(err.response?.data || "Submit failed");
+    }
+  },
+);
+
+/* ================= APPROVE ================= */
+export const approveQuotation = createAsyncThunk(
+  "quotations/approve",
+  async (id, { rejectWithValue }) => {
+    try {
+      const res = await API.post(`/quotations/${id}/approve`);
+      return { id, ...normalize(res) };
+    } catch (err) {
+      return rejectWithValue(err.response?.data || "Approve failed");
+    }
+  },
+);
+
+/* ================= REJECT ================= */
+export const rejectQuotation = createAsyncThunk(
+  "quotations/reject",
+  async ({ id, comment }, { rejectWithValue }) => {
+    try {
+      const res = await API.post(`/quotations/${id}/reject`, { comment });
+      return { id, ...normalize(res), comment };
+    } catch (err) {
+      return rejectWithValue(err.response?.data || "Reject failed");
     }
   },
 );
@@ -239,6 +284,74 @@ const quotationSlice = createSlice({
         state.selected = updated;
       })
 
+      /* ================= SUBMIT ================= */
+      .addCase(submitQuotation.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(submitQuotation.fulfilled, (state, action) => {
+        state.loading = false;
+
+        const id = action.payload.id;
+
+        // update list
+        state.list = state.list.map((q) =>
+          q.id === id ? { ...q, status: "SUBMITTED" } : q,
+        );
+
+        // update selected
+        if (state.selected?.id === id) {
+          state.selected.status = "SUBMITTED";
+        }
+      })
+      .addCase(submitQuotation.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      /* ================= APPROVE ================= */
+      .addCase(approveQuotation.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(approveQuotation.fulfilled, (state, action) => {
+        state.loading = false;
+
+        const id = action.payload.id;
+
+        state.list = state.list.map((q) =>
+          q.id === id ? { ...q, status: "APPROVED" } : q,
+        );
+
+        if (state.selected?.id === id) {
+          state.selected.status = "APPROVED";
+        }
+      })
+      .addCase(approveQuotation.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      /* ================= REJECT ================= */
+      .addCase(rejectQuotation.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(rejectQuotation.fulfilled, (state, action) => {
+        state.loading = false;
+
+        const id = action.payload.id;
+
+        state.list = state.list.map((q) =>
+          q.id === id ? { ...q, status: "REJECTED" } : q,
+        );
+
+        if (state.selected?.id === id) {
+          state.selected.status = "REJECTED";
+        }
+      })
+      .addCase(rejectQuotation.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
       /* ================= FETCH HISTORY ================= */
       .addCase(fetchQuotationHistory.pending, (state) => {
         state.loading = true;
@@ -258,6 +371,11 @@ const quotationSlice = createSlice({
       /* ================= DELETE ================= */
       .addCase(deleteQuotation.fulfilled, (state, action) => {
         state.list = state.list.filter((q) => q.id !== action.payload);
+        state.error = null; // ✅ clear old error
+      })
+
+      .addCase(deleteQuotation.rejected, (state, action) => {
+        state.error = action.payload || "Delete not allowed";
       });
   },
 });

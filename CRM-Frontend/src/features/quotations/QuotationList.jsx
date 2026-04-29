@@ -897,7 +897,7 @@
 
 // src/features/quotations/QuotationList.jsx
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, Fragment } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -922,7 +922,9 @@ import {
 import {
   fetchQuotations,
   deleteQuotation,
-  fetchQuotationHistory, // 🔥 ADD
+  fetchQuotationHistory,
+  submitQuotation,
+  clearQuotationHistory,
 } from "./quotationSlice";
 import { formatINR } from "./quotationUtils";
 
@@ -931,10 +933,13 @@ export default function QuotationList() {
   const dispatch = useDispatch();
 
   const { list, loading, history } = useSelector((state) => state.quotation);
+  const { user } = useSelector((state) => state.auth); // ⚠️ adjust if needed
+  const isAdmin = user?.role?.toLowerCase() === "admin";
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [expandedRow, setExpandedRow] = useState(null);
+  const [submittingId, setSubmittingId] = useState(null);
 
   /* ================= FETCH ================= */
   useEffect(() => {
@@ -966,11 +971,12 @@ export default function QuotationList() {
 
     if (expandedRow === quotationNo) {
       setExpandedRow(null);
+      dispatch({ type: "quotations/clearQuotationHistory" });
       return;
     }
 
     setExpandedRow(quotationNo);
-    dispatch(fetchQuotationHistory(quotationNo)); // 🔥 fetch history
+    dispatch(fetchQuotationHistory(quotationNo));
   };
 
   /* ================= FILTER ================= */
@@ -1004,15 +1010,17 @@ export default function QuotationList() {
     const all = list || [];
     const total = all.length;
     const draft = all.filter((q) => q.status?.toUpperCase() === "DRAFT").length;
-    const sent = all.filter((q) => q.status?.toUpperCase() === "SENT").length;
+    const submitted = all.filter(
+      (q) => q.status?.toUpperCase() === "SUBMITTED",
+    ).length;
     const approved = all.filter(
-      (q) => q.status?.toUpperCase() === "ACCEPTED",
+      (q) => q.status?.toUpperCase() === "APPROVED",
     ).length;
 
     const value = all.reduce((sum, q) => sum + Number(q.grandTotal || 0), 0);
     const avgValue = total > 0 ? value / total : 0;
 
-    return { total, draft, sent, approved, value, avgValue };
+    return { total, draft, submitted, approved, value, avgValue };
   }, [list]);
 
   return (
@@ -1032,11 +1040,6 @@ export default function QuotationList() {
                 <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">
                   Quotation Hub
                 </h1>
-
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 sm:text-[15px]">
-                  Manage quotations with centralized GST calculation, pipeline
-                  visibility, and status tracking across the full sales cycle.
-                </p>
               </div>
 
               <div className="flex w-full flex-col gap-3 sm:flex-row xl:w-auto xl:items-center">
@@ -1102,11 +1105,11 @@ export default function QuotationList() {
             subtext="Pending completion"
           />
           <StatCard
-            label="Sent"
-            value={stats.sent}
+            label="Submitted"
+            value={stats.submitted}
             icon={<Send className="h-5 w-5" />}
             color="blue"
-            subtext="Awaiting response"
+            subtext="Pending approval"
           />
           <StatCard
             label="Approved"
@@ -1133,7 +1136,7 @@ export default function QuotationList() {
             </div>
 
             <div className="flex flex-wrap gap-2">
-              {["ALL", "DRAFT", "SENT", "ACCEPTED", "REJECTED"].map(
+              {["ALL", "DRAFT", "SUBMITTED", "APPROVED", "REJECTED"].map(
                 (status) => (
                   <button
                     key={status}
@@ -1222,9 +1225,8 @@ export default function QuotationList() {
 
                 {!loading &&
                   quotations.map((q) => (
-                    <>
+                    <Fragment key={q.id}>
                       <tr
-                        key={q.id}
                         onClick={() => navigate(`/quotations/${q.id}`)}
                         className="group cursor-pointer transition-colors hover:bg-indigo-50/40"
                       >
@@ -1354,20 +1356,69 @@ export default function QuotationList() {
                               View
                             </button>
 
+                            {user?.role?.toLowerCase() === "sales_rep" &&
+                              (q.status?.toUpperCase() === "DRAFT" ||
+                                q.status?.toUpperCase() === "REJECTED") && (
+                                <button
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    try {
+                                      setSubmittingId(q.id);
+                                      await dispatch(
+                                        submitQuotation(q.id),
+                                      ).unwrap();
+                                      dispatch(fetchQuotations());
+                                    } catch (err) {
+                                      console.error(err);
+                                      alert("Failed to submit quotation");
+                                    } finally {
+                                      setSubmittingId(null);
+                                    }
+                                  }}
+                                  disabled={submittingId === q.id}
+                                  className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition ${
+                                    submittingId === q.id
+                                      ? "text-slate-300 cursor-not-allowed"
+                                      : "text-blue-600 hover:bg-blue-50"
+                                  }`}
+                                >
+                                  <Send className="h-3.5 w-3.5" />
+                                  {submittingId === q.id
+                                    ? "Submitting..."
+                                    : "Submit"}
+                                </button>
+                              )}
+
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 navigate(`/quotations/${q.id}/edit`);
                               }}
-                              className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold text-emerald-600 hover:bg-emerald-50"
+                              disabled={["SUBMITTED", "APPROVED"].includes(
+                                q.status?.toUpperCase(),
+                              )}
+                              className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold ${
+                                ["SUBMITTED", "APPROVED"].includes(
+                                  q.status?.toUpperCase(),
+                                )
+                                  ? "text-slate-300 cursor-not-allowed"
+                                  : "text-emerald-600 hover:bg-emerald-50"
+                              }`}
                             >
                               <Edit className="h-3.5 w-3.5" />
                               Edit
                             </button>
-
                             <button
-                              onClick={(e) => handleDelete(q.id, e)}
-                              className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50"
+                              onClick={(e) => isAdmin && handleDelete(q.id, e)}
+                              disabled={!isAdmin}
+                              className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition ${
+                                isAdmin
+                                  ? "text-rose-600 hover:bg-rose-50"
+                                  : "text-slate-300 cursor-not-allowed"
+                              }`}
+                              title={
+                                isAdmin ? "Delete" : "Only admin can delete"
+                              }
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                               Delete
@@ -1519,7 +1570,7 @@ export default function QuotationList() {
                           </td>
                         </tr>
                       )}
-                    </>
+                    </Fragment>
                   ))}
 
                 {!loading && quotations.length === 0 && (
@@ -1638,9 +1689,6 @@ function StatCard({ label, value, icon, color = "indigo", subtext }) {
           <div className="mt-1 text-2xl font-black tracking-tight text-slate-900">
             {value}
           </div>
-          {subtext && (
-            <div className="mt-1 text-xs text-slate-500">{subtext}</div>
-          )}
         </div>
       </div>
     </div>
@@ -1658,21 +1706,14 @@ function StatusBadge({ status }) {
       icon: <Clock3 className="h-3 w-3" />,
       label: "DRAFT",
     },
-    SENT: {
+    SUBMITTED: {
       bg: "bg-blue-100",
       text: "text-blue-700",
       border: "border-blue-200",
       icon: <Send className="h-3 w-3" />,
-      label: "SENT",
+      label: "SUBMITTED",
     },
     APPROVED: {
-      bg: "bg-emerald-100",
-      text: "text-emerald-700",
-      border: "border-emerald-200",
-      icon: <BadgeCheck className="h-3 w-3" />,
-      label: "APPROVED",
-    },
-    ACCEPTED: {
       bg: "bg-emerald-100",
       text: "text-emerald-700",
       border: "border-emerald-200",

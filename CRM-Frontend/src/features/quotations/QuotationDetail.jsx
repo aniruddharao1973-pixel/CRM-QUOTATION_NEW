@@ -1638,7 +1638,7 @@
 
 // src/features/quotations/QuotationDetail.jsx
 
-import { useEffect, useMemo, Fragment } from "react";
+import { useEffect, useMemo, Fragment, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { PDFDownloadLink } from "@react-pdf/renderer";
@@ -1667,7 +1667,13 @@ import {
   Wrench,
 } from "lucide-react";
 
-import { fetchQuotationById, clearSelectedQuotation } from "./quotationSlice";
+import {
+  fetchQuotationById,
+  clearSelectedQuotation,
+  submitQuotation,
+  approveQuotation,
+  rejectQuotation,
+} from "./quotationSlice";
 import { formatINR } from "./quotationUtils";
 
 export default function QuotationDetail() {
@@ -1676,6 +1682,17 @@ export default function QuotationDetail() {
   const dispatch = useDispatch();
 
   const { selected: data, loading } = useSelector((state) => state.quotation);
+
+  const user = useSelector((state) => state.auth.user);
+
+  const role = user?.role;
+  const statusUpper = (data?.status || "").toUpperCase();
+
+  const isSalesRep = role === "SALES_REP";
+  const isAdmin = role === "ADMIN";
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectComment, setRejectComment] = useState("");
+  const [actionLoading, setActionLoading] = useState(false);
 
   console.log("PDF DATA →", data);
 
@@ -1687,6 +1704,54 @@ export default function QuotationDetail() {
       dispatch(clearSelectedQuotation());
     };
   }, [dispatch, id]);
+
+  const handleSubmit = async () => {
+    try {
+      setActionLoading(true);
+      await dispatch(submitQuotation(id)).unwrap();
+      dispatch(fetchQuotationById(id));
+    } catch (err) {
+      console.error(err);
+      alert("Submit failed");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleApprove = async () => {
+    try {
+      setActionLoading(true);
+      await dispatch(approveQuotation(id)).unwrap();
+      dispatch(fetchQuotationById(id));
+    } catch (err) {
+      console.error(err);
+      alert("Approval failed");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!rejectComment.trim()) {
+      alert("Rejection reason required");
+      return;
+    }
+
+    try {
+      setActionLoading(true);
+      await dispatch(rejectQuotation({ id, comment: rejectComment })).unwrap();
+
+      setShowRejectModal(false);
+      setRejectComment("");
+
+      dispatch(fetchQuotationById(id));
+    } catch (err) {
+      console.error(err);
+      alert("Rejection failed");
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   /* ================= TOTALS ================= */
   const totals = useMemo(() => {
@@ -1726,6 +1791,7 @@ export default function QuotationDetail() {
         name: stripJunk(sub.name),
         price: stripJunk(sub.price),
         sku: stripJunk(sub.sku),
+        mfgPartNo: stripJunk(sub.mfgPartNo),
       })),
     }));
 
@@ -1763,217 +1829,220 @@ export default function QuotationDetail() {
     <div className="min-h-[calc(100vh-64px)] bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,0.10),_transparent_25%),radial-gradient(circle_at_top_right,_rgba(14,165,233,0.10),_transparent_24%),linear-gradient(to_bottom,_#f8fafc,_#f8fafc,_#eef2ff_120%)] px-3 py-4 sm:px-5 sm:py-5">
       <div className="mx-auto w-full max-w-[1700px] space-y-5">
         {/* ================= TOP BAR ================= */}
-        <div className="rounded-[28px] border border-white/60 bg-white/95 px-6 py-6 shadow-[0_8px_32px_rgba(15,23,42,0.10)] backdrop-blur-xl">
-          <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
-            <div className="flex flex-col gap-4">
-              {/* Back + Badge */}
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => navigate(-1)}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-500 shadow-sm transition hover:border-indigo-300 hover:text-indigo-600"
-                >
-                  <ChevronLeft className="h-3.5 w-3.5" />
-                  Back
-                </button>
-                <div className="inline-flex items-center gap-1.5 rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.24em] text-indigo-600">
-                  <FileText className="h-3 w-3" />
-                  Quotation Details
-                </div>
-              </div>
-
-              {/* Title + Status */}
-              <div className="flex items-center gap-4">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-[0_8px_20px_rgba(99,102,241,0.35)]">
-                  <FileText className="h-6 w-6" />
-                </div>
-                <div>
-                  <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">
-                    {data.quotationNo}
-                  </h1>
-                  <p className="mt-1 text-sm text-slate-500">
-                    {data.account?.accountName || "-"}
-                    <span className="mx-2 text-slate-300">·</span>
-                    Created {formatDate(data.createdAt)}
-                  </p>
-                </div>
-                <span
-                  className={`ml-1 inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] ${statusColor}`}
-                >
-                  <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                  {status}
-                </span>
-              </div>
-            </div>
-
-            {/* Buttons */}
-            <div className="flex items-center gap-3">
-              <div className="relative group">
-                <button className="inline-flex h-11 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 shadow-[0_2px_8px_rgba(15,23,42,0.06)] transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700">
-                  <Download className="h-4 w-4" />
-                  Export Proposal
-                </button>
-
-                {/* DROPDOWN - keep exactly as before */}
-                <div className="absolute right-0 mt-3 w-80 rounded-3xl border border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.18)] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 overflow-hidden">
-                  <div className="px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-indigo-50 via-white to-indigo-50">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
-                      Export Options
-                    </p>
-                    <p className="text-sm font-semibold text-slate-800 mt-1">
-                      Choose proposal format
-                    </p>
-                  </div>
-                  <PDFDownloadLink
-                    document={
-                      data ? (
-                        <QuotationPdfDocument
-                          quotation={{
-                            ...data,
-                            items: sanitizeItems(data.items),
-                          }}
-                          totals={totals || {}}
-                        />
-                      ) : null
-                    }
-                    fileName={`${data?.quotationNo || "quotation"}-COMMERCIAL_V1.pdf`}
-                    className="group/item flex items-start gap-3 px-5 py-4 hover:bg-indigo-50/60 transition"
-                  >
-                    {({ loading }) => (
-                      <>
-                        <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
-                          📄
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-semibold text-slate-900 group-hover/item:text-indigo-700">
-                              Commercial Proposal — V1
-                            </span>
-                            {loading ? (
-                              <span className="text-[11px] font-medium text-indigo-500">
-                                Generating...
-                              </span>
-                            ) : (
-                              <span className="text-[11px] text-slate-400 group-hover/item:text-indigo-500">
-                                Download
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                            Clean, minimal layout for client presentation
-                          </p>
-                        </div>
-                      </>
-                    )}
-                  </PDFDownloadLink>
-                  <div className="h-px bg-slate-100 mx-4" />
-                  <PDFDownloadLink
-                    document={
-                      data ? (
-                        <QuotationPdfV2
-                          quotation={{
-                            ...data,
-                            items: sanitizeItems(data.items),
-                          }}
-                          totals={totals || {}}
-                        />
-                      ) : null
-                    }
-                    fileName={`${data?.quotationNo || "quotation"}-COMMERCIAL_V2.pdf`}
-                    className="group/item flex items-start gap-3 px-5 py-4 hover:bg-indigo-50/60 transition"
-                  >
-                    {({ loading }) => (
-                      <>
-                        <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
-                          📊
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-semibold text-slate-900 group-hover/item:text-indigo-700">
-                              Commercial Proposal — V2
-                            </span>
-                            {loading ? (
-                              <span className="text-[11px] font-medium text-indigo-500">
-                                Generating...
-                              </span>
-                            ) : (
-                              <span className="text-[11px] text-slate-400 group-hover/item:text-indigo-500">
-                                Download
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                            Detailed version with pricing & technical breakdown
-                          </p>
-                        </div>
-                      </>
-                    )}
-                  </PDFDownloadLink>
-                  <div className="px-5 py-3 border-t border-slate-100 bg-slate-50 text-[11px] text-slate-500">
-                    Tip: Use V1 for clients, V2 for internal review
-                  </div>
-                </div>
-              </div>
-
-              <button
-                onClick={() => navigate(`/quotations/${id}/edit`)}
-                className="inline-flex h-11 items-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 px-6 text-sm font-bold text-white shadow-[0_4px_16px_rgba(99,102,241,0.35)] transition hover:brightness-110 hover:shadow-[0_6px_24px_rgba(99,102,241,0.45)] active:scale-[0.98]"
-              >
-                <Pencil className="h-4 w-4" />
-                Edit Quotation
-              </button>
-            </div>
-          </div>
-        </div>
 
         {/* ================= MAIN GRID ================= */}
         <div className="w-full">
           {/* LEFT COLUMN */}
           <div className="space-y-6">
             {/* OVERVIEW CARD */}
-            <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_14px_45px_rgba(15,23,42,0.06)]">
+            <div className="rounded-[28px] border border-slate-200 bg-white shadow-[0_14px_45px_rgba(15,23,42,0.06)] overflow-visible">
               <div className="border-b border-slate-100 bg-gradient-to-br from-indigo-50/50 via-white to-slate-50/30 px-6 py-6">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                  {/* LEFT SIDE */}
                   <div className="flex items-center gap-4">
+                    {/* ✅ BACK BUTTON */}
+                    <button
+                      onClick={() => navigate(-1)}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-500 shadow-sm transition hover:border-indigo-300 hover:text-indigo-600"
+                    >
+                      <ChevronLeft className="h-3.5 w-3.5" />
+                      Back
+                    </button>
+
+                    {/* ICON */}
                     <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-[0_6px_16px_rgba(99,102,241,0.28)]">
                       <FileText className="h-5 w-5" />
                     </div>
+
+                    {/* TITLE + META */}
                     <div>
-                      <h2 className="text-xl font-bold tracking-tight text-slate-900">
+                      <h2 className="text-2xl font-black tracking-tight text-slate-900">
                         {data.quotationNo}
                       </h2>
-                      <p className="mt-1 text-sm text-slate-600">
-                        {data.account?.accountName || "-"}
-                      </p>
+
+                      <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-slate-600">
+                        <span>{data.account?.accountName || "-"}</span>
+
+                        <span className="h-1 w-1 rounded-full bg-slate-300" />
+
+                        <span
+                          className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] ${statusColor}`}
+                        >
+                          <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                          {status}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                    <MiniStat
-                      icon={<Calendar className="h-4 w-4" />}
-                      label="Issue Date"
-                      value={formatDate(data.issueDate)}
-                    />
-                    <MiniStat
-                      icon={<Calendar className="h-4 w-4" />}
-                      label="Valid Until"
-                      value={formatDate(data.validUntil)}
-                    />
-                    <MiniStat
-                      icon={<Building2 className="h-4 w-4" />}
-                      label="Account"
-                      value={data.account?.accountName || "-"}
-                    />
+                  {/* RIGHT SIDE */}
+                  <div className="flex items-center gap-3 flex-wrap">
+                    {/* ADMIN / SALES ACTIONS */}
+                    {isSalesRep && statusUpper === "DRAFT" && (
+                      <button
+                        onClick={handleSubmit}
+                        disabled={actionLoading}
+                        className="h-10 px-4 rounded-xl bg-blue-600 text-white text-sm font-bold"
+                      >
+                        Submit
+                      </button>
+                    )}
+
+                    {isSalesRep && statusUpper === "REJECTED" && (
+                      <button
+                        onClick={() => navigate(`/quotations/${id}/edit`)}
+                        className="h-10 px-4 rounded-xl bg-indigo-600 text-white text-sm font-bold"
+                      >
+                        Resubmit
+                      </button>
+                    )}
+
+                    {isAdmin && statusUpper === "SUBMITTED" && (
+                      <>
+                        <button
+                          onClick={handleApprove}
+                          disabled={actionLoading}
+                          className="h-10 px-4 rounded-xl bg-emerald-600 text-white text-sm font-bold"
+                        >
+                          Approve
+                        </button>
+
+                        <button
+                          onClick={() => setShowRejectModal(true)}
+                          disabled={actionLoading}
+                          className="h-10 px-4 rounded-xl bg-rose-600 text-white text-sm font-bold"
+                        >
+                          Reject
+                        </button>
+                      </>
+                    )}
+
+                    {/* EDIT */}
+                    {(statusUpper === "DRAFT" ||
+                      statusUpper === "REJECTED") && (
+                      <button
+                        onClick={() => navigate(`/quotations/${id}/edit`)}
+                        className="h-10 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-sm font-bold"
+                      >
+                        Edit
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3 border-b border-slate-100 bg-white px-6 py-4 sm:grid-cols-4">
-                <QuickStat
-                  icon={<Layers className="h-4 w-4" />}
-                  label="Items"
-                  value={itemCount}
-                  color="indigo"
-                />
+                {isAdmin && (
+                  <div className="relative group h-full">
+                    <div className="h-full rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md flex items-center">
+                      {/* CARD HEADER */}
+                      <div className="flex items-center gap-3">
+                        <div className="rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 p-2.5 text-white shadow-sm">
+                          <Download className="h-4 w-4" />
+                        </div>
+
+                        <div>
+                          <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                            Export
+                          </div>
+                          <div className="mt-1 text-sm font-bold text-slate-900">
+                            Proposal PDF
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* DROPDOWN */}
+                    <div className="absolute left-0 mt-3 w-80 rounded-3xl border border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.18)] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 overflow-hidden">
+                      <div className="px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-indigo-50 via-white to-indigo-50">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+                          Export Options
+                        </p>
+                        <p className="text-sm font-semibold text-slate-800 mt-1">
+                          Choose proposal format
+                        </p>
+                      </div>
+
+                      {/* V1 */}
+                      <PDFDownloadLink
+                        document={
+                          data ? (
+                            <QuotationPdfDocument
+                              quotation={{
+                                ...data,
+                                items: sanitizeItems(data.items),
+                              }}
+                              totals={totals || {}}
+                            />
+                          ) : null
+                        }
+                        fileName={`${data?.quotationNo || "quotation"}-COMMERCIAL_V1.pdf`}
+                        className="flex items-start gap-3 px-5 py-4 hover:bg-indigo-50/60 transition"
+                      >
+                        {({ loading }) => (
+                          <>
+                            <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
+                              📄
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-slate-900">
+                                  Commercial Proposal — V1
+                                </span>
+                                <span className="text-[11px] text-slate-400">
+                                  {loading ? "Generating..." : "Download"}
+                                </span>
+                              </div>
+                              <p className="text-xs text-slate-500 mt-1">
+                                Clean, minimal layout
+                              </p>
+                            </div>
+                          </>
+                        )}
+                      </PDFDownloadLink>
+
+                      <div className="h-px bg-slate-100 mx-4" />
+
+                      {/* V2 */}
+                      <PDFDownloadLink
+                        document={
+                          data ? (
+                            <QuotationPdfV2
+                              quotation={{
+                                ...data,
+                                items: sanitizeItems(data.items),
+                              }}
+                              totals={totals || {}}
+                            />
+                          ) : null
+                        }
+                        fileName={`${data?.quotationNo || "quotation"}-COMMERCIAL_V2.pdf`}
+                        className="flex items-start gap-3 px-5 py-4 hover:bg-indigo-50/60 transition"
+                      >
+                        {({ loading }) => (
+                          <>
+                            <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+                              📊
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-slate-900">
+                                  Commercial Proposal — V2
+                                </span>
+                                <span className="text-[11px] text-slate-400">
+                                  {loading ? "Generating..." : "Download"}
+                                </span>
+                              </div>
+                              <p className="text-xs text-slate-500 mt-1">
+                                Detailed breakdown
+                              </p>
+                            </div>
+                          </>
+                        )}
+                      </PDFDownloadLink>
+                    </div>
+                  </div>
+                )}
                 <QuickStat
                   icon={<TrendingUp className="h-4 w-4" />}
                   label="Deal"
@@ -1981,9 +2050,9 @@ export default function QuotationDetail() {
                   color="emerald"
                 />
                 <QuickStat
-                  icon={<Hash className="h-4 w-4" />}
-                  label="Quotation No"
-                  value="1"
+                  icon={<Building2 className="h-4 w-4" />}
+                  label="Account"
+                  value={data.account?.accountName || "-"}
                   color="rose"
                 />
                 <QuickStat
@@ -2325,165 +2394,47 @@ export default function QuotationDetail() {
                 </table>
               </div>
             </div>
-
-            {/* NOTES */}
-            {/* <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_14px_45px_rgba(15,23,42,0.06)]">
-              <div className="border-b border-slate-100 bg-[linear-gradient(135deg,rgba(251,191,36,0.12),rgba(255,237,213,0.85))] px-5 py-5 sm:px-6">
-                <div className="flex items-start gap-3">
-                  <div className="rounded-2xl bg-amber-100 p-2.5 text-amber-700">
-                    <MessageSquare className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-bold text-slate-900">
-                      Additional Information
-                    </h2>
-                    <p className="mt-0.5 text-sm text-slate-600">
-                      Notes and terms
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-5 sm:p-6">
-                <div className="mb-3 flex items-center gap-2">
-                  <MessageSquare className="h-4 w-4 text-slate-500" />
-                  <h3 className="text-sm font-bold uppercase tracking-[0.16em] text-slate-900">
-                    Notes
-                  </h3>
-                </div>
-
-                <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                  <p className="whitespace-pre-wrap text-sm leading-6 text-slate-700">
-                    {data.notes || "No notes provided"}
-                  </p>
-                </div>
-              </div>
-            </div> */}
           </div>
-
-          {/* RIGHT SUMMARY PANEL */}
-          {/* <aside className="space-y-6 xl:sticky xl:top-6">
-            <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_14px_45px_rgba(15,23,42,0.06)]">
-              <div className="border-b border-slate-100 bg-[linear-gradient(135deg,rgba(99,102,241,0.10),rgba(255,255,255,0.95))] px-5 py-5">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
-                      Summary
-                    </div>
-                    <h3 className="mt-1 text-lg font-bold text-slate-900">
-                      Quotation Overview
-                    </h3>
-                  </div>
-
-                  <div
-                    className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold uppercase tracking-[0.18em] ${statusColor}`}
-                  >
-                    <span className="h-2 w-2 rounded-full bg-current" />
-                    {status}
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4 p-5">
-                <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-                  <SummaryRow
-                    icon={<DollarSign className="h-4 w-4" />}
-                    label="Subtotal"
-                    value={formatINR(totals.subtotal)}
-                  />
-                  <div className="my-3 h-px bg-slate-200" />
-                  <SummaryRow
-                    icon={<PercentIcon className="h-4 w-4" />}
-                    label="Discount"
-                    value={`-${formatINR(totals.discount)}`}
-                    highlight="rose"
-                  />
-                  <SummaryRow
-                    icon={<Calculator className="h-4 w-4" />}
-                    label="Taxable Value"
-                    value={formatINR(totals.taxable)}
-                  />
-                  <SummaryRow
-                    icon={<Receipt className="h-4 w-4" />}
-                    label="CGST (9%)"
-                    value={formatINR(totals.cgst)}
-                  />
-                  <SummaryRow
-                    icon={<Receipt className="h-4 w-4" />}
-                    label="SGST (9%)"
-                    value={formatINR(totals.sgst)}
-                  />
-                </div>
-
-                <div className="rounded-2xl bg-gradient-to-br from-emerald-600 via-emerald-600 to-teal-600 p-5 text-white shadow-[0_14px_30px_rgba(16,185,129,0.22)]">
-                  <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-100">
-                    <TrendingUp className="h-4 w-4" />
-                    Grand Total
-                  </div>
-                  <div className="mt-3 text-3xl font-black tracking-tight">
-                    {formatINR(totals.grandTotal)}
-                  </div>
-                  <p className="mt-2 text-sm text-emerald-50/90">
-                    Final quotation amount including GST.
-                  </p>
-                </div>
-
-                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                  <div className="mb-3 flex items-center gap-2">
-                    <FileCheck className="h-4 w-4 text-slate-500" />
-                    <h4 className="text-sm font-bold uppercase tracking-[0.16em] text-slate-900">
-                      Metadata
-                    </h4>
-                  </div>
-
-                  <div className="space-y-3">
-                    <SummaryRow
-                      icon={<Calendar className="h-4 w-4" />}
-                      label="Issue Date"
-                      value={formatDate(data.issueDate)}
-                      small
-                    />
-                    <SummaryRow
-                      icon={<Calendar className="h-4 w-4" />}
-                      label="Valid Until"
-                      value={formatDate(data.validUntil)}
-                      small
-                    />
-                    <SummaryRow
-                      icon={<Building2 className="h-4 w-4" />}
-                      label="Account"
-                      value={data.account?.accountName || "-"}
-                      small
-                    />
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <div className="mb-3 flex items-center gap-2">
-                    <Ruler className="h-4 w-4 text-slate-500" />
-                    <h4 className="text-sm font-bold uppercase tracking-[0.16em] text-slate-900">
-                      Quick Stats
-                    </h4>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <MiniCard label="Items" value={itemCount} />
-                    <MiniCard label="Categories" value={categoryCount} />
-                    <MiniCard
-                      label="Grand Total"
-                      value={formatINR(totals.grandTotal)}
-                    />
-                    <MiniCard
-                      label="Taxable"
-                      value={formatINR(totals.taxable)}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </aside> */}
         </div>
       </div>
+      {showRejectModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl">
+            <h3 className="text-lg font-bold text-slate-900">
+              Reject Quotation
+            </h3>
+
+            <p className="mt-1 text-sm text-slate-500">
+              Please provide a reason for rejection
+            </p>
+
+            <textarea
+              value={rejectComment}
+              onChange={(e) => setRejectComment(e.target.value)}
+              placeholder="Enter rejection reason..."
+              className="mt-4 w-full rounded-xl border border-slate-200 p-3 text-sm outline-none focus:ring-2 focus:ring-rose-500"
+              rows={4}
+            />
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                onClick={() => setShowRejectModal(false)}
+                className="rounded-xl border px-4 py-2 text-sm"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={handleReject}
+                disabled={actionLoading}
+                className="rounded-xl bg-rose-600 px-5 py-2 text-sm font-bold text-white hover:bg-rose-700 disabled:opacity-50"
+              >
+                {actionLoading ? "Processing..." : "Confirm Reject"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -2502,8 +2453,8 @@ function getStatusColor(status) {
 
   const colors = {
     DRAFT: "bg-slate-100 text-slate-700 border-slate-200",
-    SENT: "bg-blue-100 text-blue-700 border-blue-200",
-    ACCEPTED: "bg-emerald-100 text-emerald-700 border-emerald-200",
+    SUBMITTED: "bg-amber-100 text-amber-700 border-amber-200",
+    APPROVED: "bg-emerald-100 text-emerald-700 border-emerald-200",
     REJECTED: "bg-rose-100 text-rose-700 border-rose-200",
   };
 

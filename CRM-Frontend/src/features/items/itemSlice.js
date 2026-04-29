@@ -48,7 +48,13 @@ export const updateItem = createAsyncThunk(
 /* ================= DELETE ITEM ================= */
 export const deleteItem = createAsyncThunk(
   "items/delete",
-  async (id, { rejectWithValue }) => {
+  async (id, { getState, rejectWithValue }) => {
+    const user = getState().auth?.user; // 🔥 FIX PATH
+
+    if (user?.role?.toLowerCase() !== "admin") {
+      return rejectWithValue("Only admin can delete items");
+    }
+
     try {
       await API.delete(`/items/${id}`);
       return id;
@@ -146,6 +152,10 @@ const itemSlice = createSlice({
       /* ===== DELETE ===== */
       .addCase(deleteItem.fulfilled, (state, action) => {
         state.list = state.list.filter((i) => i.id !== action.payload);
+        state.error = null;
+      })
+      .addCase(deleteItem.rejected, (state, action) => {
+        state.error = action.payload || "Delete not allowed";
       });
   },
 });

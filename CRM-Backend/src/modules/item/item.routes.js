@@ -9,19 +9,21 @@ import {
   deleteItem,
 } from "./item.controller.js";
 
+import { protect, authorize } from "../../middlewares/auth.middleware.js";
+
 const router = express.Router();
 
 /* ================= CREATE ================= */
-router.post("/", createItem);
+router.post("/", protect, createItem);
 
 /* ================= READ ================= */
-router.get("/", getItems);
-router.get("/:id", getItemById);
+router.get("/", protect, getItems);
+router.get("/:id", protect, getItemById);
 
 /* ================= UPDATE ================= */
-router.put("/:id", updateItem);
+router.put("/", protect, updateItem);
 
 /* ================= DELETE ================= */
-router.delete("/:id", deleteItem);
+router.delete("/:id", protect, authorize("ADMIN"), deleteItem);
 
 export default router;

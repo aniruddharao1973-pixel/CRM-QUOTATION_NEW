@@ -41,11 +41,13 @@ export const createQuotation = async (data) => {
     /* ================= 1️⃣ CREATE QUOTATION ================= */
     const quotation = await tx.quotation.create({
       data: {
+        createdBy: current.createdBy,
         quotationNo: quotationNo,
 
         // 🔥 ADD THIS
         version: 1,
         isLatest: true,
+        status: "DRAFT", // 🔥 FORCE RESET ON EDIT
 
         account: {
           connect: { id: accountId },
@@ -277,6 +279,11 @@ export const updateQuotation = async (id, data) => {
 
     if (!current) throw new Error("Quotation not found");
 
+    // 🔥 ADD HERE
+    if (current.status === "APPROVED") {
+      throw new Error("Approved quotation cannot be edited");
+    }
+
     /* ================= 2️⃣ MARK OLD ================= */
     await tx.quotation.update({
       where: { id: current.id },
@@ -286,6 +293,7 @@ export const updateQuotation = async (id, data) => {
     /* ================= 3️⃣ CREATE NEW VERSION ================= */
     const quotation = await tx.quotation.create({
       data: {
+        createdBy: current.createdBy,
         quotationNo: current.quotationNo,
         version: current.version + 1,
         isLatest: true,

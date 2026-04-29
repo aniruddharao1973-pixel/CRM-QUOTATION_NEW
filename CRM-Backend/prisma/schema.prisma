@@ -72,6 +72,7 @@ createdEmailCampaigns EmailCampaign[]
 dealAssignments    DealAssignment[]
 contactAssignments ContactAssignment[]
 accountAssignments AccountAssignment[]
+quotationApprovals QuotationApproval[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -507,7 +508,7 @@ enum CampaignStatus {
 
 enum QuotationStatus {
   DRAFT
-  SENT
+  SUBMITTED   // 🔥 NEW (sales → admin)
   APPROVED
   REJECTED
 }
@@ -970,6 +971,8 @@ model Quotation {
 
   items QuotationItem[]
 
+  approvals QuotationApproval[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -978,6 +981,25 @@ model Quotation {
   @@index([isLatest])
   @@index([accountId])
   @@index([dealId])
+}
+
+model QuotationApproval {
+  id String @id @default(uuid())
+
+  quotationId String
+  quotation   Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+
+  action String  // APPROVED | REJECTED | SUBMITTED | RESUBMITTED
+
+  comment String? @db.Text
+
+  actedById String
+  actedBy   User @relation(fields: [actedById], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([quotationId])
+  @@index([actedById])
 }
 
 model QuotationItem {

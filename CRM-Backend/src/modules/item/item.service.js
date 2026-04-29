@@ -93,20 +93,37 @@ export const updateItemService = async (id, data) => {
 };
 
 /* ================= DELETE ================= */
+/* ================= DELETE ================= */
 export const deleteItemService = async (id) => {
   return prisma.$transaction(async (tx) => {
-    // 1. find children
-    const children = await tx.item.findMany({
-      where: { parentId: id },
-      select: { id: true },
+    // ✅ 1. delete all descendants (recursive tree via parentId)
+    const allItems = await tx.item.findMany({
+      select: { id: true, parentId: true },
     });
 
-    // 2. delete children recursively
-    for (const child of children) {
-      await deleteItemService(child.id); // recursion
+    // build map
+    const map = {};
+    allItems.forEach((i) => {
+      if (!map[i.parentId]) map[i.parentId] = [];
+      map[i.parentId].push(i.id);
+    });
+
+    // collect all child ids
+    const collect = (parentId) => {
+      const children = map[parentId] || [];
+      return children.flatMap((childId) => [childId, ...collect(childId)]);
+    };
+
+    const childIds = collect(id);
+
+    // ✅ 2. delete children first
+    if (childIds.length > 0) {
+      await tx.item.deleteMany({
+        where: { id: { in: childIds } },
+      });
     }
 
-    // 3. delete parent
+    // ✅ 3. delete parent
     return tx.item.delete({
       where: { id },
     });

@@ -5,30 +5,58 @@ import {
   createQuotationController,
   getQuotationsController,
   getQuotationByIdController,
-  getQuotationHistoryController, // 🔥 NEW
+  getQuotationHistoryController,
   updateQuotationController,
   deleteQuotationController,
+  submitQuotationController,
+  approveQuotationController,
+  rejectQuotationController,
 } from "./quotation.controller.js";
+
+import { protect, authorize } from "../../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
 /* ================= CREATE ================= */
-router.post("/", createQuotationController);
+router.post("/", protect, createQuotationController);
 
 /* ================= GET ALL ================= */
-router.get("/", getQuotationsController);
+router.get("/", protect, getQuotationsController);
 
 /* ================= GET HISTORY ================= */
 // 🔥 IMPORTANT: place BEFORE "/:id"
-router.get("/history/:quotationNo", getQuotationHistoryController);
+router.get("/history/:quotationNo", protect, getQuotationHistoryController);
+
+/* ================= APPROVAL FLOW ================= */
+// 🔒 SALES REP ONLY
+router.post(
+  "/:id/submit",
+  protect,
+  authorize("SALES_REP"),
+  submitQuotationController,
+);
+
+// 🔒 ADMIN ONLY
+router.post(
+  "/:id/approve",
+  protect,
+  authorize("ADMIN"),
+  approveQuotationController,
+);
+router.post(
+  "/:id/reject",
+  protect,
+  authorize("ADMIN"),
+  rejectQuotationController,
+);
 
 /* ================= GET ONE ================= */
-router.get("/:id", getQuotationByIdController);
+router.get("/:id", protect, getQuotationByIdController);
 
 /* ================= UPDATE ================= */
-router.put("/:id", updateQuotationController);
+router.put("/:id", protect, updateQuotationController);
 
 /* ================= DELETE ================= */
-router.delete("/:id", deleteQuotationController);
+router.delete("/:id", protect, authorize("ADMIN"), deleteQuotationController);
 
 export default router;

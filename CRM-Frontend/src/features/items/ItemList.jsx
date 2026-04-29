@@ -872,6 +872,8 @@ export default function ItemList() {
   const navigate = useNavigate();
 
   const { list, loading } = useSelector((state) => state.items);
+  const { user } = useSelector((state) => state.auth); // ⚠️ adjust if needed
+  const isAdmin = user?.role?.toLowerCase() === "admin";
 
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState("table");
@@ -1186,9 +1188,14 @@ export default function ItemList() {
                 <Pencil className="w-4 h-4" />
               </button>
               <button
-                onClick={() => handleDelete(item.id)}
-                className="p-2 rounded-lg text-rose-600 hover:bg-rose-100 transition-colors"
-                title="Delete Item"
+                onClick={() => isAdmin && handleDelete(item.id)}
+                disabled={!isAdmin}
+                className={`p-2 rounded-lg transition-colors ${
+                  isAdmin
+                    ? "text-rose-600 hover:bg-rose-100"
+                    : "text-slate-300 cursor-not-allowed"
+                }`}
+                title={isAdmin ? "Delete Item" : "Only admin can delete"}
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -1219,10 +1226,6 @@ export default function ItemList() {
             <h1 className="text-4xl font-bold text-slate-900 mb-2 tracking-tight">
               Item Master
             </h1>
-            <p className="text-slate-600 max-w-2xl leading-relaxed">
-              Manage your product catalog and master data used across quotations
-              and orders
-            </p>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3">
