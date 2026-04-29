@@ -1035,16 +1035,21 @@ export function ProposalPDF({ quotation, totals }) {
     { key: "sl", title: "SL#", width: "6%", align: "center" },
     { key: "sku", title: "SKU", width: "10%", align: "center" },
     { key: "hsn", title: "HSN/SAC", width: "10%", align: "center" },
-    { key: "gst", title: "GST*", width: "8%", align: "center" },
-    { key: "discount", title: "Disc%", width: "8%", align: "center" },
+
     { key: "description", title: "Description", width: "30%" },
+
+    { key: "qty", title: "QTY", width: "6%", align: "center" },
+
     {
       key: "unitPrice",
       title: "Unit Price",
       width: "10%",
       align: "right",
     },
-    { key: "qty", title: "QTY", width: "6%", align: "center" },
+
+    { key: "discount", title: "Disc %", width: "8%", align: "center" },
+    { key: "gst", title: "GST %", width: "8%", align: "center" },
+
     {
       key: "total",
       title: "Total",
