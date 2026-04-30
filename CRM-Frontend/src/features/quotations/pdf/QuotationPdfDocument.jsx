@@ -13,9 +13,9 @@ import { proposalData } from "./data/proposalData";
 
 const styles = StyleSheet.create({
   page: {
-    paddingTop: 24,
-    paddingBottom: 22,
-    paddingHorizontal: 26,
+    paddingTop: 22,
+    paddingBottom: 20,
+    paddingHorizontal: 36, // was 26
     fontSize: 9,
     fontFamily: "Helvetica",
     color: "#374151",
@@ -94,31 +94,35 @@ const styles = StyleSheet.create({
   },
   sectionCard: {
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: "#E5EAF2",
     borderRadius: 6,
     overflow: "hidden",
     marginBottom: 12,
     backgroundColor: "#FFFFFF",
+    borderBottomWidth: 1.5,
+    borderBottomColor: "#CBD5F5",
   },
   sectionCardSoft: {
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: "#E5EAF2",
     borderRadius: 6,
     overflow: "hidden",
     marginBottom: 12,
     backgroundColor: "#F9FBFF",
+    borderBottomWidth: 1.5,
+    borderBottomColor: "#CBD5F5",
   },
   sectionHeaderBlue: {
     backgroundColor: "#EFF6FF",
     paddingVertical: 6,
-    paddingHorizontal: 8,
+    paddingHorizontal: 8, // was 10
     borderBottomWidth: 1,
     borderBottomColor: "#E5E7EB",
   },
   sectionHeaderSoft: {
     backgroundColor: "#EEF2FF",
     paddingVertical: 7,
-    paddingHorizontal: 10,
+    paddingHorizontal: 8, // was 10
     borderBottomWidth: 1,
     borderBottomColor: "#E5E7EB",
     borderLeftWidth: 4,
@@ -137,7 +141,7 @@ const styles = StyleSheet.create({
   },
   cardBody: {
     paddingVertical: 10,
-    paddingHorizontal: 10,
+    paddingHorizontal: 8, // was 10
   },
   infoRow: {
     flexDirection: "row",
@@ -155,7 +159,7 @@ const styles = StyleSheet.create({
   },
   infoValueText: {
     width: "72%",
-    fontSize: 8.5,
+    fontSize: 8.6,
     color: "#4B5563",
     lineHeight: 1.35,
   },
@@ -163,10 +167,10 @@ const styles = StyleSheet.create({
     width: "70%",
   },
   paragraph: {
-    fontSize: 8.5,
-    lineHeight: 1.45,
+    fontSize: 8.6,
+    lineHeight: 1.6,
     color: "#4B5563",
-    marginBottom: 6,
+    marginBottom: 8,
     textAlign: "justify",
   },
   highlightBox: {
@@ -205,26 +209,26 @@ const styles = StyleSheet.create({
     flexDirection: "row",
   },
   tableCellHeader: {
-    paddingVertical: 5,
-    paddingHorizontal: 5,
-    fontSize: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+    fontSize: 8.2,
     fontWeight: "bold",
     color: "#FFFFFF",
     borderRightWidth: 1,
-    borderRightColor: "rgba(255,255,255,0.22)",
+    borderRightColor: "rgba(255,255,255,0.18)",
   },
   tableCell: {
-    paddingVertical: 5,
-    paddingHorizontal: 5,
-    fontSize: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+    fontSize: 8.2,
     color: "#4B5563",
     borderRightWidth: 1,
-    borderRightColor: "#E5E7EB",
-    lineHeight: 1.35,
+    borderRightColor: "#E5EAF2",
+    lineHeight: 1.5,
   },
   tableCellLast: {
     paddingVertical: 5,
-    paddingHorizontal: 5,
+    paddingHorizontal: 4, // was 5
     fontSize: 8,
     color: "#4B5563",
     lineHeight: 1.35,
@@ -251,7 +255,7 @@ const styles = StyleSheet.create({
     marginTop: "auto",
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
+    borderTopColor: "#CBD5F5",
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
@@ -449,7 +453,7 @@ const styles = StyleSheet.create({
   },
 
   gstGrandValue: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: "bold",
     color: "#059669",
   },
@@ -1081,7 +1085,7 @@ const formatCurrency = (value) => {
 
   const num = Number(cleaned);
   return Number.isFinite(num) && num > 0
-    ? `Rs. ${num.toLocaleString("en-IN")}`
+    ? `${num.toLocaleString("en-IN")}`
     : "-";
 };
 
@@ -1257,9 +1261,9 @@ export function ProposalPDF({ quotation, totals }) {
         hsn: HSN_SAC,
         description: `↳ ${cleanPdfText(
           (sub.description || sub.name || "-").replace(
-            /^[\u00B9\u00B2\u00B3\u2070-\u2079]+/,
+            /[\u00B9\u00B2\u00B3\u2070-\u2079]/g,
             "",
-          ), // 🔥 kill leading superscript HARD
+          ),
         )}`,
         qty: cleanNumber(sub.quantity || 0),
         unitPrice: sub.price != null ? formatCurrency(sub.price) : "-",
@@ -1328,7 +1332,7 @@ export function ProposalPDF({ quotation, totals }) {
 
   const pricingColumns = [
     { key: "sl", title: "SL#", width: "6%", align: "center" },
-    { key: "sku", title: "SKU", width: "10%", align: "center" },
+    { key: "sku", title: "SKU", width: "14%", align: "center" },
     { key: "hsn", title: "HSN/SAC", width: "10%", align: "center" },
 
     { key: "description", title: "Description", width: "30%" },
@@ -1365,11 +1369,11 @@ export function ProposalPDF({ quotation, totals }) {
     return sum + qty * price * (1 - discount / 100);
   }, 0);
 
-  const gstRate = 18; // assuming fixed for now
-  const cgst = subtotal * (gstRate / 2 / 100);
-  const sgst = subtotal * (gstRate / 2 / 100);
+  const gstRate = 18;
 
-  const grandTotal = subtotal + cgst + sgst;
+  const gstAmount = subtotal * (gstRate / 100);
+
+  const grandTotal = subtotal + gstAmount;
 
   return (
     <Document>
@@ -1393,10 +1397,10 @@ export function ProposalPDF({ quotation, totals }) {
         >
           <Text
             style={{
-              fontSize: 16,
+              fontSize: 18,
               fontWeight: "bold",
               color: "#0F172A",
-              letterSpacing: 2,
+              letterSpacing: 2.5,
               textTransform: "uppercase",
             }}
           >
@@ -1446,7 +1450,7 @@ export function ProposalPDF({ quotation, totals }) {
         >
           <View
             style={{
-              backgroundColor: "#1E3A8A",
+              backgroundColor: "#1E40AF",
               paddingVertical: 7,
               paddingHorizontal: 10,
               flexDirection: "row",
@@ -1525,7 +1529,7 @@ export function ProposalPDF({ quotation, totals }) {
         >
           <View
             style={{
-              backgroundColor: "#1E3A8A",
+              backgroundColor: "#1E40AF",
               paddingVertical: 7,
               paddingHorizontal: 10,
               flexDirection: "row",
@@ -1587,8 +1591,8 @@ export function ProposalPDF({ quotation, totals }) {
                       backgroundColor: "#EFF6FF",
                       borderWidth: 1,
                       borderColor: "#BFDBFE",
-                      borderRadius: 10,
-                      paddingVertical: 2,
+                      borderRadius: 12,
+                      paddingVertical: 3,
                       paddingHorizontal: 8,
                     }}
                   >
@@ -1917,16 +1921,69 @@ export function ProposalPDF({ quotation, totals }) {
           Design, Development, Manufacture, Test &amp; Validate, Supply &amp;
           Commissioning of:
         </Text>
-        <Text
+        <View
           style={{
-            fontSize: 8.5,
-            fontWeight: "bold",
-            color: "#2563EB",
-            marginBottom: 8,
+            borderWidth: 1,
+            borderColor: "#DBEAFE",
+            borderRadius: 6,
+            overflow: "hidden",
+            marginBottom: 10,
           }}
         >
-          {quotation?.deal?.dealName || proposalData.project.name}
-        </Text>
+          {/* Header strip */}
+          <View
+            style={{
+              backgroundColor: "#1E40AF",
+              paddingVertical: 6,
+              paddingHorizontal: 10,
+              flexDirection: "row",
+              alignItems: "center",
+            }}
+          >
+            <View
+              style={{
+                width: 3,
+                height: 12,
+                backgroundColor: "#60A5FA",
+                borderRadius: 2,
+                marginRight: 8,
+              }}
+            />
+            <Text
+              style={{
+                fontSize: 8.5,
+                fontWeight: "bold",
+                color: "#FFFFFF",
+                letterSpacing: 0.4,
+              }}
+            >
+              Project
+            </Text>
+          </View>
+
+          {/* Value row */}
+          <View
+            style={{
+              flexDirection: "row",
+              backgroundColor: "#F8FAFC",
+              paddingVertical: 7,
+              paddingHorizontal: 10,
+              alignItems: "center",
+            }}
+          >
+            <Text
+              style={{
+                width: "100%",
+                fontSize: 8.8,
+                fontWeight: "bold",
+                color: "#1D4ED8",
+                lineHeight: 1.4,
+              }}
+            >
+              {quotation?.deal?.dealName || proposalData.project.name}
+            </Text>
+          </View>
+        </View>
 
         <>
           <TableBlock columns={pricingColumns} data={pricingRows} />
@@ -1943,14 +2000,9 @@ export function ProposalPDF({ quotation, totals }) {
                 <Text style={styles.gstValue}>{formatCurrency(subtotal)}</Text>
               </View>
 
-              <View style={styles.gstRow}>
-                <Text style={styles.gstLabel}>CGST (9%)</Text>
-                <Text style={styles.gstValue}>{formatCurrency(cgst)}</Text>
-              </View>
-
               <View style={styles.gstRowLast}>
-                <Text style={styles.gstLabel}>SGST (9%)</Text>
-                <Text style={styles.gstValue}>{formatCurrency(sgst)}</Text>
+                <Text style={styles.gstLabel}>GST (18%)</Text>
+                <Text style={styles.gstValue}>{formatCurrency(gstAmount)}</Text>
               </View>
 
               <View style={styles.gstGrandRow}>

@@ -41,7 +41,7 @@ export const createQuotation = async (data) => {
     /* ================= 1️⃣ CREATE QUOTATION ================= */
     const quotation = await tx.quotation.create({
       data: {
-        createdBy: current.createdBy,
+        // createdBy: current.createdBy,
         quotationNo: quotationNo,
 
         // 🔥 ADD THIS
@@ -277,41 +277,43 @@ export const updateQuotation = async (id, data) => {
       },
     });
 
-    if (!current) throw new Error("Quotation not found");
+    if (!current) {
+      throw new Error("Quotation not found");
+    }
 
-    // 🔥 ADD HERE
-    if (current.status === "APPROVED") {
+    // Allow edit only for draft/rejected.
+    // Do NOT create a new version here.
+    const currentStatus = current.status?.toUpperCase();
+
+    if (currentStatus === "APPROVED") {
       throw new Error("Approved quotation cannot be edited");
     }
 
-    /* ================= 2️⃣ MARK OLD ================= */
-    await tx.quotation.update({
+    if (!["DRAFT", "REJECTED"].includes(currentStatus)) {
+      throw new Error("Only draft or rejected quotation can be edited");
+    }
+
+    /* ================= 2️⃣ UPDATE SAME QUOTATION ================= */
+    const quotation = await tx.quotation.update({
       where: { id: current.id },
-      data: { isLatest: false },
-    });
-
-    /* ================= 3️⃣ CREATE NEW VERSION ================= */
-    const quotation = await tx.quotation.create({
       data: {
-        createdBy: current.createdBy,
-        quotationNo: current.quotationNo,
-        version: current.version + 1,
-        isLatest: true,
-
-        accountId: current.accountId,
-        dealId: current.dealId,
-
         issueDate: issueDate ? new Date(issueDate) : current.issueDate,
         validUntil: validUntil ? new Date(validUntil) : current.validUntil,
+        notes: notes ?? current.notes,
+        terms: terms ?? current.terms,
 
-        notes,
-        terms,
+        // keep same status, do not create a new row/version
+        status: current.status,
+        updatedAt: new Date(),
       },
     });
 
-    /* ================= COPY YOUR EXISTING LOGIC ================= */
+    /* ================= 3️⃣ REMOVE OLD ITEM ROWS ================= */
+    await tx.quotationItem.deleteMany({
+      where: { quotationId: quotation.id },
+    });
 
-    // 🔥 SAME ITEM MASTER FETCH
+    /* ================= 4️⃣ FETCH ITEM MASTER DATA ================= */
     const itemIds = [
       ...items.map((i) => i.itemId),
       ...items.flatMap((i) =>
@@ -328,34 +330,32 @@ export const updateQuotation = async (id, data) => {
       itemMap[i.id] = i;
     });
 
+    /* ================= 5️⃣ RECREATE ITEMS ================= */
     let subtotal = 0;
 
-    for (let item of items) {
+    for (const item of items) {
       const master = itemMap[item.itemId];
+      if (!master) {
+        throw new Error(`Item not found: ${item.itemId}`);
+      }
 
       const qty = Number(item.quantity || 1);
-      const hasSubItems = item.subItems?.length > 0;
-
-      const price = Number(item.price ?? master?.basePrice ?? 0);
-
+      const price = Number(item.price ?? master.basePrice ?? 0);
       const discount = Number(item.discount || 0);
 
-      let lineTotal = Math.max(0, qty * price * (1 - discount / 100));
+      const lineTotal = Math.max(0, qty * price * (1 - discount / 100));
 
       let subTotalSum = 0;
-
       if (item.subItems?.length) {
         subTotalSum = item.subItems.reduce((sum, sub) => {
           const sQty = Number(sub.quantity || 1);
           const sPrice = Number(sub.price || 0);
           const sDiscount = Number(sub.discount || 0);
-
           return sum + Math.max(0, sQty * sPrice * (1 - sDiscount / 100));
         }, 0);
       }
 
       const finalLineTotal = lineTotal + subTotalSum;
-
       subtotal += finalLineTotal;
 
       await tx.quotationItem.create({
@@ -363,15 +363,13 @@ export const updateQuotation = async (id, data) => {
           quotation: { connect: { id: quotation.id } },
           item: { connect: { id: item.itemId } },
 
-          sku: master?.sku || "",
-          description: item.description || master?.description || "",
-          category: master?.category || null,
-
-          make: master?.make || null,
-          mfgPartNo: master?.mfgPartNo || null,
-          uom: master?.uom || null,
-
-          remarks: item.remarks || master?.defaultRemarks || null,
+          sku: master.sku || "",
+          description: item.description || master.description || "",
+          category: master.category || null,
+          make: master.make || null,
+          mfgPartNo: master.mfgPartNo || null,
+          uom: master.uom || null,
+          remarks: item.remarks || master.defaultRemarks || null,
 
           quantity: qty,
           price,
@@ -383,26 +381,23 @@ export const updateQuotation = async (id, data) => {
               item.subItems?.map((sub) => {
                 const subMaster = itemMap[sub.itemId];
 
-                const qty = Number(sub.quantity || 1);
-                const price = Number(sub.price || 0);
-                const discount = Number(sub.discount || 0);
+                const sQty = Number(sub.quantity || 1);
+                const sPrice = Number(sub.price || 0);
+                const sDiscount = Number(sub.discount || 0);
 
                 return {
                   itemId: sub.itemId || null,
-
                   name: subMaster?.name || sub.name || "",
                   sku: subMaster?.sku || "",
                   category: subMaster?.category || null,
-
                   make: subMaster?.make || null,
                   mfgPartNo: subMaster?.mfgPartNo || null,
                   uom: subMaster?.uom || null,
-
                   description: sub.description || null,
-                  quantity: qty,
-                  price,
-                  discount,
-                  lineTotal: Math.max(0, qty * price * (1 - discount / 100)),
+                  quantity: sQty,
+                  price: sPrice,
+                  discount: sDiscount,
+                  lineTotal: Math.max(0, sQty * sPrice * (1 - sDiscount / 100)),
                 };
               }) || [],
           },
@@ -410,18 +405,17 @@ export const updateQuotation = async (id, data) => {
       });
     }
 
-    /* ================= TOTALS ================= */
-
+    /* ================= 6️⃣ UPDATE TOTALS ================= */
     const quotationDiscount = Number(headerDiscount || 0);
     const taxableValue = Math.max(0, subtotal - quotationDiscount);
 
-    const cgst = taxableValue * 0.09;
-    const sgst = taxableValue * 0.09;
+    const cgst = taxableValue * CGST_RATE;
+    const sgst = taxableValue * SGST_RATE;
 
     const taxTotal = cgst + sgst;
     const grandTotal = taxableValue + taxTotal;
 
-    const updatedQuotation = await tx.quotation.update({
+    const finalQuotation = await tx.quotation.update({
       where: { id: quotation.id },
       data: {
         subtotal,
@@ -440,6 +434,6 @@ export const updateQuotation = async (id, data) => {
       },
     });
 
-    return updatedQuotation;
+    return finalQuotation;
   });
 };

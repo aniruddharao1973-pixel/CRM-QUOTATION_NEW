@@ -918,6 +918,7 @@ import {
   Edit,
   Send,
   Layers,
+  ChevronLeft,
 } from "lucide-react";
 import {
   fetchQuotations,
@@ -982,9 +983,9 @@ export default function QuotationList() {
   /* ================= FILTER ================= */
   const quotations = useMemo(() => {
     const q = search.trim().toLowerCase();
-    let filtered = [...(list || [])].sort(
-      (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
-    );
+    let filtered = [...(list || [])]
+      .filter((q) => q.isLatest)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     if (q) {
       filtered = filtered.filter((x) => {
@@ -1027,16 +1028,18 @@ export default function QuotationList() {
     <div className="min-h-[calc(100vh-64px)] bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,0.10),_transparent_25%),radial-gradient(circle_at_top_right,_rgba(14,165,233,0.10),_transparent_24%),linear-gradient(to_bottom,_#f8fafc,_#f8fafc,_#eef2ff_120%)] px-3 py-4 sm:px-5 sm:py-5">
       <div className="mx-auto w-full max-w-[1700px] space-y-5">
         {/* ================= HERO ================= */}
-        <div className="overflow-hidden rounded-[28px] border border-white/70 bg-white/85 shadow-[0_12px_40px_rgba(15,23,42,0.06)] backdrop-blur-xl">
+        <div className="overflow-hidden rounded-[20px] border border-white/70 bg-white/85 shadow-[0_12px_40px_rgba(15,23,42,0.06)] backdrop-blur-xl">
           <div className="relative px-5 py-5 sm:px-6 sm:py-6 lg:px-7">
             <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(99,102,241,0.06),transparent_35%,rgba(16,185,129,0.05)_72%,transparent)]" />
-            <div className="relative flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+            <div className="relative flex flex-col gap-2 xl:flex-row xl:items-end xl:justify-between">
+              <button
+                onClick={() => navigate(-1)}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50 hover:text-slate-900"
+                aria-label="Back"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
               <div className="max-w-3xl">
-                <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-indigo-700">
-                  <FileText className="h-3.5 w-3.5" />
-                  Sales Management
-                </div>
-
                 <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">
                   Quotation Hub
                 </h1>
@@ -1127,34 +1130,6 @@ export default function QuotationList() {
           />
         </div>
 
-        {/* ================= FILTERS ================= */}
-        <div className="rounded-[24px] border border-slate-200 bg-white/90 px-4 py-4 shadow-sm backdrop-blur">
-          <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-            <div className="flex items-center gap-2 text-sm font-semibold text-slate-600">
-              <Filter className="h-4 w-4 text-slate-500" />
-              Filter by status
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              {["ALL", "DRAFT", "SUBMITTED", "APPROVED", "REJECTED"].map(
-                (status) => (
-                  <button
-                    key={status}
-                    onClick={() => setStatusFilter(status)}
-                    className={`rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] transition-all ${
-                      statusFilter === status
-                        ? "bg-indigo-600 text-white shadow-[0_10px_24px_rgba(79,70,229,0.25)]"
-                        : "border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
-                    }`}
-                  >
-                    {status}
-                  </button>
-                ),
-              )}
-            </div>
-          </div>
-        </div>
-
         {/* ================= TABLE ================= */}
         <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_14px_45px_rgba(15,23,42,0.06)]">
           <div className="flex flex-col gap-4 border-b border-slate-100 px-5 py-5 sm:px-6 md:flex-row md:items-end md:justify-between">
@@ -1168,6 +1143,34 @@ export default function QuotationList() {
                 {search && " matching your search"}
                 {statusFilter !== "ALL" && ` with status: ${statusFilter}`}
               </p>
+            </div>
+
+            {/* ================= FILTERS ================= */}
+            <div className="rounded-[24px] border border-slate-200 bg-white/90 px-4 py-4 shadow-sm backdrop-blur">
+              <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+                <div className="flex items-center gap-2 text-sm font-semibold text-slate-600">
+                  <Filter className="h-4 w-4 text-slate-500" />
+                  Filter by status
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {["ALL", "DRAFT", "SUBMITTED", "APPROVED", "REJECTED"].map(
+                    (status) => (
+                      <button
+                        key={status}
+                        onClick={() => setStatusFilter(status)}
+                        className={`rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] transition-all ${
+                          statusFilter === status
+                            ? "bg-indigo-600 text-white shadow-[0_10px_24px_rgba(79,70,229,0.25)]"
+                            : "border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                        }`}
+                      >
+                        {status}
+                      </button>
+                    ),
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="flex items-center gap-2">
@@ -1498,70 +1501,121 @@ export default function QuotationList() {
                                     </div>
                                   ) : (
                                     <div className="divide-y divide-slate-100">
-                                      {history.map((h) => (
-                                        <div
-                                          key={h.id}
-                                          className="group flex items-center justify-between px-5 py-4 transition-all hover:bg-indigo-50/40"
-                                        >
-                                          {/* LEFT */}
-                                          <div className="flex items-center gap-3">
-                                            {/* Version Bubble */}
-                                            <div
-                                              className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold shadow-sm ${
-                                                h.isLatest
-                                                  ? "bg-indigo-600 text-white"
-                                                  : "bg-slate-100 text-slate-500"
-                                              }`}
-                                            >
-                                              {h.version}
-                                            </div>
+                                      {history.map((h) => {
+                                        const approvalAction =
+                                          h.approvals?.[0]?.action ||
+                                          h.status ||
+                                          "DRAFT";
 
-                                            {/* Text */}
-                                            <div className="flex flex-col">
-                                              <div className="flex items-center gap-2">
-                                                <span className="text-sm font-semibold text-slate-800">
-                                                  Rev {h.version}
-                                                </span>
+                                        const rejectionReason =
+                                          h.approvals?.[0]?.comment ||
+                                          h.rejectionReason ||
+                                          "";
 
-                                                {h.isLatest && (
-                                                  <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
-                                                    ● Latest
-                                                  </span>
-                                                )}
+                                        return (
+                                          <div
+                                            key={h.id}
+                                            className="group flex items-center justify-between px-5 py-4 transition-all hover:bg-indigo-50/40"
+                                          >
+                                            {/* LEFT */}
+                                            <div className="flex items-center gap-3">
+                                              {/* Version Bubble */}
+                                              <div
+                                                className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold shadow-sm ${
+                                                  h.isLatest
+                                                    ? "bg-indigo-600 text-white"
+                                                    : "bg-slate-100 text-slate-500"
+                                                }`}
+                                              >
+                                                {h.version}
                                               </div>
 
-                                              <span className="text-xs text-slate-400">
-                                                {new Date(
-                                                  h.createdAt,
-                                                ).toLocaleDateString("en-IN", {
-                                                  day: "numeric",
-                                                  month: "short",
-                                                  year: "numeric",
-                                                })}
+                                              <div className="flex flex-col">
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                  {/* REV */}
+                                                  <span className="text-sm font-semibold text-slate-800">
+                                                    Rev {h.version}
+                                                  </span>
+
+                                                  {/* LATEST */}
+                                                  {h.isLatest && (
+                                                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                                                      ● Latest
+                                                    </span>
+                                                  )}
+
+                                                  {/* STATUS */}
+                                                  <span
+                                                    className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                                                      approvalAction ===
+                                                      "APPROVED"
+                                                        ? "bg-emerald-100 text-emerald-700"
+                                                        : approvalAction ===
+                                                            "REJECTED"
+                                                          ? "bg-rose-100 text-rose-700"
+                                                          : "bg-slate-100 text-slate-600"
+                                                    }`}
+                                                  >
+                                                    {approvalAction}
+                                                  </span>
+                                                </div>
+
+                                                {/* DATE */}
+                                                <span className="text-xs text-slate-400">
+                                                  {new Date(
+                                                    h.createdAt,
+                                                  ).toLocaleDateString(
+                                                    "en-IN",
+                                                    {
+                                                      day: "numeric",
+                                                      month: "short",
+                                                      year: "numeric",
+                                                    },
+                                                  )}
+                                                </span>
+
+                                                {/* APPROVED LABEL */}
+                                                {approvalAction ===
+                                                  "APPROVED" && (
+                                                  <span className="text-xs font-medium mt-1 text-emerald-600">
+                                                    Approved version
+                                                  </span>
+                                                )}
+
+                                                {/* REJECTED REASON */}
+                                                {approvalAction ===
+                                                  "REJECTED" &&
+                                                  rejectionReason && (
+                                                    <span className="text-xs font-medium mt-1 text-rose-600">
+                                                      {rejectionReason}
+                                                    </span>
+                                                  )}
+                                              </div>
+                                            </div>
+
+                                            {/* RIGHT */}
+                                            <div className="flex items-center gap-4">
+                                              {/* Amount */}
+                                              <span className="tabular-nums text-sm font-bold text-slate-800">
+                                                {formatINR(h.grandTotal)}
                                               </span>
+
+                                              {/* Button */}
+                                              <button
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  navigate(
+                                                    `/quotations/${h.id}`,
+                                                  );
+                                                }}
+                                                className="rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-600 transition hover:bg-indigo-600 hover:text-white"
+                                              >
+                                                View →
+                                              </button>
                                             </div>
                                           </div>
-
-                                          {/* RIGHT */}
-                                          <div className="flex items-center gap-4">
-                                            {/* Amount */}
-                                            <span className="tabular-nums text-sm font-bold text-slate-800">
-                                              {formatINR(h.grandTotal)}
-                                            </span>
-
-                                            {/* Button */}
-                                            <button
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                navigate(`/quotations/${h.id}`);
-                                              }}
-                                              className="rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-600 transition hover:bg-indigo-600 hover:text-white"
-                                            >
-                                              View →
-                                            </button>
-                                          </div>
-                                        </div>
-                                      ))}
+                                        );
+                                      })}
                                     </div>
                                   )}
                                 </div>
@@ -1671,9 +1725,9 @@ function StatCard({ label, value, icon, color = "indigo", subtext }) {
   };
 
   return (
-    <div className="group relative overflow-hidden rounded-[24px] border border-slate-200 bg-white/90 p-5 shadow-[0_8px_30px_rgba(15,23,42,0.05)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_38px_rgba(15,23,42,0.08)]">
+    <div className="group relative overflow-hidden rounded-[24px] border border-slate-200 bg-white/90 p-1 shadow-[0_8px_30px_rgba(15,23,42,0.05)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_38px_rgba(15,23,42,0.08)]">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.08),transparent_35%)] opacity-0 transition group-hover:opacity-100" />
-      <div className="relative flex flex-col gap-4">
+      <div className="relative flex flex-col gap-1">
         <div className="flex items-start justify-between">
           <div
             className={`inline-flex rounded-2xl bg-gradient-to-br ${colorClasses[color]} p-3 text-white shadow-lg`}

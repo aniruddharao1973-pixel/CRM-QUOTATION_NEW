@@ -462,11 +462,10 @@ export const updateQuotationController = async (req, res) => {
     // 🔒 OPTIONAL OWNERSHIP CHECK
     const existing = await prisma.quotation.findUnique({
       where: { id },
-      select: { createdBy: true },
     });
 
-    if (req.user?.role !== "admin" && existing?.createdBy !== req.user.id) {
-      return res.status(403).json({ message: "Not allowed" });
+    if (!existing) {
+      return res.status(404).json({ message: "Quotation not found" });
     }
 
     const {

@@ -1708,8 +1708,16 @@ export default function QuotationDetail() {
   const handleSubmit = async () => {
     try {
       setActionLoading(true);
-      await dispatch(submitQuotation(id)).unwrap();
-      dispatch(fetchQuotationById(id));
+
+      const res = await dispatch(submitQuotation(id)).unwrap();
+
+      // 🔥 redirect to latest version (new ID returned from backend)
+      if (res?.id) {
+        navigate(`/quotations/${res.id}`);
+      } else {
+        // fallback (should rarely happen)
+        dispatch(fetchQuotationById(id));
+      }
     } catch (err) {
       console.error(err);
       alert("Submit failed");

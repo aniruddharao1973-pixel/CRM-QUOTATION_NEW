@@ -1551,15 +1551,26 @@ export default function QuotationForm() {
         })),
       };
 
-      const res = await dispatch(createQuotation(payload)).unwrap();
+      let res;
 
-      // ✅ set actual backend number
-      setForm((prev) => ({
-        ...prev,
-        quotationNumber: res.quotationNo,
-      }));
+      if (isEdit) {
+        // 🔥 EDIT FLOW → UPDATE
+        res = await dispatch(
+          updateQuotation({
+            id,
+            data: payload,
+          }),
+        ).unwrap();
+      } else {
+        // 🔥 CREATE FLOW
+        res = await dispatch(createQuotation(payload)).unwrap();
 
-      // navigate(`/quotations/${res.id}`);
+        setForm((prev) => ({
+          ...prev,
+          quotationNumber: res.quotationNo,
+        }));
+      }
+
       navigate("/quotations");
     } catch (err) {
       console.error(err);
