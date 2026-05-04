@@ -1077,10 +1077,16 @@ const formatCurrency = (value) => {
 
   const cleaned = String(value)
     .normalize("NFKC")
-    .replace(/\u00B9/g, "")
+
+    // 🔥 remove Rs / ₹ / INR
+    .replace(/(Rs\.?|₹|INR)/gi, "")
+
+    // existing cleanup
+    .replace(/[\u00B9\u00B2\u00B3\u2070-\u2079]/g, "")
     .replace(/[\u200B-\u200D\uFEFF\u00AD]/g, "")
-    .replace(/[\u00B2\u00B3\u2070-\u2079\u2032\u2033\u00B0\u00BA]/g, "")
     .replace(/[^\d.,]/g, "")
+    .replace(/(Rs\.?|₹|INR)/gi, "")
+    .replace(/(Rs\.?|₹|INR)/gi, "")
     .replace(/,/g, "");
 
   const num = Number(cleaned);
@@ -1103,7 +1109,7 @@ const cleanPdfText = (value) => {
       .replace(/[\u200B-\u200D\uFEFF\u00AD]/g, "")
 
       // 🔥 remove leading junk like quotes, symbols, etc.
-      .replace(/^[^a-zA-Z0-9↳]+/, "")
+      .replace(/^[^a-zA-Z0-9]+/, "")
 
       .trim()
   );
@@ -1259,12 +1265,13 @@ export function ProposalPDF({ quotation, totals }) {
         sl: pricingRows.length + 1,
         sku: cleanPdfText(sub.sku || "-"),
         hsn: HSN_SAC,
-        description: `↳ ${cleanPdfText(
-          (sub.description || sub.name || "-").replace(
-            /[\u00B9\u00B2\u00B3\u2070-\u2079]/g,
-            "",
-          ),
-        )}`,
+        description: cleanPdfText(
+          (sub.description || sub.name || "-")
+            .normalize("NFKC")
+            .replace(/[\u00B9\u00B2\u00B3\u2070-\u2079]/g, "")
+            .replace(/[\u200B-\u200D\uFEFF\u00AD]/g, "")
+            .replace(/^[^a-zA-Z0-9]+/, ""),
+        ),
         qty: cleanNumber(sub.quantity || 0),
         unitPrice: sub.price != null ? formatCurrency(sub.price) : "-",
         discount: sub.discount != null ? `${sub.discount}%` : "-",
@@ -1347,7 +1354,7 @@ export function ProposalPDF({ quotation, totals }) {
     },
 
     { key: "discount", title: "Disc %", width: "8%", align: "center" },
-    { key: "gst", title: "GST %", width: "8%", align: "center" },
+    { key: "gst", title: "GST", width: "8%", align: "center" },
 
     {
       key: "total",
@@ -1450,7 +1457,7 @@ export function ProposalPDF({ quotation, totals }) {
         >
           <View
             style={{
-              backgroundColor: "#1E40AF",
+              backgroundColor: "#3B82F6",
               paddingVertical: 7,
               paddingHorizontal: 10,
               flexDirection: "row",
@@ -1461,7 +1468,7 @@ export function ProposalPDF({ quotation, totals }) {
               style={{
                 width: 3,
                 height: 13,
-                backgroundColor: "#60A5FA",
+                backgroundColor: "#93C5FD",
                 borderRadius: 2,
                 marginRight: 8,
               }}
@@ -1495,7 +1502,7 @@ export function ProposalPDF({ quotation, totals }) {
                   width: "28%",
                   fontSize: 8.5,
                   fontWeight: "bold",
-                  color: "#1E3A8A",
+                  color: "#2563EB",
                 }}
               >
                 {item.label}
@@ -1529,7 +1536,7 @@ export function ProposalPDF({ quotation, totals }) {
         >
           <View
             style={{
-              backgroundColor: "#1E40AF",
+              backgroundColor: "#3B82F6",
               paddingVertical: 7,
               paddingHorizontal: 10,
               flexDirection: "row",
@@ -1540,7 +1547,7 @@ export function ProposalPDF({ quotation, totals }) {
               style={{
                 width: 3,
                 height: 13,
-                backgroundColor: "#60A5FA",
+                backgroundColor: "#93C5FD",
                 borderRadius: 2,
                 marginRight: 8,
               }}
@@ -1577,7 +1584,7 @@ export function ProposalPDF({ quotation, totals }) {
                     width: "28%",
                     fontSize: 8.5,
                     fontWeight: "bold",
-                    color: "#1E3A8A",
+                    color: "#2563EB",
                   }}
                 >
                   {item.label}
@@ -1599,7 +1606,7 @@ export function ProposalPDF({ quotation, totals }) {
                     <Text
                       style={{
                         fontSize: 7.8,
-                        color: "#1D4ED8",
+                        color: "#3B82F6",
                         fontWeight: "bold",
                       }}
                     >
@@ -1628,7 +1635,7 @@ export function ProposalPDF({ quotation, totals }) {
           <View
             style={{
               height: 2,
-              backgroundColor: "#2563EB",
+              backgroundcolor: "#3B82F6",
               borderRadius: 1,
               marginBottom: 10,
             }}
@@ -1781,7 +1788,7 @@ export function ProposalPDF({ quotation, totals }) {
             style={{
               width: 40,
               height: 2,
-              backgroundColor: "#2563EB",
+              backgroundColor: "#60A5FA",
               borderRadius: 2,
               marginTop: 5,
             }}
@@ -2023,6 +2030,46 @@ export function ProposalPDF({ quotation, totals }) {
             revNo={metadata.rev}
             date={metadata.date}
           />
+
+          <SectionCard title="Payment Terms" soft>
+            <View style={styles.bulletLine}>
+              <Text style={styles.bulletMark}>•</Text>
+              <Text style={styles.bulletText}>
+                40% Advance along with the Purchase Order.
+              </Text>
+            </View>
+            <View style={styles.bulletLine}>
+              <Text style={styles.bulletMark}>•</Text>
+              <Text style={styles.bulletText}>
+                40% Against proforma invoice before dispatch after successful
+                FAT.
+              </Text>
+            </View>
+            <View style={styles.bulletLine}>
+              <Text style={styles.bulletMark}>•</Text>
+              <Text style={styles.bulletText}>
+                20% After successful installation and commissioning at site
+                (SAT).
+              </Text>
+            </View>
+
+            <View
+              style={{
+                backgroundColor: "#F1F5F9",
+                paddingVertical: 7,
+                paddingHorizontal: 8,
+                borderRadius: 4,
+                marginTop: 8,
+              }}
+            >
+              <Text
+                style={{ fontSize: 8.3, fontWeight: "bold", color: "#4B5563" }}
+              >
+                Note: All payments should be made via NEFT/RTGS to the
+                above-mentioned bank account.
+              </Text>
+            </View>
+          </SectionCard>
 
           <HighlightBox
             text={
@@ -2449,44 +2496,6 @@ export function ProposalPDF({ quotation, totals }) {
             );
           })}
         </View>
-
-        <SectionCard title="Payment Terms" soft>
-          <View style={styles.bulletLine}>
-            <Text style={styles.bulletMark}>•</Text>
-            <Text style={styles.bulletText}>
-              40% Advance along with the Purchase Order.
-            </Text>
-          </View>
-          <View style={styles.bulletLine}>
-            <Text style={styles.bulletMark}>•</Text>
-            <Text style={styles.bulletText}>
-              40% Against proforma invoice before dispatch after successful FAT.
-            </Text>
-          </View>
-          <View style={styles.bulletLine}>
-            <Text style={styles.bulletMark}>•</Text>
-            <Text style={styles.bulletText}>
-              20% After successful installation and commissioning at site (SAT).
-            </Text>
-          </View>
-
-          <View
-            style={{
-              backgroundColor: "#F1F5F9",
-              paddingVertical: 7,
-              paddingHorizontal: 8,
-              borderRadius: 4,
-              marginTop: 8,
-            }}
-          >
-            <Text
-              style={{ fontSize: 8.3, fontWeight: "bold", color: "#4B5563" }}
-            >
-              Note: All payments should be made via NEFT/RTGS to the
-              above-mentioned bank account.
-            </Text>
-          </View>
-        </SectionCard>
 
         <View style={styles.endDocWrap}>
           <Text style={styles.endDocLine}>

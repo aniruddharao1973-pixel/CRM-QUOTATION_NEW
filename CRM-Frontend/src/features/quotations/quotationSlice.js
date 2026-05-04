@@ -17,6 +17,8 @@ const normalizeQuotation = (q) => {
     items: (q.items || []).map((it) => ({
       ...it,
 
+      remarks: it.remarks ?? "",
+
       category: it.category || it.item?.category || null,
       make: it.make || it.item?.make || null,
       mfgPartNo: it.mfgPartNo || it.item?.mfgPartNo || null,
@@ -54,6 +56,8 @@ const normalizeQuotation = (q) => {
           make: sub.make || null,
           mfgPartNo: sub.mfgPartNo || null,
           uom: sub.uom || null,
+
+          remarks: sub.remarks || "",
 
           qty,
           price,

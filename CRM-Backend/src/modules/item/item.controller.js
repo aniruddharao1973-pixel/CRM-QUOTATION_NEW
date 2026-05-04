@@ -25,8 +25,7 @@ export const createItem = async (req, res) => {
     } = req.body;
 
     // ✅ BASIC VALIDATION
-    if (!name) {
-      // ✅ SKU not mandatory anymore
+    if (!name || !sku) {
       return res.status(400).json({
         message: "SKU and Item Name are required",
       });

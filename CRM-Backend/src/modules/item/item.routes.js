@@ -21,7 +21,7 @@ router.get("/", protect, getItems);
 router.get("/:id", protect, getItemById);
 
 /* ================= UPDATE ================= */
-router.put("/", protect, updateItem);
+router.put("/:id", protect, updateItem);
 
 /* ================= DELETE ================= */
 router.delete("/:id", protect, authorize("ADMIN"), deleteItem);

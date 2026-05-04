@@ -995,9 +995,13 @@ const formatCurrency = (value) => {
 
   const cleaned = String(value)
     .normalize("NFKC")
-    .replace(/\u00B9/g, "")
+
+    // 🔥 remove Rs / ₹ / INR
+    .replace(/(Rs\.?|₹|INR)/gi, "")
+
+    // existing cleanup
+    .replace(/[\u00B9\u00B2\u00B3\u2070-\u2079]/g, "")
     .replace(/[\u200B-\u200D\uFEFF\u00AD]/g, "")
-    .replace(/[\u00B2\u00B3\u2070-\u2079\u2032\u2033\u00B0\u00BA]/g, "")
     .replace(/[^\d.,]/g, "")
     .replace(/,/g, "");
 
@@ -1014,7 +1018,7 @@ const cleanPdfText = (value) => {
     .normalize("NFKC")
     .replace(/[\u00B9\u00B2\u00B3\u2070-\u2079]/g, "")
     .replace(/[\u200B-\u200D\uFEFF\u00AD]/g, "")
-    .replace(/^[^a-zA-Z0-9↳]+/, "")
+    .replace(/^[^a-zA-Z0-9]+/, "")
     .trim();
 };
 
@@ -1026,6 +1030,7 @@ const cleanNumber = (value) => {
     .replace(/\u00B9/g, "")
     .replace(/[\u200B-\u200D\uFEFF\u00AD]/g, "")
     .replace(/[\u00B2\u00B3\u2070-\u2079\u2032\u2033\u00B0\u00BA]/g, "")
+    .replace(/(Rs\.?|₹|INR)/gi, "")
     .replace(/,/g, "")
     .replace(/[^\d.-]/g, "")
     .replace(/^\./, "");
@@ -1169,12 +1174,13 @@ export function ProposalPDF({ quotation, totals }) {
         sl: pricingRows.length + 1,
         sku: cleanPdfText(sub.sku || "-"),
         hsn: HSN_SAC,
-        description: `↳ ${cleanPdfText(
-          (sub.description || sub.name || "-").replace(
-            /^[\u00B9\u00B2\u00B3\u2070-\u2079]+/,
-            "",
-          ),
-        )}`,
+        description: cleanPdfText(
+          (sub.description || sub.name || "-")
+            .normalize("NFKC")
+            .replace(/[\u00B9\u00B2\u00B3\u2070-\u2079]/g, "")
+            .replace(/[\u200B-\u200D\uFEFF\u00AD]/g, "")
+            .replace(/^[^a-zA-Z0-9]+/, ""),
+        ),
         qty: cleanNumber(sub.quantity || 0),
         unitPrice: sub.price != null ? formatCurrency(sub.price) : "-",
         discount: sub.discount != null ? `${sub.discount}%` : "-",
@@ -1250,7 +1256,7 @@ export function ProposalPDF({ quotation, totals }) {
       align: "right",
     },
     { key: "discount", title: "Disc %", width: "8%", align: "center" },
-    { key: "gst", title: "GST %", width: "8%", align: "center" },
+    { key: "gst", title: "GST", width: "8%", align: "center" },
     {
       key: "total",
       title: "Total",
@@ -1549,6 +1555,42 @@ export function ProposalPDF({ quotation, totals }) {
           revNo={metadata.rev}
           date={metadata.date}
         />
+
+        <SectionCard title="Payment Terms" soft>
+          <View style={styles.bulletLine}>
+            <Text style={styles.bulletMark}>•</Text>
+            <Text style={styles.bulletText}>
+              40% Advance along with the Purchase Order.
+            </Text>
+          </View>
+          <View style={styles.bulletLine}>
+            <Text style={styles.bulletMark}>•</Text>
+            <Text style={styles.bulletText}>
+              40% Against proforma invoice before dispatch after successful FAT.
+            </Text>
+          </View>
+          <View style={styles.bulletLine}>
+            <Text style={styles.bulletMark}>•</Text>
+            <Text style={styles.bulletText}>
+              20% After successful installation and commissioning at site (SAT).
+            </Text>
+          </View>
+
+          <View
+            style={{
+              backgroundColor: "#EFF6FF",
+              paddingVertical: 8,
+              paddingHorizontal: 10,
+              borderRadius: 5,
+              marginTop: 10,
+            }}
+          >
+            <Text style={{ fontSize: 9, fontWeight: "bold", color: "#374151" }}>
+              Note: All payments should be made via NEFT/RTGS to the
+              above-mentioned bank account.
+            </Text>
+          </View>
+        </SectionCard>
 
         <HighlightBox
           text={
@@ -1939,42 +1981,6 @@ export function ProposalPDF({ quotation, totals }) {
             );
           })}
         </View>
-
-        <SectionCard title="Payment Terms" soft>
-          <View style={styles.bulletLine}>
-            <Text style={styles.bulletMark}>•</Text>
-            <Text style={styles.bulletText}>
-              40% Advance along with the Purchase Order.
-            </Text>
-          </View>
-          <View style={styles.bulletLine}>
-            <Text style={styles.bulletMark}>•</Text>
-            <Text style={styles.bulletText}>
-              40% Against proforma invoice before dispatch after successful FAT.
-            </Text>
-          </View>
-          <View style={styles.bulletLine}>
-            <Text style={styles.bulletMark}>•</Text>
-            <Text style={styles.bulletText}>
-              20% After successful installation and commissioning at site (SAT).
-            </Text>
-          </View>
-
-          <View
-            style={{
-              backgroundColor: "#EFF6FF",
-              paddingVertical: 8,
-              paddingHorizontal: 10,
-              borderRadius: 5,
-              marginTop: 10,
-            }}
-          >
-            <Text style={{ fontSize: 9, fontWeight: "bold", color: "#374151" }}>
-              Note: All payments should be made via NEFT/RTGS to the
-              above-mentioned bank account.
-            </Text>
-          </View>
-        </SectionCard>
 
         <View style={styles.endDocWrap}>
           <Text style={styles.endDocLine}>

@@ -1099,7 +1099,6 @@ import { formatINR } from "./quotationUtils";
 
 import {
   ChevronLeft,
-  Save,
   Download,
   FileText,
   CalendarDays,
@@ -1237,7 +1236,7 @@ export default function QuotationForm() {
     date: new Date().toISOString().slice(0, 10),
     validUntil: "",
     notes: "",
-    terms: "Quotation valid for 15 days from the issue date.",
+    // terms: "Quotation valid for 15 days from the issue date.",
     headerDiscount: 0,
     items: [newLineItem()],
   });
@@ -1282,7 +1281,7 @@ export default function QuotationForm() {
           itemId: item.itemId,
           sku: item.sku,
           category: item.category || "",
-          description: item.description,
+          description: item.description || "",
           make: item.make,
           mfgPartNo: item.mfgPartNo,
           uom: item.uom,
@@ -1302,7 +1301,8 @@ export default function QuotationForm() {
             name: sub.name,
             sku: sub.sku || "",
             category: sub.category || "",
-            description: sub.description,
+            description: sub.description || "",
+            remarks: sub.remarks || "",
 
             qty: Number(sub.quantity || 1),
             price: Number(sub.price || 0),
@@ -1320,6 +1320,64 @@ export default function QuotationForm() {
       dispatch(fetchContactsDropdown({ accountId: quotation.accountId }));
     }
   }, [quotation, id, itemsList, dispatch]);
+
+  const handleCreateQuotation = async () => {
+    try {
+      if (!form.accountId) return toast.error("Select account");
+      if (!form.dealId) return toast.error("Select deal");
+
+      const validItems = form.items.filter((i) => i.itemId);
+
+      if (!validItems.length) {
+        return toast.error("Add at least one valid item");
+      }
+
+      const payload = {
+        quotationNumber: form.quotationNumber,
+        accountId: form.accountId,
+        dealId: form.dealId,
+        contactIds: form.contactIds,
+        issueDate: form.date,
+        validUntil: form.validUntil || null,
+        notes: form.notes,
+        terms: form.terms,
+
+        items: validItems.map((item) => ({
+          itemId: item.itemId,
+          description: item.description || "",
+          sku: item.sku || "",
+          category: item.category || "",
+          make: item.make || "",
+          mfgPartNo: item.mfgPartNo || "",
+          uom: item.uom || "",
+          quantity: Number(item.qty || 1),
+          price: Number(item.price || 0),
+          discount: Number(item.discount || 0),
+          remarks: item.remarks,
+
+          subItems: (item.selectedSubItems || []).map((sub) => ({
+            itemId: sub.id,
+            name: sub.name,
+            description: sub.description || "",
+            remarks: sub.remarks || "",
+            quantity: Number(sub.qty || 1),
+            price: Number(sub.price || 0),
+            discount: Number(sub.discount || 0),
+          })),
+        })),
+      };
+
+      const res = await dispatch(createQuotation(payload)).unwrap();
+
+      toast.success("Quotation created");
+
+      // 👉 redirect to edit mode (IMPORTANT)
+      navigate("/quotations");
+    } catch (err) {
+      console.error(err);
+      toast.error("Create failed");
+    }
+  };
 
   /* ================= TOTALS ================= */
 
@@ -1369,7 +1427,10 @@ export default function QuotationForm() {
             next.make = product.make || "";
             next.mfgPartNo = product.mfgPartNo || "";
             next.uom = product.uom || "";
-            next.remarks = product.remarks || "";
+            next.remarks =
+              item.remarks !== undefined && item.remarks !== ""
+                ? item.remarks
+                : product.defaultRemarks || "";
             next.subItems = product.children || [];
             next.selectedSubItems = [];
 
@@ -1448,14 +1509,27 @@ export default function QuotationForm() {
           sub.id === subId
             ? {
                 ...sub,
-                [key]: value === "" ? "" : Number(value),
+
+                // ✅ FIX: handle text vs number
+                [key]: ["remarks", "description", "name"].includes(key)
+                  ? value
+                  : value === ""
+                    ? ""
+                    : Number(value),
               }
             : sub,
+        );
+
+        const total = updatedSubs.reduce(
+          (sum, s) =>
+            sum + (s.qty || 1) * (s.price || 0) * (1 - (s.discount || 0) / 100),
+          0,
         );
 
         return {
           ...item,
           selectedSubItems: updatedSubs,
+          price: total,
         };
       });
 
@@ -1493,13 +1567,22 @@ export default function QuotationForm() {
             terms: form.terms,
             items: form.items.map((item) => ({
               itemId: item.itemId,
+              // ✅ ADD THESE (THIS IS YOUR BUG FIX)
+              description: item.description || "",
+              sku: item.sku || "",
+              category: item.category || "",
+              make: item.make || "",
+              mfgPartNo: item.mfgPartNo || "",
+              uom: item.uom || "",
               quantity: Number(item.qty || 1),
               price: Number(item.price || 0),
               discount: Number(item.discount || 0),
+              remarks: item.remarks,
               subItems: (item.selectedSubItems || []).map((sub) => ({
                 itemId: sub.id,
                 name: sub.name,
                 description: sub.description || "",
+                remarks: sub.remarks || "",
                 quantity: Number(sub.qty || 1),
                 price: Number(sub.price || 0),
                 discount: Number(sub.discount || 0),
@@ -1515,70 +1598,78 @@ export default function QuotationForm() {
     }
   };
 
-  const saveQuotation = async () => {
-    try {
-      if (!form.accountId) return alert("Select account");
-      if (!form.dealId) return alert("Select deal");
-      if (!form.items.length) return alert("Add items");
+  // const saveQuotation = async () => {
+  //   try {
+  //     if (!form.accountId) return alert("Select account");
+  //     if (!form.dealId) return alert("Select deal");
+  //     if (!form.items.length) return alert("Add items");
 
-      const invalidItem = form.items.find((i) => !i.itemId);
-      if (invalidItem) return alert("Please select an item for every row");
+  //     const invalidItem = form.items.find((i) => !i.itemId);
+  //     if (invalidItem) return alert("Please select an item for every row");
 
-      setIsSaving(true);
+  //     setIsSaving(true);
 
-      const payload = {
-        quotationNumber: form.quotationNumber,
-        accountId: form.accountId,
-        dealId: form.dealId,
-        contactIds: form.contactIds,
-        issueDate: form.date,
-        validUntil: form.validUntil || null,
-        notes: form.notes,
-        terms: form.terms,
-        items: form.items.map((item) => ({
-          itemId: item.itemId,
-          quantity: Number(item.qty || 1),
-          price: Number(item.price || 0),
-          discount: Number(item.discount || 0),
-          subItems: (item.selectedSubItems || []).map((sub) => ({
-            itemId: sub.id,
-            name: sub.name,
-            description: sub.description || "",
-            quantity: Number(sub.qty || 1),
-            price: Number(sub.price || 0),
-            discount: Number(sub.discount || 0),
-          })),
-        })),
-      };
+  //     const payload = {
+  //       quotationNumber: form.quotationNumber,
+  //       accountId: form.accountId,
+  //       dealId: form.dealId,
+  //       contactIds: form.contactIds,
+  //       issueDate: form.date,
+  //       validUntil: form.validUntil || null,
+  //       notes: form.notes,
+  //       terms: form.terms,
+  //       items: form.items.map((item) => ({
+  //         itemId: item.itemId,
+  //         // 🔥 ADD THESE
+  //         sku: item.sku,
+  //         description: item.description,
+  //         category: item.category,
+  //         make: item.make,
+  //         mfgPartNo: item.mfgPartNo,
+  //         uom: item.uom,
+  //         remarks: item.remarks,
+  //         quantity: Number(item.qty || 1),
+  //         price: Number(item.price || 0),
+  //         discount: Number(item.discount || 0),
+  //         subItems: (item.selectedSubItems || []).map((sub) => ({
+  //           itemId: sub.id,
+  //           name: sub.name,
+  //           description: sub.description || "",
+  //           quantity: Number(sub.qty || 1),
+  //           price: Number(sub.price || 0),
+  //           discount: Number(sub.discount || 0),
+  //         })),
+  //       })),
+  //     };
 
-      let res;
+  //     let res;
 
-      if (isEdit) {
-        // 🔥 EDIT FLOW → UPDATE
-        res = await dispatch(
-          updateQuotation({
-            id,
-            data: payload,
-          }),
-        ).unwrap();
-      } else {
-        // 🔥 CREATE FLOW
-        res = await dispatch(createQuotation(payload)).unwrap();
+  //     if (isEdit) {
+  //       // 🔥 EDIT FLOW → UPDATE
+  //       res = await dispatch(
+  //         updateQuotation({
+  //           id,
+  //           data: payload,
+  //         }),
+  //       ).unwrap();
+  //     } else {
+  //       // 🔥 CREATE FLOW
+  //       res = await dispatch(createQuotation(payload)).unwrap();
 
-        setForm((prev) => ({
-          ...prev,
-          quotationNumber: res.quotationNo,
-        }));
-      }
+  //       setForm((prev) => ({
+  //         ...prev,
+  //         quotationNumber: res.quotationNo,
+  //       }));
+  //     }
 
-      navigate("/quotations");
-    } catch (err) {
-      console.error(err);
-      alert("Failed to save");
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  //     navigate("/quotations");
+  //   } catch (err) {
+  //     console.error(err);
+  //     alert("Failed to save");
+  //   } finally {
+  //     setIsSaving(false);
+  //   }
+  // };
 
   /* ================= UI ================= */
 
@@ -1587,9 +1678,11 @@ export default function QuotationForm() {
       <div className="mx-auto w-full max-w-[1700px] space-y-5">
         {/* HERO / TOP BAR */}
         <div className="overflow-hidden rounded-[28px] border border-white/70 bg-white/85 shadow-[0_12px_40px_rgba(15,23,42,0.06)] backdrop-blur-xl">
-          <div className="relative px-5 py-5 sm:px-6 lg:px-7">
+          <div className="relative px-4 py-3 sm:px-5 lg:px-6">
             <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(99,102,241,0.06),transparent_35%,rgba(16,185,129,0.05)_72%,transparent)]" />
-            <div className="relative flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+
+            <div className="relative flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+              {/* LEFT */}
               <div className="flex items-start gap-4">
                 <button
                   onClick={() => navigate(-1)}
@@ -1611,62 +1704,45 @@ export default function QuotationForm() {
                     </span>
                   </div>
 
-                  <div className="mt-3 flex items-start gap-3">
-                    <div className="rounded-2xl bg-indigo-50 p-3 text-indigo-700">
-                      <FileText className="h-6 w-6" />
-                    </div>
+                  <div className="mt-2 flex flex-wrap items-center gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-xl bg-indigo-50 p-2 text-indigo-700">
+                        <FileText className="h-5 w-5" />
+                      </div>
 
-                    <div className="min-w-0">
                       <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
                         {isEdit ? "Edit Quotation" : "Create Quotation"}
                       </h1>
-                      <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500 sm:text-[15px]">
-                        Build a clean quotation with account, deal, contacts,
-                        item master selection, and GST-aware totals in one
-                        focused workspace.
-                      </p>
+                    </div>
+
+                    {/* QUOTATION NUMBER */}
+                    <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
+                      <span className="inline-flex items-center gap-2 rounded-lg border border-indigo-100 bg-indigo-50 px-3 py-1.5 font-medium text-indigo-700">
+                        <Package className="h-4 w-4" />
+                        {form.quotationNumber || "—"}
+                      </span>
                     </div>
                   </div>
                 </div>
               </div>
 
+              {/* RIGHT */}
               <div className="flex flex-col gap-3 sm:flex-row">
-                <button
-                  onClick={saveQuotation}
-                  disabled={isSaving}
-                  className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-600 to-violet-600 px-5 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(79,70,229,0.28)] transition hover:-translate-y-0.5 hover:from-indigo-700 hover:via-indigo-700 hover:to-violet-700 disabled:cursor-not-allowed disabled:opacity-70"
-                >
-                  <Save className="h-4 w-4" />
-                  {isSaving ? "Saving..." : "Save Quotation"}
-                </button>
+                {!isEdit ? (
+                  <button
+                    onClick={handleCreateQuotation}
+                    className="inline-flex h-11 items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 text-sm font-semibold text-white shadow-[0_10px_25px_rgba(79,70,229,0.25)] transition hover:opacity-95"
+                  >
+                    <FileText className="h-4 w-4" />
+                    Create Quotation
+                  </button>
+                ) : (
+                  <span className="inline-flex items-center gap-2 rounded-2xl bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-700 border border-emerald-100">
+                    <ShieldCheck className="h-4 w-4" />
+                    Auto-saved
+                  </span>
+                )}
               </div>
-            </div>
-
-            <div className="mt-5 grid grid-cols-2 gap-3 border-t border-slate-100 pt-5 lg:grid-cols-4">
-              <StatCard
-                label="Quotation No"
-                value={form.quotationNumber || "—"}
-                icon={Package}
-                tone="indigo"
-              />
-              <StatCard
-                label="GST"
-                value={`GST ${GST_RATE}% (${CGST_RATE}% + ${SGST_RATE}%)`}
-                icon={Percent}
-                tone="emerald"
-              />
-              <StatCard
-                label="Issue Date"
-                value={form.date}
-                icon={CalendarDays}
-                tone="amber"
-              />
-              <StatCard
-                label="Lines"
-                value={`${lineCount || 0} item row(s)`}
-                icon={ClipboardList}
-                tone="slate"
-              />
             </div>
           </div>
         </div>

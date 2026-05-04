@@ -1025,20 +1025,32 @@ export default function QuotationList() {
   }, [list]);
 
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,0.10),_transparent_25%),radial-gradient(circle_at_top_right,_rgba(14,165,233,0.10),_transparent_24%),linear-gradient(to_bottom,_#f8fafc,_#f8fafc,_#eef2ff_120%)] px-3 py-4 sm:px-5 sm:py-5">
-      <div className="mx-auto w-full max-w-[1700px] space-y-5">
+    <div
+      className="min-h-[calc(100vh-64px)] px-4 py-6 sm:px-6"
+      style={{
+        background:
+          "linear-gradient(145deg, #f0f4ff 0%, #f8fafc 40%, #eef2ff 100%)",
+      }}
+    >
+      <div className="mx-auto w-full max-w-[1700px] space-y-3">
         {/* ================= HERO ================= */}
-        <div className="overflow-hidden rounded-[20px] border border-white/70 bg-white/85 shadow-[0_12px_40px_rgba(15,23,42,0.06)] backdrop-blur-xl">
-          <div className="relative px-5 py-5 sm:px-6 sm:py-6 lg:px-7">
-            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(99,102,241,0.06),transparent_35%,rgba(16,185,129,0.05)_72%,transparent)]" />
+        <div className="overflow-hidden rounded-[24px] border border-indigo-100 bg-white shadow-[0_8px_32px_rgba(99,102,241,0.10)]">
+          <div className="relative px-6 py-4 sm:px-8 sm:py-4">
+            <div
+              className="pointer-events-none absolute inset-0"
+              style={{
+                background:
+                  "linear-gradient(135deg, rgba(99,102,241,0.06) 0%, transparent 50%)",
+              }}
+            />
             <div className="relative flex flex-col gap-2 xl:flex-row xl:items-end xl:justify-between">
-              <button
+              {/* <button
                 onClick={() => navigate(-1)}
                 className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50 hover:text-slate-900"
                 aria-label="Back"
               >
                 <ChevronLeft className="h-5 w-5" />
-              </button>
+              </button> */}
               <div className="max-w-3xl">
                 <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">
                   Quotation Hub
@@ -1092,7 +1104,7 @@ export default function QuotationList() {
         </div>
 
         {/* ================= STATS ================= */}
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-5 mt-1">
           <StatCard
             label="Total Quotations"
             value={stats.total}
@@ -1131,7 +1143,7 @@ export default function QuotationList() {
         </div>
 
         {/* ================= TABLE ================= */}
-        <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_14px_45px_rgba(15,23,42,0.06)]">
+        <div className="overflow-hidden rounded-[24px] border border-slate-200/80 bg-white shadow-[0_8px_32px_rgba(99,102,241,0.08)]">
           <div className="flex flex-col gap-4 border-b border-slate-100 px-5 py-5 sm:px-6 md:flex-row md:items-end md:justify-between">
             <div>
               <h2 className="text-xl font-bold tracking-tight text-slate-900">
@@ -1183,30 +1195,36 @@ export default function QuotationList() {
 
           <div className="max-h-[500px] overflow-auto">
             <table className="min-w-[1300px] text-sm">
-              <thead className="sticky top-0 z-10 bg-slate-50/95 text-slate-500 backdrop-blur">
-                <tr className="border-b border-slate-200">
-                  <th className="px-5 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em]">
+              <thead
+                className="sticky top-0 z-10 backdrop-blur"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #eef2ff 0%, #f8fafc 100%)",
+                }}
+              >
+                <tr className="border-b border-indigo-100">
+                  <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.22em] text-indigo-400">
                     Quotation Details
                   </th>
-                  <th className="px-5 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em]">
+                  <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.22em] text-indigo-400">
                     Account
                   </th>
-                  <th className="px-5 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em]">
+                  <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.22em] text-indigo-400">
                     Deal
                   </th>
-                  <th className="px-5 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em]">
+                  <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.22em] text-indigo-400">
                     Issue Date
                   </th>
-                  <th className="px-5 py-4 text-right text-[11px] font-bold uppercase tracking-[0.18em]">
+                  <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.22em] text-indigo-400">
                     Taxable Value
                   </th>
-                  <th className="px-5 py-4 text-right text-[11px] font-bold uppercase tracking-[0.18em]">
+                  <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.22em] text-indigo-400">
                     Grand Total
                   </th>
-                  <th className="px-5 py-4 text-left text-[11px] font-bold uppercase tracking-[0.18em]">
+                  <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.22em] text-indigo-400">
                     Status
                   </th>
-                  <th className="px-5 py-4 text-center text-[11px] font-bold uppercase tracking-[0.18em]">
+                  <th className="px-6 py-4 text-center text-[10px] font-black uppercase tracking-[0.22em] text-indigo-400">
                     Actions
                   </th>
                 </tr>
@@ -1231,7 +1249,17 @@ export default function QuotationList() {
                     <Fragment key={q.id}>
                       <tr
                         onClick={() => navigate(`/quotations/${q.id}`)}
-                        className="group cursor-pointer transition-colors hover:bg-indigo-50/40"
+                        className="group cursor-pointer border-b border-slate-50 transition-all duration-150"
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background =
+                            "linear-gradient(90deg, #eef2ff 0%, #f8fafc 100%)";
+                          e.currentTarget.style.boxShadow =
+                            "inset 3px 0 0 #6366f1";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = "white";
+                          e.currentTarget.style.boxShadow = "none";
+                        }}
                       >
                         <td className="px-6 py-5 min-w-[260px]">
                           <div className="flex items-start gap-3">
@@ -1679,7 +1707,12 @@ export default function QuotationList() {
           </div>
 
           {!loading && quotations.length > 0 && (
-            <div className="border-t border-slate-100 bg-slate-50/70 px-5 py-4 sm:px-6">
+            <div
+              className="border-t border-indigo-100 px-6 py-4"
+              style={{
+                background: "linear-gradient(135deg, #eef2ff, #f8fafc)",
+              }}
+            >
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="text-sm text-slate-600">
                   Showing{" "}
@@ -1716,34 +1749,71 @@ export default function QuotationList() {
 /* ================= COMPONENTS ================= */
 
 function StatCard({ label, value, icon, color = "indigo", subtext }) {
-  const colorClasses = {
-    indigo: "from-indigo-500 to-indigo-600",
-    slate: "from-slate-500 to-slate-600",
-    blue: "from-blue-500 to-blue-600",
-    emerald: "from-emerald-500 to-emerald-600",
-    amber: "from-amber-500 to-amber-600",
+  const colorMap = {
+    indigo: {
+      from: "#6366f1",
+      to: "#4f46e5",
+      shadow: "rgba(99,102,241,0.30)",
+      bg: "#eef2ff",
+      text: "#4338ca",
+    },
+    slate: {
+      from: "#64748b",
+      to: "#475569",
+      shadow: "rgba(100,116,139,0.25)",
+      bg: "#f1f5f9",
+      text: "#334155",
+    },
+    blue: {
+      from: "#3b82f6",
+      to: "#2563eb",
+      shadow: "rgba(59,130,246,0.28)",
+      bg: "#eff6ff",
+      text: "#1d4ed8",
+    },
+    emerald: {
+      from: "#10b981",
+      to: "#059669",
+      shadow: "rgba(16,185,129,0.28)",
+      bg: "#ecfdf5",
+      text: "#065f46",
+    },
+    amber: {
+      from: "#f59e0b",
+      to: "#d97706",
+      shadow: "rgba(245,158,11,0.28)",
+      bg: "#fffbeb",
+      text: "#92400e",
+    },
   };
+  const c = colorMap[color];
 
   return (
-    <div className="group relative overflow-hidden rounded-[24px] border border-slate-200 bg-white/90 p-1 shadow-[0_8px_30px_rgba(15,23,42,0.05)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_38px_rgba(15,23,42,0.08)]">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.08),transparent_35%)] opacity-0 transition group-hover:opacity-100" />
-      <div className="relative flex flex-col gap-1">
-        <div className="flex items-start justify-between">
+    <div className="group relative rounded-[18px] border border-slate-100 bg-white px-4 py-3.5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md cursor-default flex items-center gap-3.5">
+      <div
+        className="rounded-xl p-2.5 text-white shadow-md flex-shrink-0"
+        style={{
+          background: `linear-gradient(135deg, ${c.from}, ${c.to})`,
+          boxShadow: `0 4px 12px ${c.shadow}`,
+        }}
+      >
+        {icon}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 truncate">
+          {label}
+        </div>
+        <div className="mt-0.5 text-xl font-black tracking-tight text-slate-900 truncate">
+          {value}
+        </div>
+        {subtext && (
           <div
-            className={`inline-flex rounded-2xl bg-gradient-to-br ${colorClasses[color]} p-3 text-white shadow-lg`}
+            className="text-[10px] font-semibold mt-0.5"
+            style={{ color: c.text }}
           >
-            {icon}
+            {subtext}
           </div>
-        </div>
-
-        <div>
-          <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
-            {label}
-          </div>
-          <div className="mt-1 text-2xl font-black tracking-tight text-slate-900">
-            {value}
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

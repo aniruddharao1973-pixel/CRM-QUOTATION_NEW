@@ -1044,7 +1044,18 @@ export default function ItemList() {
   const renderRows = (items, level = 0) =>
     items.map((item) => (
       <Fragment key={`${item.id}-${level}`}>
-        <tr className="group hover:bg-indigo-50/40 transition-all duration-200 border-b border-slate-100 last:border-0">
+        <tr
+          className="group border-b border-slate-50 transition-all duration-150"
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background =
+              "linear-gradient(90deg, #eef2ff 0%, #f8fafc 100%)";
+            e.currentTarget.style.boxShadow = "inset 3px 0 0 #6366f1";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "white";
+            e.currentTarget.style.boxShadow = "none";
+          }}
+        >
           <td className="p-4">
             <div
               className="flex items-start gap-3"
@@ -1210,22 +1221,34 @@ export default function ItemList() {
     ));
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/20">
-      <div className="max-w-[1800px] mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+    <div
+      className="min-h-screen"
+      style={{
+        background:
+          "linear-gradient(145deg, #f0f4ff 0%, #f8fafc 40%, #eef2ff 100%)",
+      }}
+    >
+      <div className="max-w-[1800px] mx-auto px-5 py-5 space-y-4">
         {/* ================= HEADER ================= */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-          <div>
-            <div className="flex items-center gap-2.5 mb-3">
-              <div className="p-2.5 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 shadow-lg shadow-indigo-500/30">
-                <Package className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                Inventory Management
-              </span>
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 rounded-[24px] border border-indigo-100 bg-white px-6 py-4 shadow-[0_8px_32px_rgba(99,102,241,0.10)]">
+          <div className="flex items-center gap-3">
+            <div
+              className="flex h-11 w-11 items-center justify-center rounded-2xl text-white flex-shrink-0"
+              style={{
+                background: "linear-gradient(135deg, #6366f1, #4f46e5)",
+                boxShadow: "0 6px 16px rgba(99,102,241,0.35)",
+              }}
+            >
+              <Package className="w-5 h-5" />
             </div>
-            <h1 className="text-4xl font-bold text-slate-900 mb-2 tracking-tight">
-              Item Master
-            </h1>
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
+                Inventory Management
+              </div>
+              <h1 className="text-2xl font-black tracking-tight text-slate-900">
+                Item Master
+              </h1>
+            </div>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3">
@@ -1292,7 +1315,7 @@ export default function ItemList() {
         </div>
 
         {/* ================= STATS ================= */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <StatCard
             icon={<Layers className="w-5 h-5" />}
             label="Total Items"
@@ -1317,9 +1340,17 @@ export default function ItemList() {
         </div>
 
         {/* ================= TABLE CARD ================= */}
-        <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg hover:shadow-xl transition-shadow overflow-hidden flex flex-col h-[600px]">
+        <div
+          className="bg-white rounded-[24px] border border-slate-200/80 shadow-[0_8px_32px_rgba(99,102,241,0.08)] overflow-hidden flex flex-col"
+          style={{ height: "calc(100vh - 280px)", minHeight: "480px" }}
+        >
           {/* TABLE HEADER */}
-          <div className="px-6 py-5 border-b-2 border-slate-100 bg-gradient-to-r from-slate-50 to-white">
+          <div
+            className="px-6 py-4 border-b border-indigo-100"
+            style={{
+              background: "linear-gradient(135deg, #eef2ff 0%, #f8fafc 100%)",
+            }}
+          >
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
                 <h2 className="font-bold text-slate-900 text-xl mb-1">
@@ -1365,33 +1396,39 @@ export default function ItemList() {
           {/* TABLE */}
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-slate-50/80 text-slate-700 border-b-2 border-slate-200">
-                <tr>
-                  <th className="text-left p-4 font-bold text-xs uppercase tracking-wider">
+              <thead
+                className="sticky top-0 z-10 backdrop-blur"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #eef2ff 0%, #f8fafc 100%)",
+                }}
+              >
+                <tr className="border-b border-indigo-100">
+                  <th className="text-left px-5 py-3.5 text-[10px] font-black uppercase tracking-[0.22em] text-indigo-400">
                     Item Details
                   </th>
-                  <th className="text-left p-4 font-bold text-xs uppercase tracking-wider">
+                  <th className="text-left px-5 py-3.5 text-[10px] font-black uppercase tracking-[0.22em] text-indigo-400">
                     SKU
                   </th>
-                  <th className="text-left p-4 font-bold text-xs uppercase tracking-wider">
+                  <th className="text-left px-5 py-3.5 text-[10px] font-black uppercase tracking-[0.22em] text-indigo-400">
                     Category
                   </th>
-                  <th className="text-left p-4 font-bold text-xs uppercase tracking-wider">
+                  <th className="text-left px-5 py-3.5 text-[10px] font-black uppercase tracking-[0.22em] text-indigo-400">
                     Make
                   </th>
-                  <th className="text-left p-4 font-bold text-xs uppercase tracking-wider">
+                  <th className="text-left px-5 py-3.5 text-[10px] font-black uppercase tracking-[0.22em] text-indigo-400">
                     Mfg Part No
                   </th>
-                  <th className="text-left p-4 font-bold text-xs uppercase tracking-wider">
+                  <th className="text-left px-5 py-3.5 text-[10px] font-black uppercase tracking-[0.22em] text-indigo-400">
                     UOM
                   </th>
-                  <th className="text-right p-4 font-bold text-xs uppercase tracking-wider">
+                  <th className="text-right px-5 py-3.5 text-[10px] font-black uppercase tracking-[0.22em] text-indigo-400">
                     Base Price
                   </th>
-                  <th className="text-right p-4 font-bold text-xs uppercase tracking-wider">
+                  <th className="text-right px-5 py-3.5 text-[10px] font-black uppercase tracking-[0.22em] text-indigo-400">
                     Total Price
                   </th>
-                  <th className="text-center p-4 font-bold text-xs uppercase tracking-wider">
+                  <th className="text-center px-5 py-3.5 text-[10px] font-black uppercase tracking-[0.22em] text-indigo-400">
                     Actions
                   </th>
                 </tr>
@@ -1475,7 +1512,12 @@ export default function ItemList() {
 
           {/* TABLE FOOTER */}
           {!loading && filtered.length > 0 && (
-            <div className="px-6 py-4 border-t-2 border-slate-100 bg-gradient-to-r from-slate-50 to-white">
+            <div
+              className="px-6 py-3.5 border-t border-indigo-100"
+              style={{
+                background: "linear-gradient(135deg, #eef2ff 0%, #f8fafc 100%)",
+              }}
+            >
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm">
                 <div className="text-slate-600">
                   Showing{" "}
@@ -1510,42 +1552,57 @@ export default function ItemList() {
 
 /* ================= STAT CARD ================= */
 function StatCard({ icon, label, value, color = "indigo", subtext }) {
-  const colorClasses = {
-    indigo: "from-indigo-500 to-indigo-600 shadow-indigo-500/30",
-    emerald: "from-emerald-500 to-emerald-600 shadow-emerald-500/30",
-    amber: "from-amber-500 to-amber-600 shadow-amber-500/30",
+  const colorMap = {
+    indigo: {
+      from: "#6366f1",
+      to: "#4f46e5",
+      shadow: "rgba(99,102,241,0.28)",
+      light: "#eef2ff",
+      text: "#4338ca",
+    },
+    emerald: {
+      from: "#10b981",
+      to: "#059669",
+      shadow: "rgba(16,185,129,0.28)",
+      light: "#ecfdf5",
+      text: "#065f46",
+    },
+    amber: {
+      from: "#f59e0b",
+      to: "#d97706",
+      shadow: "rgba(245,158,11,0.28)",
+      light: "#fffbeb",
+      text: "#92400e",
+    },
   };
+  const c = colorMap[color];
 
   return (
-    <div className="relative group">
-      <div className="absolute -inset-0.5 bg-gradient-to-r from-slate-200 to-slate-300 rounded-2xl opacity-0 group-hover:opacity-100 blur transition-opacity duration-500" />
-
-      <div className="relative rounded-2xl bg-white border-2 border-slate-200 shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden">
-        <div className="absolute top-0 right-0 w-32 h-32 opacity-5">
+    <div className="flex items-center gap-4 rounded-[18px] border border-slate-100 bg-white px-5 py-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+      <div
+        className="flex h-11 w-11 items-center justify-center rounded-2xl text-white flex-shrink-0"
+        style={{
+          background: `linear-gradient(135deg, ${c.from}, ${c.to})`,
+          boxShadow: `0 6px 16px ${c.shadow}`,
+        }}
+      >
+        {icon}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
+          {label}
+        </div>
+        <div className="mt-0.5 text-xl font-black tracking-tight text-slate-900 truncate">
+          {value}
+        </div>
+        {subtext && (
           <div
-            className={`w-full h-full bg-gradient-to-br ${colorClasses[color]} blur-2xl`}
-          />
-        </div>
-
-        <div className="relative p-6">
-          <div className="flex items-start justify-between mb-4">
-            <div
-              className={`p-3 rounded-xl bg-gradient-to-br ${colorClasses[color]} text-white shadow-lg ${colorClasses[color].split(" ")[1]}`}
-            >
-              {icon}
-            </div>
+            className="text-[10px] font-semibold mt-0.5"
+            style={{ color: c.text }}
+          >
+            {subtext}
           </div>
-
-          <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
-            {label}
-          </div>
-          <div className="text-2xl font-bold text-slate-900 mb-1">{value}</div>
-          {subtext && (
-            <div className="text-xs text-slate-600 pt-2 border-t border-slate-100 mt-2">
-              {subtext}
-            </div>
-          )}
-        </div>
+        )}
       </div>
     </div>
   );

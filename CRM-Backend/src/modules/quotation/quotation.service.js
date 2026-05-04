@@ -103,6 +103,11 @@ export const createQuotation = async (data) => {
 
       const price = Number(item.price ?? master.basePrice ?? 0);
       const discount = Number(item.discount || 0);
+      if (discount > 0 && !item.remarks?.trim()) {
+        throw new Error(
+          `Remarks required when discount is applied (Item: ${master.name})`,
+        );
+      }
       const lineTotal = Math.max(0, qty * price * (1 - discount / 100));
 
       // ✅ INCLUDE SUB-ITEMS IN TOTAL
@@ -138,7 +143,10 @@ export const createQuotation = async (data) => {
         uom: master.uom || null,
 
         // USER EDITABLE
-        remarks: item.remarks || master.defaultRemarks || null,
+        remarks:
+          item.remarks !== undefined
+            ? item.remarks
+            : master.defaultRemarks || null,
 
         quantity: qty,
         price,
@@ -201,6 +209,7 @@ export const createQuotation = async (data) => {
                   uom: subMaster?.uom || null,
 
                   description: sub.description || null,
+                  remarks: sub.remarks || null,
                   quantity: qty,
                   price,
                   discount,
@@ -343,6 +352,12 @@ export const updateQuotation = async (id, data) => {
       const price = Number(item.price ?? master.basePrice ?? 0);
       const discount = Number(item.discount || 0);
 
+      if (discount > 0 && !item.remarks?.trim()) {
+        throw new Error(
+          `Remarks required when discount is applied (Item: ${master.name})`,
+        );
+      }
+
       const lineTotal = Math.max(0, qty * price * (1 - discount / 100));
 
       let subTotalSum = 0;
@@ -369,7 +384,10 @@ export const updateQuotation = async (id, data) => {
           make: master.make || null,
           mfgPartNo: master.mfgPartNo || null,
           uom: master.uom || null,
-          remarks: item.remarks || master.defaultRemarks || null,
+          remarks:
+            item.remarks !== undefined
+              ? item.remarks
+              : master.defaultRemarks || null,
 
           quantity: qty,
           price,
@@ -394,6 +412,7 @@ export const updateQuotation = async (id, data) => {
                   mfgPartNo: subMaster?.mfgPartNo || null,
                   uom: subMaster?.uom || null,
                   description: sub.description || null,
+                  remarks: sub.remarks || null,
                   quantity: sQty,
                   price: sPrice,
                   discount: sDiscount,

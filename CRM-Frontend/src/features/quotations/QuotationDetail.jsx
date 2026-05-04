@@ -1644,6 +1644,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import QuotationPdfDocument from "./pdf/QuotationPdfDocument";
 import QuotationPdfV2 from "./pdf/QuotationPdfDocumentV2";
+import QuotationPdfV3 from "./pdf/QuotationPdfDocumentV3";
 import {
   Download,
   Pencil,
@@ -1843,86 +1844,182 @@ export default function QuotationDetail() {
           {/* LEFT COLUMN */}
           <div className="space-y-6">
             {/* OVERVIEW CARD */}
-            <div className="rounded-[28px] border border-slate-200 bg-white shadow-[0_14px_45px_rgba(15,23,42,0.06)] overflow-visible">
-              <div className="border-b border-slate-100 bg-gradient-to-br from-indigo-50/50 via-white to-slate-50/30 px-6 py-6">
+            <div
+              className="rounded-[28px] border-0 shadow-[0_20px_60px_rgba(15,23,42,0.18)]"
+              style={{
+                background:
+                  "linear-gradient(135deg, #0f172a 0%, #1e293b 40%, #0f2027 100%)",
+              }}
+            >
+              <div
+                className="border-b border-slate-200/60 px-6 py-5 rounded-t-[28px]"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #0f172a 0%, #1e293b 40%, #0f2027 100%)",
+                }}
+              >
                 <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
                   {/* LEFT SIDE */}
                   <div className="flex items-center gap-4">
-                    {/* ✅ BACK BUTTON */}
+                    {/* BACK BUTTON */}
                     <button
                       onClick={() => navigate(-1)}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-500 shadow-sm transition hover:border-indigo-300 hover:text-indigo-600"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white/70 backdrop-blur-sm transition hover:bg-white/20 hover:text-white"
                     >
                       <ChevronLeft className="h-3.5 w-3.5" />
                       Back
                     </button>
 
                     {/* ICON */}
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-[0_6px_16px_rgba(99,102,241,0.28)]">
-                      <FileText className="h-5 w-5" />
+                    <div className="relative flex-shrink-0">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-400 to-violet-500 text-white shadow-[0_0_24px_rgba(139,92,246,0.45)]">
+                        <FileText className="h-5 w-5" />
+                      </div>
+                      {/* glow ring */}
+                      <div className="absolute inset-0 rounded-2xl ring-2 ring-violet-400/30" />
                     </div>
 
                     {/* TITLE + META */}
                     <div>
-                      <h2 className="text-2xl font-black tracking-tight text-slate-900">
-                        {data.quotationNo}
+                      <h2 className="text-xl font-black tracking-tight text-white drop-shadow-sm lg:text-2xl">
+                        {data.deal?.dealName || "—"}
                       </h2>
 
-                      <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-slate-600">
-                        <span>{data.account?.accountName || "-"}</span>
+                      <div className="mt-2 flex flex-wrap items-center gap-2.5">
+                        {/* QUOTATION NO */}
+                        <div className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-bold text-white/80 backdrop-blur-sm">
+                          <Hash className="h-3 w-3 text-indigo-300" />
+                          {data.quotationNo}
+                        </div>
 
-                        <span className="h-1 w-1 rounded-full bg-slate-300" />
-
-                        <span
-                          className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] ${statusColor}`}
+                        {/* STATUS BADGE */}
+                        <div
+                          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-black uppercase tracking-[0.18em] backdrop-blur-sm ${
+                            statusUpper === "APPROVED"
+                              ? "border-emerald-400/40 bg-emerald-400/15 text-emerald-300"
+                              : statusUpper === "SUBMITTED"
+                                ? "border-amber-400/40 bg-amber-400/15 text-amber-300"
+                                : statusUpper === "REJECTED"
+                                  ? "border-rose-400/40 bg-rose-400/15 text-rose-300"
+                                  : "border-slate-400/30 bg-white/10 text-slate-300"
+                          }`}
                         >
-                          <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                          <span
+                            className={`h-1.5 w-1.5 rounded-full animate-pulse ${
+                              statusUpper === "APPROVED"
+                                ? "bg-emerald-400"
+                                : statusUpper === "SUBMITTED"
+                                  ? "bg-amber-400"
+                                  : statusUpper === "REJECTED"
+                                    ? "bg-rose-400"
+                                    : "bg-slate-400"
+                            }`}
+                          />
                           {status}
-                        </span>
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* RIGHT SIDE */}
-                  <div className="flex items-center gap-3 flex-wrap">
-                    {/* ADMIN / SALES ACTIONS */}
+                  {/* RIGHT SIDE — ACTION BUTTONS */}
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    {/* SALES REP: Submit */}
                     {isSalesRep && statusUpper === "DRAFT" && (
                       <button
                         onClick={handleSubmit}
                         disabled={actionLoading}
-                        className="h-10 px-4 rounded-xl bg-blue-600 text-white text-sm font-bold"
+                        className="inline-flex items-center gap-2 h-10 px-5 rounded-xl text-sm font-black text-white transition-all duration-200 disabled:opacity-50"
+                        style={{
+                          background:
+                            "linear-gradient(135deg, #2563eb, #1d4ed8)",
+                          boxShadow: "0 4px 16px rgba(37,99,235,0.45)",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.boxShadow =
+                            "0 6px 22px rgba(37,99,235,0.65)")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.boxShadow =
+                            "0 4px 16px rgba(37,99,235,0.45)")
+                        }
                       >
+                        <FileCheck className="h-4 w-4" />
                         Submit
                       </button>
                     )}
 
+                    {/* SALES REP: Resubmit */}
                     {isSalesRep && statusUpper === "REJECTED" && (
                       <button
                         onClick={() => navigate(`/quotations/${id}/edit`)}
-                        className="h-10 px-4 rounded-xl bg-indigo-600 text-white text-sm font-bold"
+                        className="inline-flex items-center gap-2 h-10 px-5 rounded-xl text-sm font-black text-white transition-all duration-200"
+                        style={{
+                          background:
+                            "linear-gradient(135deg, #6366f1, #4f46e5)",
+                          boxShadow: "0 4px 16px rgba(99,102,241,0.45)",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.boxShadow =
+                            "0 6px 22px rgba(99,102,241,0.65)")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.boxShadow =
+                            "0 4px 16px rgba(99,102,241,0.45)")
+                        }
                       >
+                        <RefreshCw className="h-4 w-4" />
                         Resubmit
                       </button>
                     )}
 
+                    {/* ADMIN: Approve */}
                     {isAdmin && statusUpper === "SUBMITTED" && (
-                      <>
-                        <button
-                          onClick={handleApprove}
-                          disabled={actionLoading}
-                          className="h-10 px-4 rounded-xl bg-emerald-600 text-white text-sm font-bold"
-                        >
-                          Approve
-                        </button>
+                      <button
+                        onClick={handleApprove}
+                        disabled={actionLoading}
+                        className="inline-flex items-center gap-2 h-10 px-5 rounded-xl text-sm font-black text-white transition-all duration-200 disabled:opacity-50"
+                        style={{
+                          background:
+                            "linear-gradient(135deg, #10b981, #059669)",
+                          boxShadow: "0 4px 16px rgba(16,185,129,0.40)",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.boxShadow =
+                            "0 6px 22px rgba(16,185,129,0.60)")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.boxShadow =
+                            "0 4px 16px rgba(16,185,129,0.40)")
+                        }
+                      >
+                        <FileCheck className="h-4 w-4" />
+                        Approve
+                      </button>
+                    )}
 
-                        <button
-                          onClick={() => setShowRejectModal(true)}
-                          disabled={actionLoading}
-                          className="h-10 px-4 rounded-xl bg-rose-600 text-white text-sm font-bold"
-                        >
-                          Reject
-                        </button>
-                      </>
+                    {/* ADMIN: Reject */}
+                    {isAdmin && statusUpper === "SUBMITTED" && (
+                      <button
+                        onClick={() => setShowRejectModal(true)}
+                        disabled={actionLoading}
+                        className="inline-flex items-center gap-2 h-10 px-5 rounded-xl text-sm font-black text-white transition-all duration-200 disabled:opacity-50"
+                        style={{
+                          background:
+                            "linear-gradient(135deg, #f43f5e, #e11d48)",
+                          boxShadow: "0 4px 16px rgba(244,63,94,0.40)",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.boxShadow =
+                            "0 6px 22px rgba(244,63,94,0.60)")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.boxShadow =
+                            "0 4px 16px rgba(244,63,94,0.40)")
+                        }
+                      >
+                        <MessageSquare className="h-4 w-4" />
+                        Reject
+                      </button>
                     )}
 
                     {/* EDIT */}
@@ -1930,8 +2027,22 @@ export default function QuotationDetail() {
                       statusUpper === "REJECTED") && (
                       <button
                         onClick={() => navigate(`/quotations/${id}/edit`)}
-                        className="h-10 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-sm font-bold"
+                        className="inline-flex items-center gap-2 h-10 px-5 rounded-xl text-sm font-black text-white transition-all duration-200"
+                        style={{
+                          background:
+                            "linear-gradient(135deg, #818cf8, #6366f1, #4f46e5)",
+                          boxShadow: "0 4px 16px rgba(99,102,241,0.40)",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.boxShadow =
+                            "0 6px 22px rgba(99,102,241,0.65)")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.boxShadow =
+                            "0 4px 16px rgba(99,102,241,0.40)")
+                        }
                       >
+                        <Pencil className="h-4 w-4" />
                         Edit
                       </button>
                     )}
@@ -1939,21 +2050,27 @@ export default function QuotationDetail() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 border-b border-slate-100 bg-white px-6 py-4 sm:grid-cols-4">
+              <div className="grid grid-cols-2 gap-3 px-6 py-5 sm:grid-cols-4 bg-white border-t-2 border-slate-200 shadow-inner rounded-b-[28px]">
                 {isAdmin && (
                   <div className="relative group h-full">
-                    <div className="h-full rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md flex items-center">
+                    <div className="h-full rounded-2xl border border-slate-100 bg-white p-4 flex items-center shadow-sm transition-all duration-200 hover:shadow-md hover:border-slate-200">
                       {/* CARD HEADER */}
                       <div className="flex items-center gap-3">
-                        <div className="rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 p-2.5 text-white shadow-sm">
+                        <div
+                          className="rounded-xl p-2.5 text-white flex-shrink-0"
+                          style={{
+                            background:
+                              "linear-gradient(135deg, #818cf8, #6366f1)",
+                            boxShadow: "0 4px 14px rgba(99,102,241,0.4)",
+                          }}
+                        >
                           <Download className="h-4 w-4" />
                         </div>
-
                         <div>
-                          <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                          <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
                             Export
                           </div>
-                          <div className="mt-1 text-sm font-bold text-slate-900">
+                          <div className="text-sm font-black text-slate-900">
                             Proposal PDF
                           </div>
                         </div>
@@ -2048,27 +2165,105 @@ export default function QuotationDetail() {
                           </>
                         )}
                       </PDFDownloadLink>
+                      <div className="h-px bg-slate-100 mx-4" />
+
+                      {/* V3 */}
+                      <PDFDownloadLink
+                        document={
+                          data ? (
+                            <QuotationPdfV3
+                              quotation={{
+                                ...data,
+                                items: sanitizeItems(data.items),
+                              }}
+                              totals={totals || {}}
+                            />
+                          ) : null
+                        }
+                        fileName={`${data?.quotationNo || "quotation"}-COMMERCIAL_V3.pdf`}
+                        className="flex items-start gap-3 px-5 py-4 hover:bg-indigo-50/60 transition"
+                      >
+                        {({ loading }) => (
+                          <>
+                            <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl bg-violet-100 text-violet-600">
+                              🚀
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-slate-900">
+                                  Commercial Proposal — V3
+                                </span>
+                                <span className="text-[11px] text-slate-400">
+                                  {loading ? "Generating..." : "Download"}
+                                </span>
+                              </div>
+                              <p className="text-xs text-slate-500 mt-1">
+                                Advanced layout (latest version)
+                              </p>
+                            </div>
+                          </>
+                        )}
+                      </PDFDownloadLink>
                     </div>
                   </div>
                 )}
-                <QuickStat
-                  icon={<TrendingUp className="h-4 w-4" />}
-                  label="Deal"
-                  value={data.deal?.dealName || "-"}
-                  color="emerald"
-                />
-                <QuickStat
-                  icon={<Building2 className="h-4 w-4" />}
-                  label="Account"
-                  value={data.account?.accountName || "-"}
-                  color="rose"
-                />
-                <QuickStat
-                  icon={<FileCheck className="h-4 w-4" />}
-                  label="Status"
-                  value={status}
-                  color="indigo"
-                />
+                {[
+                  {
+                    icon: <DollarSign className="h-4 w-4" />,
+                    label: "Total Value",
+                    value: formatINR(data.grandTotal),
+                    from: "#10b981",
+                    to: "#059669",
+                    shadow: "rgba(16,185,129,0.35)",
+                  },
+                  {
+                    icon: <Building2 className="h-4 w-4" />,
+                    label: "Account",
+                    value: data.account?.accountName || "—",
+                    from: "#f43f5e",
+                    to: "#e11d48",
+                    shadow: "rgba(244,63,94,0.35)",
+                  },
+                  {
+                    icon: <FileCheck className="h-4 w-4" />,
+                    label: "Status",
+                    value: status,
+                    from: "#818cf8",
+                    to: "#6366f1",
+                    shadow: "rgba(99,102,241,0.35)",
+                  },
+                ].map(({ icon, label, value, from, to, shadow }) => (
+                  <div
+                    key={label}
+                    className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md hover:border-slate-200"
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.transform = "translateY(-1px)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.transform = "translateY(0)")
+                    }
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="rounded-xl p-2.5 text-white shadow-lg flex-shrink-0"
+                        style={{
+                          background: `linear-gradient(135deg, ${from}, ${to})`,
+                          boxShadow: `0 4px 14px ${shadow}`,
+                        }}
+                      >
+                        {icon}
+                      </div>
+                      <div>
+                        <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                          {label}
+                        </div>
+                        <div className="mt-1 text-sm font-black text-slate-900 leading-tight">
+                          {value}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -2107,299 +2302,380 @@ export default function QuotationDetail() {
               </div>
 
               {/* TABLE CONTAINER */}
-              <div className="max-h-[400px] overflow-auto sm:max-h-[450px] lg:max-h-[520px]">
-                <table className="w-full table-fixed text-sm">
-                  {/* THEAD */}
-                  <thead className="sticky top-0 z-10 border-b-2 border-slate-200 bg-gradient-to-br from-slate-50 to-slate-100 backdrop-blur-sm">
-                    <tr>
-                      {[
-                        { label: "SKU", w: "w-[10%]", align: "text-left" },
-                        {
-                          label: "Description",
-                          w: "w-[28%]",
-                          align: "text-left",
-                        },
-                        { label: "Category", w: "w-[12%]", align: "text-left" },
-                        { label: "Make", w: "w-[10%]", align: "text-left" },
-                        { label: "Mfg PN", w: "w-[12%]", align: "text-left" },
-                        { label: "UOM", w: "w-[6%]", align: "text-left" },
-                        { label: "Qty", w: "w-[6%]", align: "text-right" },
-                        { label: "Price", w: "w-[8%]", align: "text-right" },
-                        { label: "Discount", w: "w-[8%]", align: "text-right" },
-                        { label: "Total", w: "w-[10%]", align: "text-right" },
-                        { label: "Remarks", w: "w-[10%]", align: "text-left" },
-                      ].map(({ label, w, align }) => (
-                        <th
-                          key={label}
-                          className={`px-5 py-4 ${align} ${w} text-[10px] font-black uppercase tracking-[0.2em] text-slate-500`}
-                        >
-                          {label}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
+              <div className="relative">
+                {/* Custom scrollbar wrapper */}
+                <div
+                  className="max-h-[400px] overflow-auto sm:max-h-[450px] lg:max-h-[560px]"
+                  style={{
+                    scrollbarWidth: "thin",
+                    scrollbarColor: "#10b981 #f1f5f9",
+                  }}
+                >
+                  <table
+                    className="w-full text-sm"
+                    style={{ minWidth: "1100px" }}
+                  >
+                    {/* THEAD */}
+                    <thead className="sticky top-0 z-10">
+                      <tr className="bg-slate-900">
+                        {[
+                          { label: "SKU", w: "120px", align: "text-left" },
+                          {
+                            label: "Description",
+                            w: "260px",
+                            align: "text-left",
+                          },
+                          { label: "Category", w: "150px", align: "text-left" },
+                          { label: "Make", w: "110px", align: "text-left" },
+                          { label: "Mfg PN", w: "120px", align: "text-left" },
+                          { label: "UOM", w: "70px", align: "text-left" },
+                          { label: "Qty", w: "60px", align: "text-right" },
+                          { label: "Price", w: "110px", align: "text-right" },
+                          { label: "Discount", w: "90px", align: "text-right" },
+                          { label: "Total", w: "120px", align: "text-right" },
+                          { label: "Remarks", w: "110px", align: "text-left" },
+                        ].map(({ label, w, align }, i) => (
+                          <th
+                            key={label}
+                            style={{ minWidth: w }}
+                            className={`px-5 py-4 ${align} text-[10px] font-black uppercase tracking-[0.22em] text-slate-400 border-b border-slate-700/60 ${
+                              i === 0 ? "pl-6" : ""
+                            }`}
+                          >
+                            {label}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
 
-                  {/* TBODY */}
-                  <tbody className="divide-y divide-slate-100">
-                    {(data.items || []).map((item) => (
-                      <Fragment key={item.id}>
-                        {/* PARENT ROW */}
-                        <tr className="group bg-white transition-all duration-200 hover:bg-emerald-50/30">
-                          {/* SKU */}
-                          <td className="px-5 py-4 align-top">
-                            <div className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 font-mono text-[11px] font-bold text-slate-700 shadow-sm">
-                              <Tag className="h-3 w-3 text-slate-400" />
-                              {item.sku || "-"}
-                            </div>
-                          </td>
-
-                          {/* DESCRIPTION */}
-                          <td className="px-5 py-4 align-top">
-                            <div className="text-justify text-sm font-medium leading-relaxed text-slate-900">
-                              {item.description || "-"}
-                            </div>
-                          </td>
-
-                          {/* CATEGORY */}
-                          <td className="px-5 py-4 align-top">
-                            {item.category ? (
-                              <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-br from-emerald-100 to-teal-100 px-3 py-1.5 text-xs font-semibold text-emerald-800 shadow-sm">
-                                <Layers className="h-3 w-3" />
-                                {item.category}
-                              </span>
-                            ) : (
-                              <span className="text-xs text-slate-400">-</span>
-                            )}
-                          </td>
-
-                          {/* MAKE */}
-                          <td className="px-5 py-4 align-top font-medium text-slate-700">
-                            {item.make || "-"}
-                          </td>
-
-                          {/* MFG PN */}
-                          <td className="px-5 py-4 align-top font-medium text-slate-700">
-                            {item.mfgPartNo || "-"}
-                          </td>
-
-                          {/* UOM */}
-                          <td className="px-5 py-4 align-top font-medium text-slate-700">
-                            {item.uom || "-"}
-                          </td>
-
-                          {/* QTY */}
-                          <td className="px-5 py-4 align-top text-right font-bold text-slate-900">
-                            {item.quantity ?? "-"}
-                          </td>
-
-                          {/* PRICE */}
-                          <td className="px-5 py-4 align-top text-right font-semibold text-slate-700">
-                            {item.price ? formatINR(item.price) : "-"}
-                          </td>
-
-                          {/* DISCOUNT */}
-                          <td className="px-5 py-4 align-top text-right">
-                            {item.discount > 0 ? (
-                              <span className="inline-flex items-center gap-1 rounded-md bg-rose-50 px-2 py-1 text-xs font-bold text-rose-600">
-                                {item.discount}%
-                              </span>
-                            ) : (
-                              <span className="text-xs text-slate-400">-</span>
-                            )}
-                          </td>
-
-                          {/* TOTAL */}
-                          <td className="px-5 py-4 align-top text-right">
-                            <div className="inline-flex rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 px-3.5 py-2 text-sm font-black text-emerald-800 shadow-sm">
-                              {formatINR(
-                                Number(item.quantity || 1) *
-                                  Number(item.price || 0) *
-                                  (1 - Number(item.discount || 0) / 100),
-                              )}
-                            </div>
-                          </td>
-
-                          {/* REMARKS */}
-                          <td className="px-5 py-4 align-top text-sm text-slate-600">
-                            <div className="max-w-[180px] truncate">
-                              {item.remarks || "-"}
-                            </div>
-                          </td>
-                        </tr>
-
-                        {/* SUB ITEMS */}
-                        {item.subItems?.map((sub) => (
+                    {/* TBODY */}
+                    <tbody>
+                      {(data.items || []).map((item, idx) => (
+                        <Fragment key={item.id}>
+                          {/* PARENT ROW */}
                           <tr
-                            key={sub.id}
-                            className="group bg-slate-50/50 transition-all duration-200 hover:bg-emerald-50/20"
+                            className="group relative border-b border-slate-100 transition-all duration-200"
+                            style={{ background: "white" }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background =
+                                "linear-gradient(90deg, #ecfdf5 0%, #f0fdfa 60%, #f8fafc 100%)";
+                              e.currentTarget.style.boxShadow =
+                                "inset 3px 0 0 #10b981, 0 2px 12px rgba(16,185,129,0.08)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = "white";
+                              e.currentTarget.style.boxShadow = "none";
+                            }}
                           >
                             {/* SKU */}
-                            <td className="px-5 py-4 pl-10 align-top font-mono text-xs text-slate-500">
-                              ↳ {sub.sku || "-"}
+                            <td className="px-5 py-4 pl-6 align-top">
+                              <div className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 px-2.5 py-1.5 font-mono text-[11px] font-black text-emerald-800 shadow-sm">
+                                <Tag className="h-3 w-3 text-emerald-500 flex-shrink-0" />
+                                <span className="truncate max-w-[70px]">
+                                  {item.sku || "—"}
+                                </span>
+                              </div>
                             </td>
 
                             {/* DESCRIPTION */}
                             <td className="px-5 py-4 align-top">
-                              <div className="text-justify text-sm leading-relaxed text-slate-800">
-                                {sub.name || "-"}
+                              <div className="text-sm font-semibold leading-snug text-slate-900 pr-2">
+                                {item.description || "—"}
                               </div>
                             </td>
 
                             {/* CATEGORY */}
                             <td className="px-5 py-4 align-top">
-                              {sub.category ? (
-                                <span className="inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
-                                  {sub.category}
+                              {item.category ? (
+                                <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 px-3 py-1.5 text-[11px] font-bold text-white shadow-md shadow-emerald-500/25 whitespace-nowrap">
+                                  <Layers className="h-3 w-3 flex-shrink-0" />
+                                  {item.category}
                                 </span>
                               ) : (
-                                <span className="text-xs text-slate-400">
-                                  -
+                                <span className="text-slate-300 text-sm">
+                                  —
                                 </span>
                               )}
                             </td>
 
                             {/* MAKE */}
-                            <td className="px-5 py-4 align-top text-sm text-slate-700">
-                              {sub.make || "-"}
+                            <td className="px-5 py-4 align-top">
+                              <span className="text-sm font-semibold text-slate-700">
+                                {item.make || (
+                                  <span className="text-slate-300">—</span>
+                                )}
+                              </span>
                             </td>
 
                             {/* MFG PN */}
-                            <td className="px-5 py-4 align-top text-sm text-slate-700">
-                              {sub.mfgPartNo || "-"}
+                            <td className="px-5 py-4 align-top">
+                              <span className="font-mono text-xs font-semibold text-slate-600 bg-slate-100 px-2 py-1 rounded-md">
+                                {item.mfgPartNo || (
+                                  <span className="text-slate-400 bg-transparent">
+                                    —
+                                  </span>
+                                )}
+                              </span>
                             </td>
 
                             {/* UOM */}
-                            <td className="px-5 py-4 align-top text-sm text-slate-700">
-                              {sub.uom || "-"}
+                            <td className="px-5 py-4 align-top text-sm font-medium text-slate-500">
+                              {item.uom || "—"}
                             </td>
 
                             {/* QTY */}
-                            <td className="px-5 py-4 align-top text-right font-semibold text-slate-800">
-                              {sub.quantity}
+                            <td className="px-5 py-4 align-top text-right">
+                              <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 text-sm font-black text-slate-800 ml-auto">
+                                {item.quantity ?? "—"}
+                              </span>
                             </td>
 
                             {/* PRICE */}
-                            <td className="px-5 py-4 align-top text-right font-semibold text-slate-700">
-                              {formatINR(sub.price)}
+                            <td className="px-5 py-4 align-top text-right text-sm font-semibold text-slate-700">
+                              {item.price ? formatINR(item.price) : "—"}
                             </td>
 
                             {/* DISCOUNT */}
                             <td className="px-5 py-4 align-top text-right">
-                              {sub.discount > 0 ? (
-                                <span className="inline-flex rounded-md bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-600">
-                                  {sub.discount}%
+                              {item.discount > 0 ? (
+                                <span className="inline-flex items-center gap-0.5 rounded-full bg-rose-500 px-2.5 py-1 text-[11px] font-black text-white shadow-sm shadow-rose-400/40">
+                                  −{item.discount}%
                                 </span>
                               ) : (
-                                <span className="text-xs text-slate-400">
-                                  -
-                                </span>
+                                <span className="text-slate-300">—</span>
                               )}
                             </td>
 
                             {/* TOTAL */}
-                            <td className="px-5 py-4 align-top text-right font-bold text-slate-900">
-                              {formatINR(sub.lineTotal)}
+                            <td className="px-5 py-4 align-top text-right">
+                              <div className="inline-flex items-center rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 px-3.5 py-2 text-sm font-black text-white shadow-lg shadow-emerald-500/30">
+                                {formatINR(
+                                  Number(item.quantity || 1) *
+                                    Number(item.price || 0) *
+                                    (1 - Number(item.discount || 0) / 100),
+                                )}
+                              </div>
                             </td>
 
                             {/* REMARKS */}
-                            <td className="px-5 py-4 align-top text-xs text-slate-400">
-                              -
+                            <td className="px-5 py-4 align-top">
+                              <span className="text-xs font-medium text-slate-500 max-w-[100px] block truncate">
+                                {item.remarks || (
+                                  <span className="text-slate-300">—</span>
+                                )}
+                              </span>
                             </td>
                           </tr>
-                        ))}
-                      </Fragment>
-                    ))}
-                  </tbody>
 
-                  {/* TFOOT */}
-                  <tfoot className="border-t-2 border-slate-200 bg-gradient-to-br from-slate-50 to-white">
-                    {/* SUBTOTAL */}
-                    <tr className="border-b border-slate-100">
-                      <td
-                        colSpan={9}
-                        className="px-5 py-4 text-right text-sm font-semibold uppercase tracking-wide text-slate-600"
-                      >
-                        Subtotal
-                      </td>
-                      <td className="px-5 py-4 text-right text-base font-bold text-slate-900">
-                        {formatINR(totals.subtotal)}
-                      </td>
-                      <td />
-                    </tr>
+                          {/* SUB ITEMS */}
+                          {(item.selectedSubItems?.length
+                            ? item.selectedSubItems
+                            : item.subItems
+                          )?.map((sub, subIdx) => (
+                            <tr
+                              key={sub.id}
+                              className="border-b border-slate-50 transition-all duration-200"
+                              style={{ background: "#fafafa" }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.background =
+                                  "linear-gradient(90deg, #f0fdf4 0%, #f8fffe 60%, #fafafa 100%)";
+                                e.currentTarget.style.boxShadow =
+                                  "inset 3px 0 0 #6ee7b7";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.background = "#fafafa";
+                                e.currentTarget.style.boxShadow = "none";
+                              }}
+                            >
+                              {/* SKU */}
+                              <td className="px-5 py-3.5 pl-6 align-top">
+                                <div className="flex items-center gap-2">
+                                  <div className="flex flex-col items-center">
+                                    <div className="w-px h-2 bg-slate-300" />
+                                    <div className="w-3 h-px bg-slate-300" />
+                                  </div>
+                                  <span className="font-mono text-[11px] font-semibold text-slate-400">
+                                    {sub.sku || "—"}
+                                  </span>
+                                </div>
+                              </td>
 
-                    {/* DISCOUNT */}
-                    {totals.discount > 0 && (
-                      <tr className="border-b border-slate-100">
+                              {/* DESCRIPTION */}
+                              <td className="px-5 py-3.5 align-top">
+                                <div className="text-sm leading-snug text-slate-600 pr-2">
+                                  {sub.name || "—"}
+                                </div>
+                              </td>
+
+                              {/* CATEGORY */}
+                              <td className="px-5 py-3.5 align-top">
+                                {sub.category ? (
+                                  <span className="inline-flex rounded-full border border-teal-200 bg-teal-50 px-2.5 py-1 text-[11px] font-semibold text-teal-700 whitespace-nowrap">
+                                    {sub.category}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-300">—</span>
+                                )}
+                              </td>
+
+                              {/* MAKE */}
+                              <td className="px-5 py-3.5 align-top text-sm text-slate-500">
+                                {sub.make || (
+                                  <span className="text-slate-300">—</span>
+                                )}
+                              </td>
+
+                              {/* MFG PN */}
+                              <td className="px-5 py-3.5 align-top">
+                                <span className="font-mono text-xs text-slate-500">
+                                  {sub.mfgPartNo || (
+                                    <span className="text-slate-300">—</span>
+                                  )}
+                                </span>
+                              </td>
+
+                              {/* UOM */}
+                              <td className="px-5 py-3.5 align-top text-sm text-slate-400">
+                                {sub.uom || "—"}
+                              </td>
+
+                              {/* QTY */}
+                              <td className="px-5 py-3.5 align-top text-right text-sm font-semibold text-slate-600">
+                                {sub.quantity}
+                              </td>
+
+                              {/* PRICE */}
+                              <td className="px-5 py-3.5 align-top text-right text-sm font-semibold text-slate-600">
+                                {formatINR(sub.price)}
+                              </td>
+
+                              {/* DISCOUNT */}
+                              <td className="px-5 py-3.5 align-top text-right">
+                                {sub.discount > 0 ? (
+                                  <span className="inline-flex rounded-full border border-rose-200 bg-rose-50 px-2 py-1 text-[11px] font-semibold text-rose-600">
+                                    −{sub.discount}%
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-300">—</span>
+                                )}
+                              </td>
+
+                              {/* TOTAL */}
+                              <td className="px-5 py-3.5 align-top text-right text-sm font-bold text-slate-700">
+                                {formatINR(sub.lineTotal)}
+                              </td>
+
+                              {/* REMARKS */}
+                              <td className="px-5 py-3.5 align-top text-xs text-slate-500">
+                                {sub.remarks?.trim() ? (
+                                  sub.remarks
+                                ) : (
+                                  <span className="text-slate-300">—</span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </Fragment>
+                      ))}
+                    </tbody>
+
+                    {/* TFOOT */}
+                    <tfoot>
+                      {/* SUBTOTAL */}
+                      <tr className="border-t-2 border-slate-200 bg-white">
                         <td
                           colSpan={9}
-                          className="px-5 py-3 text-right text-sm font-medium uppercase tracking-wide text-rose-600"
+                          className="px-6 py-4 text-right text-xs font-bold uppercase tracking-[0.22em] text-slate-400"
                         >
-                          Discount
+                          Subtotal
                         </td>
-                        <td className="px-5 py-3 text-right text-sm font-bold text-rose-700">
-                          -{formatINR(totals.discount)}
+                        <td className="px-5 py-4 text-right text-base font-black text-slate-800">
+                          {formatINR(totals.subtotal)}
                         </td>
                         <td />
                       </tr>
-                    )}
 
-                    {/* TAXABLE VALUE */}
-                    <tr className="border-b border-slate-100">
-                      <td
-                        colSpan={9}
-                        className="px-5 py-3 text-right text-sm font-medium uppercase tracking-wide text-slate-600"
-                      >
-                        Taxable Value
-                      </td>
-                      <td className="px-5 py-3 text-right text-sm font-bold text-slate-900">
-                        {formatINR(totals.taxable)}
-                      </td>
-                      <td />
-                    </tr>
+                      {/* DISCOUNT */}
+                      {totals.discount > 0 && (
+                        <tr className="bg-rose-50/40 border-t border-slate-100">
+                          <td
+                            colSpan={9}
+                            className="px-6 py-3 text-right text-xs font-bold uppercase tracking-[0.22em] text-rose-500"
+                          >
+                            Discount
+                          </td>
+                          <td className="px-5 py-3 text-right text-sm font-black text-rose-600">
+                            −{formatINR(totals.discount)}
+                          </td>
+                          <td />
+                        </tr>
+                      )}
 
-                    {/* CGST */}
-                    <tr className="border-b border-slate-50 bg-slate-50/40">
-                      <td
-                        colSpan={9}
-                        className="px-5 py-2.5 text-right text-xs font-medium uppercase tracking-wider text-slate-500"
-                      >
-                        CGST (9%)
-                      </td>
-                      <td className="px-5 py-2.5 text-right text-xs font-bold text-slate-700">
-                        {formatINR(totals.cgst)}
-                      </td>
-                      <td />
-                    </tr>
+                      {/* TAXABLE VALUE */}
+                      <tr className="border-t border-slate-100 bg-white">
+                        <td
+                          colSpan={9}
+                          className="px-6 py-3 text-right text-xs font-bold uppercase tracking-[0.22em] text-slate-400"
+                        >
+                          Taxable Value
+                        </td>
+                        <td className="px-5 py-3 text-right text-sm font-black text-slate-800">
+                          {formatINR(totals.taxable)}
+                        </td>
+                        <td />
+                      </tr>
 
-                    {/* SGST */}
-                    <tr className="border-b border-slate-100 bg-slate-50/40">
-                      <td
-                        colSpan={9}
-                        className="px-5 py-2.5 text-right text-xs font-medium uppercase tracking-wider text-slate-500"
-                      >
-                        SGST (9%)
-                      </td>
-                      <td className="px-5 py-2.5 text-right text-xs font-bold text-slate-700">
-                        {formatINR(totals.sgst)}
-                      </td>
-                      <td />
-                    </tr>
+                      {/* CGST */}
+                      <tr className="border-t border-slate-100 bg-slate-50/60">
+                        <td
+                          colSpan={9}
+                          className="px-6 py-2.5 text-right text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400"
+                        >
+                          CGST (9%)
+                        </td>
+                        <td className="px-5 py-2.5 text-right text-xs font-bold text-slate-600">
+                          {formatINR(totals.cgst)}
+                        </td>
+                        <td />
+                      </tr>
 
-                    {/* GRAND TOTAL */}
-                    <tr className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 shadow-lg shadow-emerald-500/20">
-                      <td
-                        colSpan={9}
-                        className="px-5 py-5 text-right text-sm font-bold uppercase tracking-[0.15em] text-white/95"
+                      {/* SGST */}
+                      <tr className="border-t border-slate-100 bg-slate-50/60">
+                        <td
+                          colSpan={9}
+                          className="px-6 py-2.5 text-right text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400"
+                        >
+                          SGST (9%)
+                        </td>
+                        <td className="px-5 py-2.5 text-right text-xs font-bold text-slate-600">
+                          {formatINR(totals.sgst)}
+                        </td>
+                        <td />
+                      </tr>
+
+                      {/* GRAND TOTAL */}
+                      <tr
+                        style={{
+                          background:
+                            "linear-gradient(90deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)",
+                        }}
                       >
-                        Grand Total
-                      </td>
-                      <td className="px-5 py-5 text-right text-2xl font-black text-white drop-shadow-md">
-                        {formatINR(totals.grandTotal)}
-                      </td>
-                      <td className="bg-gradient-to-r from-cyan-600 to-cyan-600" />
-                    </tr>
-                  </tfoot>
-                </table>
+                        <td
+                          colSpan={9}
+                          className="px-6 py-5 text-right text-xs font-black uppercase tracking-[0.28em] text-white/50"
+                        >
+                          Grand Total
+                        </td>
+                        <td className="px-5 py-5 text-right">
+                          <span className="text-2xl font-black tracking-tight text-white drop-shadow-md">
+                            {formatINR(totals.grandTotal)}
+                          </span>
+                        </td>
+                        <td style={{ background: "#0f172a" }} />
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
               </div>
             </div>
           </div>

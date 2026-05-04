@@ -1292,7 +1292,7 @@ export default function QuotationItemsTable({
       </div>
 
       {/* TOOLBAR */}
-      <div className="border-b border-slate-100 bg-slate-50/70 px-5 py-4 sm:px-6">
+      <div className="border-b border-slate-100 bg-gradient-to-r from-slate-50 via-white to-slate-50/80 px-5 py-4 sm:px-6 shadow-[0_1px_3px_rgba(15,23,42,0.04)]">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
             <RowBadge tone="indigo">{totals?.rows?.length || 0} rows</RowBadge>
@@ -1314,9 +1314,12 @@ export default function QuotationItemsTable({
       </div>
 
       {/* TABLE */}
-      <div className="overflow-auto max-h-[420px] sm:max-h-[480px] lg:max-h-[560px] rounded-b-[28px]">
-        <table className="min-w-[1550px] w-full border-separate border-spacing-0 text-sm">
-          <thead className="sticky top-0 z-10 bg-slate-50/95 backdrop-blur">
+      <div className="overflow-auto max-h-[420px] sm:max-h-[480px] lg:max-h-[560px] rounded-b-[28px] scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100">
+        <table
+          className="min-w-[1750px] w-full border-separate text-sm"
+          style={{ borderSpacing: "0 4px" }}
+        >
+          <thead className="sticky top-0 z-10 bg-gradient-to-r from-slate-50 via-slate-50/95 to-indigo-50/80 backdrop-blur-md shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
             <tr>
               {[
                 "Item",
@@ -1327,13 +1330,14 @@ export default function QuotationItemsTable({
                 "Price",
                 "Discount",
                 "Line Total",
+                "Remarks",
                 "",
               ].map((h, index) => (
                 <th
                   key={h}
-                  className={`border-b border-slate-100 px-6 py-4 text-left text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400 whitespace-nowrap ${
-                    index === 0 ? "pl-7" : ""
-                  } ${index === 1 ? "pl-4" : ""}`}
+                  className={`border-b-2 border-indigo-100 px-5 py-4 text-left text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500 whitespace-nowrap first:pl-6 last:pr-6 ${
+                    index === 7 ? "text-right" : ""
+                  }`}
                 >
                   {h}
                 </th>
@@ -1348,7 +1352,13 @@ export default function QuotationItemsTable({
               return (
                 <FragmentWrapper key={`row-${index}`}>
                   {/* MAIN ROW */}
-                  <tr className="group border-b border-slate-100 transition hover:bg-slate-50/70">
+                  <tr
+                    className={`group transition-all duration-200 hover:shadow-[0_2px_12px_rgba(15,23,42,0.06)] ${
+                      Number(row.discount || 0) > 0
+                        ? "bg-gradient-to-r from-amber-50/40 to-amber-50/20 hover:from-amber-50/60 hover:to-amber-50/30"
+                        : "bg-white hover:bg-slate-50/50"
+                    }`}
+                  >
                     {/* ITEM */}
                     <td className="px-6 py-4 align-top w-[340px]">
                       <CellLabel>Item</CellLabel>
@@ -1390,6 +1400,7 @@ export default function QuotationItemsTable({
                                   price: child.basePrice || 0,
                                   discount: child.discount || 0,
                                   description: child.description || "",
+                                  remarks: "",
                                 })),
                               );
                             } else {
@@ -1397,7 +1408,7 @@ export default function QuotationItemsTable({
                               updateItem(index, "selectedSubItems", []);
                             }
                           }}
-                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm text-slate-900 outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10"
+                          className="w-full rounded-2xl border border-slate-200/80 bg-white px-4 py-3.5 pr-10 text-sm text-slate-900 shadow-sm outline-none transition-all duration-200 hover:border-slate-300 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/15 focus:shadow-md"
                         >
                           <option value="">Select item</option>
                           {itemsList.map((i) => (
@@ -1445,16 +1456,16 @@ export default function QuotationItemsTable({
                     </td>
 
                     {/* DESCRIPTION */}
-                    <td className="px-6 py-4 align-top w-[420px]">
+                    <td className="px-6 py-4 align-top w-[480px]">
                       <CellLabel>Description</CellLabel>
                       <textarea
-                        value={row.description}
+                        value={row.description ?? ""}
                         rows={3}
                         onChange={(e) =>
                           updateItem(index, "description", e.target.value)
                         }
                         onBlur={() => autoSave(formItems)}
-                        className="w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-slate-900 outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10"
+                        className="w-full resize-none rounded-2xl border border-slate-200/80 bg-white px-4 py-3 text-sm leading-6 text-slate-900 shadow-sm outline-none transition-all duration-200 hover:border-slate-300 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/15 focus:shadow-md"
                         placeholder="Add description"
                       />
                     </td>
@@ -1465,7 +1476,7 @@ export default function QuotationItemsTable({
                       <input
                         type="number"
                         min="1"
-                        value={row.qty === 0 ? "" : row.qty}
+                        value={Number.isFinite(row.qty) ? row.qty : ""}
                         onChange={(e) =>
                           updateItem(index, "qty", e.target.value)
                         }
@@ -1480,7 +1491,7 @@ export default function QuotationItemsTable({
                       <input
                         type="number"
                         min="0"
-                        value={row.price === 0 ? "" : row.price}
+                        value={Number.isFinite(row.price) ? row.price : ""}
                         onChange={(e) =>
                           updateItem(index, "price", e.target.value)
                         }
@@ -1497,7 +1508,7 @@ export default function QuotationItemsTable({
                           type="number"
                           min="0"
                           max="100"
-                          value={row.discount === 0 ? "" : row.discount}
+                          value={Number.isFinite(row.discount) ? row.discount : ""}
                           onChange={(e) =>
                             updateItem(index, "discount", e.target.value)
                           }
@@ -1513,7 +1524,7 @@ export default function QuotationItemsTable({
                     {/* LINE TOTAL */}
                     <td className="px-6 py-4 align-top w-[180px]">
                       <CellLabel>Line Total</CellLabel>
-                      <div className="inline-flex min-w-28 items-center justify-end rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
+                      <div className="inline-flex min-w-32 items-center justify-end rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 px-4 py-3.5 text-sm font-bold text-emerald-700 shadow-sm ring-1 ring-emerald-200/50">
                         {formatINR(
                           Number(row.qty || 1) *
                             Number(row.price || 0) *
@@ -1522,14 +1533,37 @@ export default function QuotationItemsTable({
                       </div>
                     </td>
 
+                    {/* NOTES */}
+                    <td className="px-6 py-4 align-top w-[260px]">
+                      <CellLabel>Remarks</CellLabel>
+
+                      <textarea
+                        rows={3}
+                        value={row.remarks ?? ""}
+                        onChange={(e) =>
+                          updateItem(index, "remarks", e.target.value)
+                        }
+                        onBlur={() => autoSave(formItems)}
+                        className="w-full resize-none rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs leading-5"
+                        placeholder="Add notes"
+                      />
+
+                      {Number(row.discount || 0) > 0 &&
+                        !row.remarks?.trim() && (
+                          <span className="text-[10px] text-rose-500">
+                            Required
+                          </span>
+                        )}
+                    </td>
+
                     {/* ACTION */}
                     <td className="px-6 py-4 align-top w-[80px]">
                       <button
                         onClick={() => removeItem(index)}
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-rose-100 bg-rose-50 text-rose-500 transition hover:bg-rose-100 hover:text-rose-700"
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-rose-200/60 bg-gradient-to-br from-rose-50 to-rose-100/50 text-rose-600 shadow-sm transition-all duration-200 hover:shadow-md hover:scale-105 hover:from-rose-100 hover:to-rose-200/50 hover:text-rose-700 active:scale-95"
                         aria-label="Remove row"
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        <Trash2 className="h-4 w-4" />
                       </button>
                     </td>
                   </tr>
@@ -1550,10 +1584,10 @@ export default function QuotationItemsTable({
                       return (
                         <tr
                           key={sub.id}
-                          className={`border-b border-slate-100 transition ${
+                          className={`transition-all duration-200 ${
                             checked
-                              ? "bg-indigo-50/35 hover:bg-indigo-50/55"
-                              : "bg-slate-50/70 hover:bg-slate-100/60"
+                              ? "bg-gradient-to-r from-indigo-50/50 to-indigo-50/30 hover:from-indigo-50/70 hover:to-indigo-50/40 shadow-[inset_0_1px_0_rgba(99,102,241,0.1)]"
+                              : "bg-slate-50/40 hover:bg-slate-50/70"
                           }`}
                         >
                           {/* ITEM + CHECKBOX */}
@@ -1588,27 +1622,28 @@ export default function QuotationItemsTable({
                               </div>
                             </div>
                           </td>
-
                           {/* SKU */}
                           <td className="px-6 py-3 align-top w-[170px]">
                             <span className="pl-2 border-l border-slate-100 text-xs text-slate-400">
                               {sub.sku || "—"}
                             </span>
                           </td>
-
                           {/* CATEGORY */}
                           <td className="px-6 py-3 align-top w-[180px]">
                             <span className="pl-2 text-xs text-slate-400">
                               {sub.category || "—"}
                             </span>
                           </td>
-
                           {/* DESCRIPTION */}
-                          <td className="px-6 py-3 align-top w-[420px]">
+                          <td className="px-6 py-3 align-top w-[480px]">
                             <textarea
-                              rows={2}
+                              rows={4} // Increased from 2 to 3 for more space
                               value={
-                                selected?.description ?? sub.description ?? ""
+                                formItems[index].selectedSubItems.find(
+                                  (s) => s.id === (sub.id || sub.itemId),
+                                )?.description ??
+                                sub.description ??
+                                ""
                               }
                               disabled={!checked}
                               onChange={(e) =>
@@ -1620,15 +1655,15 @@ export default function QuotationItemsTable({
                                 )
                               }
                               onBlur={() => autoSave(formItems)}
-                              className={`w-full resize-none rounded-xl border px-3 py-2 text-xs leading-5 transition ${
+                              className={`w-full resize-none rounded-xl border px-3 py-2 text-xs leading-5 transition-all duration-200 ${
+                                // Updated class for premium look
                                 checked
-                                  ? "border-slate-200 bg-white text-slate-800 outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-500/10"
+                                  ? "border-slate-200/80 bg-white text-slate-800 shadow-sm outline-none hover:border-slate-300 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/15 focus:shadow-md"
                                   : "cursor-not-allowed border-transparent bg-transparent text-slate-400"
                               }`}
                               placeholder="Description"
                             />
                           </td>
-
                           {/* QTY */}
                           <td className="px-6 py-3 align-top w-[110px]">
                             <input
@@ -1658,7 +1693,6 @@ export default function QuotationItemsTable({
                               }`}
                             />
                           </td>
-
                           {/* PRICE */}
                           <td className="px-6 py-3 align-top w-[150px]">
                             <input
@@ -1688,7 +1722,6 @@ export default function QuotationItemsTable({
                               }`}
                             />
                           </td>
-
                           {/* DISCOUNT */}
                           <td className="px-6 py-3 align-top w-[140px]">
                             <div className="relative w-24">
@@ -1697,7 +1730,7 @@ export default function QuotationItemsTable({
                                 min="0"
                                 max="100"
                                 value={
-                                  checked ? (discount === 0 ? "" : discount) : 0
+                                  checked ? (Number.isFinite(discount) ? discount : "") : 0
                                 }
                                 disabled={!checked}
                                 onChange={(e) =>
@@ -1720,7 +1753,6 @@ export default function QuotationItemsTable({
                               </span>
                             </div>
                           </td>
-
                           {/* TOTAL */}
                           <td className="px-6 py-3 align-top w-[180px] text-right">
                             <div
@@ -1733,7 +1765,33 @@ export default function QuotationItemsTable({
                               {checked ? formatINR(lineTotal) : formatINR(0)}
                             </div>
                           </td>
-
+                          {/* NOTES (SUB ITEM) */}
+                          <td className="px-6 py-3 align-top w-[260px]">
+                            <textarea
+                              rows={3}
+                              value={
+                                formItems[index].selectedSubItems.find(
+                                  (s) => s.id === (sub.id || sub.itemId),
+                                )?.remarks ?? ""
+                              }
+                              disabled={!checked}
+                              onChange={(e) =>
+                                updateSubItem(
+                                  index,
+                                  sub.id,
+                                  "remarks",
+                                  e.target.value,
+                                )
+                              }
+                              onBlur={() => autoSave(formItems)}
+                              className={`w-full resize-none rounded-xl border px-2.5 py-1.5 text-xs transition ${
+                                checked
+                                  ? "border-slate-200 bg-white text-slate-800 focus:border-indigo-300 focus:ring-2 focus:ring-indigo-500/10"
+                                  : "cursor-not-allowed border-transparent bg-transparent text-slate-400"
+                              }`}
+                              placeholder="Notes"
+                            />
+                          </td>
                           {/* ACTION */}
                           <td className="px-6 py-3 align-top w-[80px] text-center">
                             {checked && (
@@ -1751,13 +1809,13 @@ export default function QuotationItemsTable({
 
                   {/* GROUP TOTAL ROW */}
                   {formItems[index]?.selectedSubItems?.length > 0 && (
-                    <tr className="border-b border-slate-200 bg-indigo-50/40">
+                    <tr className="bg-gradient-to-r from-indigo-50/60 via-indigo-50/40 to-indigo-50/30 shadow-[inset_0_1px_0_rgba(99,102,241,0.2)]">
                       <td colSpan={6} />
-                      <td className="px-6 py-2.5 text-right text-xs font-semibold text-slate-600">
-                        Total
+                      <td className="px-6 py-3.5 text-right text-xs font-bold uppercase tracking-wider text-slate-700">
+                        Group Total
                       </td>
-                      <td className="px-6 py-2.5 text-right">
-                        <div className="inline-flex min-w-28 justify-end rounded-xl bg-indigo-100 px-3 py-1.5 text-sm font-semibold text-indigo-700">
+                      <td className="px-6 py-3.5 text-right">
+                        <div className="inline-flex min-w-32 justify-end rounded-2xl bg-gradient-to-br from-indigo-100 to-indigo-200/60 px-4 py-2.5 text-sm font-bold text-indigo-800 shadow-sm ring-1 ring-indigo-300/50">
                           {formatINR(
                             (() => {
                               const parentTotal =
