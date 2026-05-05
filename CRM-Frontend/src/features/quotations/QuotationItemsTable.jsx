@@ -1200,31 +1200,704 @@
 //   );
 // }
 
+// // src/features/quotations/QuotationItemsTable.jsx
+
+// import {
+//   Plus,
+//   Trash2,
+//   PackageSearch,
+//   Sparkles,
+//   ChevronDown,
+// } from "lucide-react";
+// import { formatINR } from "./quotationUtils";
+
+// function Metric({ label, value }) {
+//   return (
+//     <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+//       <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+//         {label}
+//       </div>
+//       <div className="mt-1 text-sm font-semibold text-slate-900">{value}</div>
+//     </div>
+//   );
+// }
+
+// function CellLabel({ children }) {
+//   return (
+//     <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500 md:hidden">
+//       {children}
+//     </div>
+//   );
+// }
+
+// function RowBadge({ children, tone = "slate" }) {
+//   const classes = {
+//     slate: "bg-slate-100 text-slate-700",
+//     indigo: "bg-indigo-100 text-indigo-700",
+//     emerald: "bg-emerald-100 text-emerald-700",
+//     rose: "bg-rose-100 text-rose-700",
+//   };
+
+//   return (
+//     <span
+//       className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${classes[tone] || classes.slate}`}
+//     >
+//       {children}
+//     </span>
+//   );
+// }
+
+// export default function QuotationItemsTable({
+//   totals,
+//   itemsList,
+//   updateItem,
+//   addItem,
+//   removeItem,
+//   formItems,
+//   toggleSubItem,
+//   updateSubItem,
+//   autoSave,
+// }) {
+//   const rowCount = totals?.rows?.length || 0;
+//   const filledCount =
+//     totals?.rows?.filter(
+//       (row) => row.itemId || row.description || row.qty || row.price,
+//     )?.length || 0;
+
+//   return (
+//     <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_14px_45px_rgba(15,23,42,0.05)]">
+//       {/* HEADER */}
+//       <div className="border-b border-slate-100 bg-[linear-gradient(135deg,rgba(248,250,252,0.95),rgba(255,255,255,0.95),rgba(238,242,255,0.75))] px-5 py-5 sm:px-6">
+//         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+//           <div>
+//             <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+//               <Sparkles className="h-3 w-3 text-indigo-400" />
+//               Line Items
+//             </div>
+//             <h2 className="mt-1.5 text-base font-semibold tracking-tight text-slate-900">
+//               Item breakdown
+//             </h2>
+//             <p className="mt-0.5 text-xs leading-5 text-slate-400">
+//               Select products from master data and fine-tune quantity, pricing,
+//               and discount per row.
+//             </p>
+//           </div>
+
+//           <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+//             <Metric label="Rows" value={`${rowCount} total`} />
+//             <Metric label="Filled" value={`${filledCount} active`} />
+//             <Metric label="Subtotal" value={formatINR(totals?.subtotal || 0)} />
+//           </div>
+//         </div>
+//       </div>
+
+//       {/* TOOLBAR */}
+//       <div className="border-b border-slate-100 bg-gradient-to-r from-slate-50 via-white to-slate-50/80 px-5 py-4 sm:px-6 shadow-[0_1px_3px_rgba(15,23,42,0.04)]">
+//         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+//           <div className="flex items-center gap-2">
+//             <RowBadge tone="indigo">{totals?.rows?.length || 0} rows</RowBadge>
+//             <RowBadge tone="emerald">
+//               {formItems?.filter((item) => item.selectedSubItems?.length > 0)
+//                 ?.length || 0}{" "}
+//               grouped
+//             </RowBadge>
+//           </div>
+
+//           <button
+//             onClick={addItem}
+//             className="inline-flex items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white shadow-[0_10px_22px_rgba(79,70,229,0.18)] transition hover:bg-indigo-700"
+//           >
+//             <Plus className="h-3.5 w-3.5" />
+//             Add Item Row
+//           </button>
+//         </div>
+//       </div>
+
+//       {/* TABLE */}
+//       <div className="overflow-auto max-h-[420px] sm:max-h-[480px] lg:max-h-[560px] rounded-b-[28px] scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100">
+//         <table
+//           className="min-w-[1750px] w-full border-separate text-sm"
+//           style={{ borderSpacing: "0 4px" }}
+//         >
+//           <thead className="sticky top-0 z-10 bg-gradient-to-r from-slate-50 via-slate-50/95 to-indigo-50/80 backdrop-blur-md shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+//             <tr>
+//               {[
+//                 "Item",
+//                 "SKU",
+//                 "Category",
+//                 "Description",
+//                 "Qty",
+//                 "Price",
+//                 "Discount",
+//                 "Line Total",
+//                 "Remarks",
+//                 "",
+//               ].map((h, index) => (
+//                 <th
+//                   key={h}
+//                   className={`border-b-2 border-indigo-100 px-5 py-4 text-left text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500 whitespace-nowrap first:pl-6 last:pr-6 ${
+//                     index === 7 ? "text-right" : ""
+//                   }`}
+//                 >
+//                   {h}
+//                 </th>
+//               ))}
+//             </tr>
+//           </thead>
+
+//           <tbody>
+//             {totals.rows.map((row, index) => {
+//               const selectedItem = itemsList.find((i) => i.id === row.itemId);
+
+//               return (
+//                 <FragmentWrapper key={`row-${index}`}>
+//                   {/* MAIN ROW */}
+//                   <tr
+//                     className={`group transition-all duration-200 hover:shadow-[0_2px_12px_rgba(15,23,42,0.06)] ${
+//                       Number(row.discount || 0) > 0
+//                         ? "bg-gradient-to-r from-amber-50/40 to-amber-50/20 hover:from-amber-50/60 hover:to-amber-50/30"
+//                         : "bg-white hover:bg-slate-50/50"
+//                     }`}
+//                   >
+//                     {/* ITEM */}
+//                     <td className="px-6 py-4 align-top w-[340px]">
+//                       <CellLabel>Item</CellLabel>
+//                       <div className="relative pr-3">
+//                         <select
+//                           value={row.itemId}
+//                           onChange={(e) => {
+//                             const selectedId = e.target.value;
+//                             const selectedItem = itemsList.find(
+//                               (i) => i.id === selectedId,
+//                             );
+
+//                             updateItem(index, "itemId", selectedId);
+//                             updateItem(
+//                               index,
+//                               "discount",
+//                               selectedItem?.discount || 0,
+//                             );
+//                             updateItem(
+//                               index,
+//                               "description",
+//                               selectedItem?.description || "",
+//                             );
+
+//                             if (selectedItem?.children?.length) {
+//                               updateItem(
+//                                 index,
+//                                 "subItems",
+//                                 selectedItem.children,
+//                               );
+//                               updateItem(
+//                                 index,
+//                                 "selectedSubItems",
+//                                 selectedItem.children.map((child) => ({
+//                                   id: child.id,
+//                                   itemId: child.id,
+//                                   name: child.name,
+//                                   qty: child.baseQty || 1,
+//                                   price: child.basePrice || 0,
+//                                   discount: child.discount || 0,
+//                                   description: child.description || "",
+//                                   remarks: "",
+//                                 })),
+//                               );
+//                             } else {
+//                               updateItem(index, "subItems", []);
+//                               updateItem(index, "selectedSubItems", []);
+//                             }
+//                           }}
+//                           className="w-full rounded-2xl border border-slate-200/80 bg-white px-4 py-3.5 pr-10 text-sm text-slate-900 shadow-sm outline-none transition-all duration-200 hover:border-slate-300 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/15 focus:shadow-md"
+//                         >
+//                           <option value="">Select item</option>
+//                           {itemsList.map((i) => (
+//                             <option key={i.id} value={i.id}>
+//                               {i.name}
+//                               {i.sku ? ` • ${i.sku}` : ""}
+//                             </option>
+//                           ))}
+//                         </select>
+//                         <PackageSearch className="pointer-events-none absolute right-4 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+//                       </div>
+
+//                       {selectedItem && (
+//                         <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
+//                           {selectedItem.sku && (
+//                             <RowBadge>{selectedItem.sku}</RowBadge>
+//                           )}
+//                           {selectedItem.category && (
+//                             <RowBadge tone="indigo">
+//                               {selectedItem.category}
+//                             </RowBadge>
+//                           )}
+//                         </div>
+//                       )}
+//                     </td>
+
+//                     {/* SKU */}
+//                     <td className="px-6 py-4 align-top w-[170px]">
+//                       <CellLabel>SKU</CellLabel>
+//                       <div className="pl-2 border-l border-slate-100 text-sm text-slate-500">
+//                         {selectedItem?.sku || (
+//                           <span className="text-slate-300">—</span>
+//                         )}
+//                       </div>
+//                     </td>
+
+//                     {/* CATEGORY */}
+//                     <td className="px-6 py-4 align-top w-[180px]">
+//                       <CellLabel>Category</CellLabel>
+//                       <div className="pl-2 text-sm text-slate-500">
+//                         {selectedItem?.category || (
+//                           <span className="text-slate-300">—</span>
+//                         )}
+//                       </div>
+//                     </td>
+
+//                     {/* DESCRIPTION */}
+//                     <td className="px-6 py-4 align-top w-[480px]">
+//                       <CellLabel>Description</CellLabel>
+//                       <textarea
+//                         value={row.description ?? ""}
+//                         rows={3}
+//                         onChange={(e) =>
+//                           updateItem(index, "description", e.target.value)
+//                         }
+//                         onBlur={() => autoSave(formItems)}
+//                         className="w-full resize-none rounded-2xl border border-slate-200/80 bg-white px-4 py-3 text-sm leading-6 text-slate-900 shadow-sm outline-none transition-all duration-200 hover:border-slate-300 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/15 focus:shadow-md"
+//                         placeholder="Add description"
+//                       />
+//                     </td>
+
+//                     {/* QTY */}
+//                     <td className="px-6 py-4 align-top w-[110px]">
+//                       <CellLabel>Qty</CellLabel>
+//                       <input
+//                         type="number"
+//                         min="1"
+//                         value={Number.isFinite(row.qty) ? row.qty : ""}
+//                         onChange={(e) =>
+//                           updateItem(index, "qty", e.target.value)
+//                         }
+//                         onBlur={() => autoSave(formItems)}
+//                         className="w-24 rounded-2xl border border-slate-200 bg-white px-3 py-3 text-right text-sm text-slate-900 outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10"
+//                       />
+//                     </td>
+
+//                     {/* PRICE */}
+//                     <td className="px-6 py-4 align-top w-[150px]">
+//                       <CellLabel>Price</CellLabel>
+//                       <input
+//                         type="number"
+//                         min="0"
+//                         value={Number.isFinite(row.price) ? row.price : ""}
+//                         onChange={(e) =>
+//                           updateItem(index, "price", e.target.value)
+//                         }
+//                         onBlur={() => autoSave(formItems)}
+//                         className="w-28 rounded-2xl border border-slate-200 bg-white px-3 py-3 text-right text-sm text-slate-900 outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10"
+//                       />
+//                     </td>
+
+//                     {/* DISCOUNT */}
+//                     <td className="px-6 py-4 align-top w-[140px]">
+//                       <CellLabel>Discount</CellLabel>
+//                       <div className="relative w-28">
+//                         <input
+//                           type="number"
+//                           min="0"
+//                           max="100"
+//                           value={Number.isFinite(row.discount) ? row.discount : ""}
+//                           onChange={(e) =>
+//                             updateItem(index, "discount", e.target.value)
+//                           }
+//                           onBlur={() => autoSave(formItems)}
+//                           className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 pr-8 text-right text-sm text-slate-900 outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10"
+//                         />
+//                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">
+//                           %
+//                         </span>
+//                       </div>
+//                     </td>
+
+//                     {/* LINE TOTAL */}
+//                     <td className="px-6 py-4 align-top w-[180px]">
+//                       <CellLabel>Line Total</CellLabel>
+//                       <div className="inline-flex min-w-32 items-center justify-end rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 px-4 py-3.5 text-sm font-bold text-emerald-700 shadow-sm ring-1 ring-emerald-200/50">
+//                         {formatINR(
+//                           Number(row.qty || 1) *
+//                             Number(row.price || 0) *
+//                             (1 - Number(row.discount || 0) / 100),
+//                         )}
+//                       </div>
+//                     </td>
+
+//                     {/* NOTES */}
+//                     <td className="px-6 py-4 align-top w-[260px]">
+//                       <CellLabel>Remarks</CellLabel>
+
+//                       <textarea
+//                         rows={3}
+//                         value={row.remarks ?? ""}
+//                         onChange={(e) =>
+//                           updateItem(index, "remarks", e.target.value)
+//                         }
+//                         onBlur={() => autoSave(formItems)}
+//                         className="w-full resize-none rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs leading-5"
+//                         placeholder="Add notes"
+//                       />
+
+//                       {Number(row.discount || 0) > 0 &&
+//                         !row.remarks?.trim() && (
+//                           <span className="text-[10px] text-rose-500">
+//                             Required
+//                           </span>
+//                         )}
+//                     </td>
+
+//                     {/* ACTION */}
+//                     <td className="px-6 py-4 align-top w-[80px]">
+//                       <button
+//                         onClick={() => removeItem(index)}
+//                         className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-rose-200/60 bg-gradient-to-br from-rose-50 to-rose-100/50 text-rose-600 shadow-sm transition-all duration-200 hover:shadow-md hover:scale-105 hover:from-rose-100 hover:to-rose-200/50 hover:text-rose-700 active:scale-95"
+//                         aria-label="Remove row"
+//                       >
+//                         <Trash2 className="h-4 w-4" />
+//                       </button>
+//                     </td>
+//                   </tr>
+
+//                   {/* SUB-ITEM ROWS */}
+//                   {formItems[index]?.subItems?.length > 0 &&
+//                     formItems[index].subItems.map((sub) => {
+//                       const selected = formItems[index].selectedSubItems.find(
+//                         (s) => s.id === (sub.id || sub.itemId),
+//                       );
+
+//                       const checked = !!selected;
+//                       const qty = selected?.qty || 1;
+//                       const price = selected?.price ?? sub.basePrice ?? 0;
+//                       const discount = selected?.discount || 0;
+//                       const lineTotal = qty * price * (1 - discount / 100);
+
+//                       return (
+//                         <tr
+//                           key={sub.id}
+//                           className={`transition-all duration-200 ${
+//                             checked
+//                               ? "bg-gradient-to-r from-indigo-50/50 to-indigo-50/30 hover:from-indigo-50/70 hover:to-indigo-50/40 shadow-[inset_0_1px_0_rgba(99,102,241,0.1)]"
+//                               : "bg-slate-50/40 hover:bg-slate-50/70"
+//                           }`}
+//                         >
+//                           {/* ITEM + CHECKBOX */}
+//                           <td className="px-6 py-3 align-top w-[340px]">
+//                             <div className="flex items-center gap-3 pl-6">
+//                               <div
+//                                 className={`h-4 w-1 rounded-full ${
+//                                   checked ? "bg-indigo-300" : "bg-slate-200"
+//                                 }`}
+//                               />
+//                               <input
+//                                 type="checkbox"
+//                                 checked={formItems[index].selectedSubItems.some(
+//                                   (s) => s.id === (sub.id || sub.itemId),
+//                                 )}
+//                                 onChange={() => toggleSubItem(index, sub)}
+//                                 className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+//                               />
+//                               <div className="flex min-w-0 flex-col">
+//                                 <span
+//                                   className={`text-xs font-medium leading-5 whitespace-normal break-words ${
+//                                     checked
+//                                       ? "text-slate-800"
+//                                       : "text-slate-500"
+//                                   }`}
+//                                 >
+//                                   {sub.name}
+//                                 </span>
+//                                 <span className="text-[10px] text-slate-400">
+//                                   {sub.uom || "Sub item"}
+//                                 </span>
+//                               </div>
+//                             </div>
+//                           </td>
+//                           {/* SKU */}
+//                           <td className="px-6 py-3 align-top w-[170px]">
+//                             <span className="pl-2 border-l border-slate-100 text-xs text-slate-400">
+//                               {sub.sku || "—"}
+//                             </span>
+//                           </td>
+//                           {/* CATEGORY */}
+//                           <td className="px-6 py-3 align-top w-[180px]">
+//                             <span className="pl-2 text-xs text-slate-400">
+//                               {sub.category || "—"}
+//                             </span>
+//                           </td>
+//                           {/* DESCRIPTION */}
+//                           <td className="px-6 py-3 align-top w-[480px]">
+//                             <textarea
+//                               rows={4} // Increased from 2 to 3 for more space
+//                               value={
+//                                 formItems[index].selectedSubItems.find(
+//                                   (s) => s.id === (sub.id || sub.itemId),
+//                                 )?.description ??
+//                                 sub.description ??
+//                                 ""
+//                               }
+//                               disabled={!checked}
+//                               onChange={(e) =>
+//                                 updateSubItem(
+//                                   index,
+//                                   sub.id,
+//                                   "description",
+//                                   e.target.value,
+//                                 )
+//                               }
+//                               onBlur={() => autoSave(formItems)}
+//                               className={`w-full resize-none rounded-xl border px-3 py-2 text-xs leading-5 transition-all duration-200 ${
+//                                 // Updated class for premium look
+//                                 checked
+//                                   ? "border-slate-200/80 bg-white text-slate-800 shadow-sm outline-none hover:border-slate-300 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/15 focus:shadow-md"
+//                                   : "cursor-not-allowed border-transparent bg-transparent text-slate-400"
+//                               }`}
+//                               placeholder="Description"
+//                             />
+//                           </td>
+//                           {/* QTY */}
+//                           <td className="px-6 py-3 align-top w-[110px]">
+//                             <input
+//                               type="number"
+//                               min="1"
+//                               value={
+//                                 checked
+//                                   ? qty === 0
+//                                     ? ""
+//                                     : qty
+//                                   : sub.baseQty || 1
+//                               }
+//                               disabled={!checked}
+//                               onChange={(e) =>
+//                                 updateSubItem(
+//                                   index,
+//                                   sub.id,
+//                                   "qty",
+//                                   e.target.value,
+//                                 )
+//                               }
+//                               onBlur={() => autoSave(formItems)}
+//                               className={`w-20 rounded-xl border px-2.5 py-1.5 text-right text-xs transition ${
+//                                 checked
+//                                   ? "border-slate-200 bg-white text-slate-800 outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-500/10"
+//                                   : "cursor-not-allowed border-transparent bg-transparent text-slate-400"
+//                               }`}
+//                             />
+//                           </td>
+//                           {/* PRICE */}
+//                           <td className="px-6 py-3 align-top w-[150px]">
+//                             <input
+//                               type="number"
+//                               min="0"
+//                               value={
+//                                 checked
+//                                   ? price === 0
+//                                     ? ""
+//                                     : price
+//                                   : sub.basePrice || 0
+//                               }
+//                               disabled={!checked}
+//                               onChange={(e) =>
+//                                 updateSubItem(
+//                                   index,
+//                                   sub.id,
+//                                   "price",
+//                                   e.target.value,
+//                                 )
+//                               }
+//                               onBlur={() => autoSave(formItems)}
+//                               className={`w-24 rounded-xl border px-2.5 py-1.5 text-right text-xs transition ${
+//                                 checked
+//                                   ? "border-slate-200 bg-white text-slate-800 outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-500/10"
+//                                   : "cursor-not-allowed border-transparent bg-transparent text-slate-400"
+//                               }`}
+//                             />
+//                           </td>
+//                           {/* DISCOUNT */}
+//                           <td className="px-6 py-3 align-top w-[140px]">
+//                             <div className="relative w-24">
+//                               <input
+//                                 type="number"
+//                                 min="0"
+//                                 max="100"
+//                                 value={
+//                                   checked ? (Number.isFinite(discount) ? discount : "") : 0
+//                                 }
+//                                 disabled={!checked}
+//                                 onChange={(e) =>
+//                                   updateSubItem(
+//                                     index,
+//                                     sub.id,
+//                                     "discount",
+//                                     e.target.value,
+//                                   )
+//                                 }
+//                                 onBlur={() => autoSave(formItems)}
+//                                 className={`w-full rounded-xl border px-2.5 py-1.5 pr-6 text-right text-xs transition ${
+//                                   checked
+//                                     ? "border-slate-200 bg-white text-slate-800 outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-500/10"
+//                                     : "cursor-not-allowed border-transparent bg-transparent text-slate-400"
+//                                 }`}
+//                               />
+//                               <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">
+//                                 %
+//                               </span>
+//                             </div>
+//                           </td>
+//                           {/* TOTAL */}
+//                           <td className="px-6 py-3 align-top w-[180px] text-right">
+//                             <div
+//                               className={`inline-flex min-w-24 justify-end rounded-xl px-2.5 py-1.5 text-xs font-semibold ${
+//                                 checked
+//                                   ? "bg-emerald-50 text-emerald-700"
+//                                   : "bg-transparent text-slate-300"
+//                               }`}
+//                             >
+//                               {checked ? formatINR(lineTotal) : formatINR(0)}
+//                             </div>
+//                           </td>
+//                           {/* NOTES (SUB ITEM) */}
+//                           <td className="px-6 py-3 align-top w-[260px]">
+//                             <textarea
+//                               rows={3}
+//                               value={
+//                                 formItems[index].selectedSubItems.find(
+//                                   (s) => s.id === (sub.id || sub.itemId),
+//                                 )?.remarks ?? ""
+//                               }
+//                               disabled={!checked}
+//                               onChange={(e) =>
+//                                 updateSubItem(
+//                                   index,
+//                                   sub.id,
+//                                   "remarks",
+//                                   e.target.value,
+//                                 )
+//                               }
+//                               onBlur={() => autoSave(formItems)}
+//                               className={`w-full resize-none rounded-xl border px-2.5 py-1.5 text-xs transition ${
+//                                 checked
+//                                   ? "border-slate-200 bg-white text-slate-800 focus:border-indigo-300 focus:ring-2 focus:ring-indigo-500/10"
+//                                   : "cursor-not-allowed border-transparent bg-transparent text-slate-400"
+//                               }`}
+//                               placeholder="Notes"
+//                             />
+//                           </td>
+//                           {/* ACTION */}
+//                           <td className="px-6 py-3 align-top w-[80px] text-center">
+//                             {checked && (
+//                               <button
+//                                 onClick={() => toggleSubItem(index, sub)}
+//                                 className="text-[11px] font-medium text-rose-500 transition hover:text-rose-700"
+//                               >
+//                                 Remove
+//                               </button>
+//                             )}
+//                           </td>
+//                         </tr>
+//                       );
+//                     })}
+
+//                   {/* GROUP TOTAL ROW */}
+//                   {formItems[index]?.selectedSubItems?.length > 0 && (
+//                     <tr className="bg-gradient-to-r from-indigo-50/60 via-indigo-50/40 to-indigo-50/30 shadow-[inset_0_1px_0_rgba(99,102,241,0.2)]">
+//                       <td colSpan={6} />
+//                       <td className="px-6 py-3.5 text-right text-xs font-bold uppercase tracking-wider text-slate-700">
+//                         Group Total
+//                       </td>
+//                       <td className="px-6 py-3.5 text-right">
+//                         <div className="inline-flex min-w-32 justify-end rounded-2xl bg-gradient-to-br from-indigo-100 to-indigo-200/60 px-4 py-2.5 text-sm font-bold text-indigo-800 shadow-sm ring-1 ring-indigo-300/50">
+//                           {formatINR(
+//                             (() => {
+//                               const parentTotal =
+//                                 Number(row.qty || 1) *
+//                                 Number(row.price || 0) *
+//                                 (1 - Number(row.discount || 0) / 100);
+
+//                               const subTotal = formItems[
+//                                 index
+//                               ].selectedSubItems.reduce((sum, sub) => {
+//                                 const qty = Number(sub.qty || 1);
+//                                 const price = Number(sub.price || 0);
+//                                 const discount = Number(sub.discount || 0);
+
+//                                 return sum + qty * price * (1 - discount / 100);
+//                               }, 0);
+
+//                               return parentTotal + subTotal;
+//                             })(),
+//                           )}
+//                         </div>
+//                       </td>
+//                       <td />
+//                     </tr>
+//                   )}
+//                 </FragmentWrapper>
+//               );
+//             })}
+//           </tbody>
+//         </table>
+//       </div>
+
+//       {/* FOOTER */}
+//       <div className="border-t border-slate-100 bg-slate-50/70 px-5 py-4 sm:px-6">
+//         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3"></div>
+//       </div>
+//     </div>
+//   );
+// }
+
+// function FragmentWrapper({ children, ...props }) {
+//   return <>{children}</>;
+// }
+
 // src/features/quotations/QuotationItemsTable.jsx
 
-import {
-  Plus,
-  Trash2,
-  PackageSearch,
-  Sparkles,
-  ChevronDown,
-} from "lucide-react";
+import { Plus, Trash2, PackageSearch, Sparkles } from "lucide-react";
 import { formatINR } from "./quotationUtils";
+import API from "../../api/axios";
 
-function Metric({ label, value }) {
+function Metric({ label, value, accent }) {
+  const accents = {
+    default: "from-slate-50 to-white border-slate-200/60 shadow-slate-100/80",
+    indigo:
+      "from-indigo-50/90 to-white border-indigo-200/50 shadow-indigo-100/60",
+    emerald:
+      "from-emerald-50/90 to-white border-emerald-200/50 shadow-emerald-100/60",
+  };
+  const valueColors = {
+    default: "text-slate-800",
+    indigo: "text-indigo-700",
+    emerald: "text-emerald-700",
+  };
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-      <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+    <div
+      className={`flex flex-col gap-1 rounded-2xl border bg-gradient-to-br ${accents[accent] || accents.default} px-5 py-3.5 shadow-md backdrop-blur-sm`}
+    >
+      <div className="text-[9px] font-bold uppercase tracking-[0.24em] text-slate-400">
         {label}
       </div>
-      <div className="mt-1 text-sm font-semibold text-slate-900">{value}</div>
+      <div
+        className={`text-sm font-bold tabular-nums ${valueColors[accent] || valueColors.default}`}
+      >
+        {value}
+      </div>
     </div>
   );
 }
 
 function CellLabel({ children }) {
   return (
-    <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500 md:hidden">
+    <div className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 md:hidden">
       {children}
     </div>
   );
@@ -1232,20 +1905,28 @@ function CellLabel({ children }) {
 
 function RowBadge({ children, tone = "slate" }) {
   const classes = {
-    slate: "bg-slate-100 text-slate-700",
-    indigo: "bg-indigo-100 text-indigo-700",
-    emerald: "bg-emerald-100 text-emerald-700",
-    rose: "bg-rose-100 text-rose-700",
+    slate: "bg-slate-100 text-slate-500 ring-1 ring-slate-200/80",
+    indigo: "bg-indigo-50 text-indigo-600 ring-1 ring-indigo-200/70",
+    emerald: "bg-emerald-50 text-emerald-600 ring-1 ring-emerald-200/70",
+    rose: "bg-rose-50 text-rose-500 ring-1 ring-rose-200/70",
   };
-
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${classes[tone] || classes.slate}`}
+      className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold tracking-wide ${classes[tone] || classes.slate}`}
     >
       {children}
     </span>
   );
 }
+
+const inputBase =
+  "w-full rounded-xl border border-slate-200/70 bg-white/60 text-sm text-slate-800 shadow-[0_1px_4px_rgba(15,23,42,0.05)] outline-none backdrop-blur-sm transition-all duration-200 placeholder:text-slate-300 hover:border-indigo-200 hover:bg-white/90 hover:shadow-[0_2px_10px_rgba(99,102,241,0.1)] focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:shadow-[0_0_0_4px_rgba(99,102,241,0.1),0_4px_12px_rgba(99,102,241,0.12)]";
+
+const subInputEnabled =
+  "border-slate-200/70 bg-white/60 text-slate-700 shadow-[0_1px_4px_rgba(15,23,42,0.05)] backdrop-blur-sm outline-none hover:border-indigo-200 hover:bg-white/90 hover:shadow-[0_2px_10px_rgba(99,102,241,0.1)] focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-500/10";
+
+const disabledInput =
+  "cursor-not-allowed border-transparent bg-transparent text-slate-300 shadow-none";
 
 export default function QuotationItemsTable({
   totals,
@@ -1257,6 +1938,7 @@ export default function QuotationItemsTable({
   toggleSubItem,
   updateSubItem,
   autoSave,
+  onSkuSearch,
 }) {
   const rowCount = totals?.rows?.length || 0;
   const filledCount =
@@ -1264,82 +1946,186 @@ export default function QuotationItemsTable({
       (row) => row.itemId || row.description || row.qty || row.price,
     )?.length || 0;
 
+  // const handleSkuSearch = async (sku, rowIndex) => {
+  //   if (!sku) return;
+
+  //   try {
+  //     const res = await API.get(`/items/by-sku/${sku}`);
+
+  //     const { parent, children } = res.data;
+
+  //     // ✅ update parent row
+  //     updateItem(rowIndex, "itemId", parent.id);
+  //     updateItem(rowIndex, "description", parent.description || "");
+  //     updateItem(rowIndex, "price", parent.basePrice || 0);
+
+  //     // ✅ inject subItems (children)
+  //     if (children?.length) {
+  //       updateItem(rowIndex, "subItems", children);
+  //     }
+  //   } catch (err) {
+  //     console.error("SKU search failed", err);
+  //   }
+  // };
+
   return (
-    <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_14px_45px_rgba(15,23,42,0.05)]">
-      {/* HEADER */}
-      <div className="border-b border-slate-100 bg-[linear-gradient(135deg,rgba(248,250,252,0.95),rgba(255,255,255,0.95),rgba(238,242,255,0.75))] px-5 py-5 sm:px-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <div className="overflow-hidden rounded-[32px] border border-slate-200/70 bg-gradient-to-b from-white via-slate-50/20 to-white shadow-[0_32px_80px_rgba(15,23,42,0.08),0_8px_24px_rgba(15,23,42,0.04)]">
+      {/* ── HEADER ── */}
+      <div className="relative overflow-hidden border-b border-slate-100/80 px-8 py-6">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_70%_at_75%_-10%,rgba(199,210,254,0.35),transparent_70%),radial-gradient(ellipse_50%_50%_at_5%_110%,rgba(224,231,255,0.25),transparent)]" />
+        <div className="pointer-events-none absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-indigo-50/20 to-transparent" />
+
+        <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-              <Sparkles className="h-3 w-3 text-indigo-400" />
-              Line Items
+            <div className="flex items-center gap-2">
+              <div className="flex h-5 w-5 items-center justify-center rounded-md bg-indigo-100 ring-1 ring-indigo-200/60">
+                <Sparkles className="h-3 w-3 text-indigo-500" />
+              </div>
+              <span className="text-[9px] font-bold uppercase tracking-[0.26em] text-indigo-400">
+                Line Items
+              </span>
             </div>
-            <h2 className="mt-1.5 text-base font-semibold tracking-tight text-slate-900">
-              Item breakdown
+            <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-900">
+              Item Breakdown
             </h2>
-            <p className="mt-0.5 text-xs leading-5 text-slate-400">
+            <p className="mt-0.5 text-[12px] leading-5 text-slate-400">
               Select products from master data and fine-tune quantity, pricing,
               and discount per row.
             </p>
           </div>
-
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-            <Metric label="Rows" value={`${rowCount} total`} />
-            <Metric label="Filled" value={`${filledCount} active`} />
-            <Metric label="Subtotal" value={formatINR(totals?.subtotal || 0)} />
+          <div className="flex flex-wrap gap-3 sm:flex-nowrap">
+            <Metric label="Rows" value={`${rowCount} total`} accent="default" />
+            <Metric
+              label="Filled"
+              value={`${filledCount} active`}
+              accent="indigo"
+            />
+            <Metric
+              label="Subtotal"
+              value={formatINR(totals?.subtotal || 0)}
+              accent="emerald"
+            />
           </div>
         </div>
       </div>
 
-      {/* TOOLBAR */}
-      <div className="border-b border-slate-100 bg-gradient-to-r from-slate-50 via-white to-slate-50/80 px-5 py-4 sm:px-6 shadow-[0_1px_3px_rgba(15,23,42,0.04)]">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2">
-            <RowBadge tone="indigo">{totals?.rows?.length || 0} rows</RowBadge>
-            <RowBadge tone="emerald">
-              {formItems?.filter((item) => item.selectedSubItems?.length > 0)
-                ?.length || 0}{" "}
-              grouped
-            </RowBadge>
-          </div>
+      {/* ── TOOLBAR ── */}
+      <div className="flex flex-col gap-3 border-b border-slate-100/80 bg-gradient-to-r from-slate-50/80 via-white/60 to-slate-50/40 px-8 py-3.5 sm:flex-row sm:items-center sm:justify-between">
+        {/* LEFT SIDE (UNCHANGED) */}
+        <div className="flex items-center gap-2">
+          <RowBadge tone="indigo">{totals?.rows?.length || 0} rows</RowBadge>
+          <RowBadge tone="emerald">
+            {formItems?.filter((item) => item.selectedSubItems?.length > 0)
+              ?.length || 0}{" "}
+            grouped
+          </RowBadge>
+        </div>
 
+        {/* RIGHT SIDE (NEW SKU + BUTTON) */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+          {/* 🔥 SKU SEARCH INPUT */}
+          <input
+            type="text"
+            placeholder="Enter SKU & press Enter"
+            onKeyDown={async (e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+
+                const value = e.target.value.trim();
+                if (!value) return;
+
+                try {
+                  const res = await API.get(`/items/by-sku/${value}`);
+
+                  console.log("SKU RESPONSE:", res.data);
+
+                  // ✅ FIX: parent is the response itself
+                  const parent = res.data;
+                  const children = res.data.children || [];
+
+                  let rowIndex = totals?.rows?.length - 1;
+
+                  if (!totals?.rows?.length) {
+                    addItem();
+                    rowIndex = 0;
+                  }
+
+                  // ✅ set parent
+                  updateItem(rowIndex, "itemId", parent.id);
+
+                  // ✅ inject children
+                  if (children.length > 0) {
+                    updateItem(rowIndex, "subItems", children);
+
+                    updateItem(
+                      rowIndex,
+                      "selectedSubItems",
+                      children.map((child) => ({
+                        id: child.id,
+                        itemId: child.id,
+                        name: child.name,
+                        qty: child.baseQty || 1,
+                        price: child.basePrice || 0,
+                        discount: child.discount || 0,
+                        description: child.description || "",
+                        remarks: "",
+                      })),
+                    );
+                  } else {
+                    updateItem(rowIndex, "subItems", []);
+                    updateItem(rowIndex, "selectedSubItems", []);
+                  }
+
+                  // ✅ auto-fill parent fields
+                  updateItem(rowIndex, "description", parent.description || "");
+                  updateItem(rowIndex, "price", parent.basePrice || 0);
+                  updateItem(rowIndex, "discount", parent.discount || 0);
+
+                  e.target.value = "";
+                } catch (err) {
+                  console.error("❌ SKU search failed:", err);
+                }
+              }
+            }}
+            className="w-full sm:w-56 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300 transition-all"
+          />
+
+          {/* EXISTING BUTTON (UNCHANGED DESIGN) */}
           <button
             onClick={addItem}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white shadow-[0_10px_22px_rgba(79,70,229,0.18)] transition hover:bg-indigo-700"
+            className="group inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-700 px-5 py-2.5 text-[12px] font-bold tracking-wide text-white shadow-[0_6px_18px_rgba(79,70,229,0.28),0_2px_6px_rgba(79,70,229,0.16)] transition-all duration-200 hover:from-indigo-600 hover:to-indigo-800 hover:shadow-[0_10px_28px_rgba(79,70,229,0.36)] active:scale-[0.97]"
           >
-            <Plus className="h-3.5 w-3.5" />
+            <Plus className="h-3.5 w-3.5 transition-transform duration-200 group-hover:rotate-90" />
             Add Item Row
           </button>
         </div>
       </div>
 
-      {/* TABLE */}
-      <div className="overflow-auto max-h-[420px] sm:max-h-[480px] lg:max-h-[560px] rounded-b-[28px] scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100">
+      {/* ── TABLE ── */}
+      <div className="overflow-auto max-h-[440px] sm:max-h-[500px] lg:max-h-[600px] rounded-b-[32px] scrollbar-thin scrollbar-thumb-indigo-100 scrollbar-track-transparent">
         <table
-          className="min-w-[1750px] w-full border-separate text-sm"
-          style={{ borderSpacing: "0 4px" }}
+          className="min-w-[1800px] w-full text-sm"
+          style={{ borderCollapse: "separate", borderSpacing: "0" }}
         >
-          <thead className="sticky top-0 z-10 bg-gradient-to-r from-slate-50 via-slate-50/95 to-indigo-50/80 backdrop-blur-md shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+          <thead className="sticky top-0 z-10">
             <tr>
               {[
-                "Item",
-                "SKU",
-                "Category",
-                "Description",
-                "Qty",
-                "Price",
-                "Discount",
-                "Line Total",
-                "Remarks",
-                "",
-              ].map((h, index) => (
+                { label: "Item", cls: "pl-8 w-[300px]" },
+                { label: "SKU", cls: "w-[145px]" },
+                { label: "Category", cls: "w-[155px]" },
+                { label: "Description", cls: "w-[420px]" },
+                { label: "Qty", cls: "w-[105px] text-right" },
+                { label: "Price", cls: "w-[135px] text-right" },
+                { label: "Discount", cls: "w-[125px] text-right" },
+                { label: "Line Total", cls: "w-[175px] text-right" },
+                { label: "Remarks", cls: "w-[230px]" },
+                { label: "", cls: "w-[68px] pr-8" },
+              ].map(({ label, cls }) => (
                 <th
-                  key={h}
-                  className={`border-b-2 border-indigo-100 px-5 py-4 text-left text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500 whitespace-nowrap first:pl-6 last:pr-6 ${
-                    index === 7 ? "text-right" : ""
-                  }`}
+                  key={label}
+                  className={`border-b border-slate-100 bg-white/85 backdrop-blur-md px-4 py-4 text-left text-[9px] font-bold uppercase tracking-[0.22em] text-slate-400 whitespace-nowrap ${cls}`}
                 >
-                  {h}
+                  {label}
                 </th>
               ))}
             </tr>
@@ -1348,21 +2134,22 @@ export default function QuotationItemsTable({
           <tbody>
             {totals.rows.map((row, index) => {
               const selectedItem = itemsList.find((i) => i.id === row.itemId);
+              const hasDiscount = Number(row.discount || 0) > 0;
 
               return (
                 <FragmentWrapper key={`row-${index}`}>
-                  {/* MAIN ROW */}
+                  {/* ── MAIN ROW ── */}
                   <tr
-                    className={`group transition-all duration-200 hover:shadow-[0_2px_12px_rgba(15,23,42,0.06)] ${
-                      Number(row.discount || 0) > 0
-                        ? "bg-gradient-to-r from-amber-50/40 to-amber-50/20 hover:from-amber-50/60 hover:to-amber-50/30"
-                        : "bg-white hover:bg-slate-50/50"
+                    className={`group border-b border-slate-100/60 transition-all duration-200 ${
+                      hasDiscount
+                        ? "bg-gradient-to-r from-amber-50/50 via-amber-50/20 to-transparent hover:from-amber-50/80 hover:via-amber-50/40"
+                        : "bg-white hover:bg-gradient-to-r hover:from-indigo-50/20 hover:via-slate-50/30 hover:to-transparent"
                     }`}
                   >
                     {/* ITEM */}
-                    <td className="px-6 py-4 align-top w-[340px]">
+                    <td className="px-4 pl-8 py-5 align-top">
                       <CellLabel>Item</CellLabel>
-                      <div className="relative pr-3">
+                      <div className="relative">
                         <select
                           value={row.itemId}
                           onChange={(e) => {
@@ -1370,7 +2157,6 @@ export default function QuotationItemsTable({
                             const selectedItem = itemsList.find(
                               (i) => i.id === selectedId,
                             );
-
                             updateItem(index, "itemId", selectedId);
                             updateItem(
                               index,
@@ -1382,7 +2168,6 @@ export default function QuotationItemsTable({
                               "description",
                               selectedItem?.description || "",
                             );
-
                             if (selectedItem?.children?.length) {
                               updateItem(
                                 index,
@@ -1408,9 +2193,9 @@ export default function QuotationItemsTable({
                               updateItem(index, "selectedSubItems", []);
                             }
                           }}
-                          className="w-full rounded-2xl border border-slate-200/80 bg-white px-4 py-3.5 pr-10 text-sm text-slate-900 shadow-sm outline-none transition-all duration-200 hover:border-slate-300 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/15 focus:shadow-md"
+                          className={`${inputBase} appearance-none py-3 pl-3.5 pr-9 font-medium`}
                         >
-                          <option value="">Select item</option>
+                          <option value="">Select item…</option>
                           {itemsList.map((i) => (
                             <option key={i.id} value={i.id}>
                               {i.name}
@@ -1418,11 +2203,10 @@ export default function QuotationItemsTable({
                             </option>
                           ))}
                         </select>
-                        <PackageSearch className="pointer-events-none absolute right-4 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                        <PackageSearch className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
                       </div>
-
                       {selectedItem && (
-                        <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
+                        <div className="mt-2 flex flex-wrap items-center gap-1.5">
                           {selectedItem.sku && (
                             <RowBadge>{selectedItem.sku}</RowBadge>
                           )}
@@ -1436,19 +2220,24 @@ export default function QuotationItemsTable({
                     </td>
 
                     {/* SKU */}
-                    <td className="px-6 py-4 align-top w-[170px]">
+                    <td className="px-4 py-5 align-top">
                       <CellLabel>SKU</CellLabel>
-                      <div className="pl-2 border-l border-slate-100 text-sm text-slate-500">
-                        {selectedItem?.sku || (
-                          <span className="text-slate-300">—</span>
-                        )}
+                      <div className="flex h-[46px] items-center gap-3">
+                        <div className="h-8 w-[2px] rounded-full bg-gradient-to-b from-indigo-200 to-slate-100" />
+                        <span className="text-[12px] font-mono font-semibold text-slate-500">
+                          {selectedItem?.sku || (
+                            <span className="font-sans font-normal text-slate-300">
+                              —
+                            </span>
+                          )}
+                        </span>
                       </div>
                     </td>
 
                     {/* CATEGORY */}
-                    <td className="px-6 py-4 align-top w-[180px]">
+                    <td className="px-4 py-5 align-top">
                       <CellLabel>Category</CellLabel>
-                      <div className="pl-2 text-sm text-slate-500">
+                      <div className="flex h-[46px] items-center text-[12px] text-slate-500">
                         {selectedItem?.category || (
                           <span className="text-slate-300">—</span>
                         )}
@@ -1456,7 +2245,7 @@ export default function QuotationItemsTable({
                     </td>
 
                     {/* DESCRIPTION */}
-                    <td className="px-6 py-4 align-top w-[480px]">
+                    <td className="px-4 py-5 align-top">
                       <CellLabel>Description</CellLabel>
                       <textarea
                         value={row.description ?? ""}
@@ -1465,13 +2254,13 @@ export default function QuotationItemsTable({
                           updateItem(index, "description", e.target.value)
                         }
                         onBlur={() => autoSave(formItems)}
-                        className="w-full resize-none rounded-2xl border border-slate-200/80 bg-white px-4 py-3 text-sm leading-6 text-slate-900 shadow-sm outline-none transition-all duration-200 hover:border-slate-300 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/15 focus:shadow-md"
-                        placeholder="Add description"
+                        className={`${inputBase} resize-none px-3.5 py-3 leading-6`}
+                        placeholder="Add description…"
                       />
                     </td>
 
                     {/* QTY */}
-                    <td className="px-6 py-4 align-top w-[110px]">
+                    <td className="px-4 py-5 align-top">
                       <CellLabel>Qty</CellLabel>
                       <input
                         type="number"
@@ -1481,12 +2270,12 @@ export default function QuotationItemsTable({
                           updateItem(index, "qty", e.target.value)
                         }
                         onBlur={() => autoSave(formItems)}
-                        className="w-24 rounded-2xl border border-slate-200 bg-white px-3 py-3 text-right text-sm text-slate-900 outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10"
+                        className={`${inputBase} px-3.5 py-3 text-right tabular-nums`}
                       />
                     </td>
 
                     {/* PRICE */}
-                    <td className="px-6 py-4 align-top w-[150px]">
+                    <td className="px-4 py-5 align-top">
                       <CellLabel>Price</CellLabel>
                       <input
                         type="number"
@@ -1496,35 +2285,37 @@ export default function QuotationItemsTable({
                           updateItem(index, "price", e.target.value)
                         }
                         onBlur={() => autoSave(formItems)}
-                        className="w-28 rounded-2xl border border-slate-200 bg-white px-3 py-3 text-right text-sm text-slate-900 outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10"
+                        className={`${inputBase} px-3.5 py-3 text-right tabular-nums`}
                       />
                     </td>
 
                     {/* DISCOUNT */}
-                    <td className="px-6 py-4 align-top w-[140px]">
+                    <td className="px-4 py-5 align-top">
                       <CellLabel>Discount</CellLabel>
-                      <div className="relative w-28">
+                      <div className="relative">
                         <input
                           type="number"
                           min="0"
                           max="100"
-                          value={Number.isFinite(row.discount) ? row.discount : ""}
+                          value={
+                            Number.isFinite(row.discount) ? row.discount : ""
+                          }
                           onChange={(e) =>
                             updateItem(index, "discount", e.target.value)
                           }
                           onBlur={() => autoSave(formItems)}
-                          className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 pr-8 text-right text-sm text-slate-900 outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10"
+                          className={`${inputBase} py-3 pl-3.5 pr-7 text-right tabular-nums`}
                         />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">
+                        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-slate-400">
                           %
                         </span>
                       </div>
                     </td>
 
                     {/* LINE TOTAL */}
-                    <td className="px-6 py-4 align-top w-[180px]">
+                    <td className="px-4 py-5 align-top">
                       <CellLabel>Line Total</CellLabel>
-                      <div className="inline-flex min-w-32 items-center justify-end rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 px-4 py-3.5 text-sm font-bold text-emerald-700 shadow-sm ring-1 ring-emerald-200/50">
+                      <div className="flex h-[46px] items-center justify-end rounded-xl bg-gradient-to-br from-emerald-50 via-emerald-50/80 to-teal-50/40 px-4 text-sm font-bold tabular-nums text-emerald-700 ring-1 ring-emerald-200/70 shadow-[0_2px_8px_rgba(16,185,129,0.1),inset_0_1px_0_rgba(255,255,255,0.8)]">
                         {formatINR(
                           Number(row.qty || 1) *
                             Number(row.price || 0) *
@@ -1533,10 +2324,9 @@ export default function QuotationItemsTable({
                       </div>
                     </td>
 
-                    {/* NOTES */}
-                    <td className="px-6 py-4 align-top w-[260px]">
+                    {/* REMARKS */}
+                    <td className="px-4 py-5 align-top">
                       <CellLabel>Remarks</CellLabel>
-
                       <textarea
                         rows={3}
                         value={row.remarks ?? ""}
@@ -1544,37 +2334,36 @@ export default function QuotationItemsTable({
                           updateItem(index, "remarks", e.target.value)
                         }
                         onBlur={() => autoSave(formItems)}
-                        className="w-full resize-none rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs leading-5"
-                        placeholder="Add notes"
+                        className={`${inputBase} resize-none px-3.5 py-3 text-[12px] leading-5`}
+                        placeholder="Add notes…"
                       />
-
                       {Number(row.discount || 0) > 0 &&
                         !row.remarks?.trim() && (
-                          <span className="text-[10px] text-rose-500">
+                          <span className="mt-1.5 flex items-center gap-1.5 text-[10px] font-bold text-rose-500">
+                            <span className="h-1.5 w-1.5 rounded-full bg-rose-400 animate-pulse" />
                             Required
                           </span>
                         )}
                     </td>
 
                     {/* ACTION */}
-                    <td className="px-6 py-4 align-top w-[80px]">
+                    <td className="px-4 pr-8 py-5 align-top">
                       <button
                         onClick={() => removeItem(index)}
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-rose-200/60 bg-gradient-to-br from-rose-50 to-rose-100/50 text-rose-600 shadow-sm transition-all duration-200 hover:shadow-md hover:scale-105 hover:from-rose-100 hover:to-rose-200/50 hover:text-rose-700 active:scale-95"
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-rose-100 bg-gradient-to-br from-rose-50 to-rose-100/50 text-rose-400 shadow-sm transition-all duration-200 hover:border-rose-200 hover:from-rose-100 hover:to-rose-200/60 hover:text-rose-600 hover:shadow-[0_4px_12px_rgba(239,68,68,0.15)] active:scale-95"
                         aria-label="Remove row"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </td>
                   </tr>
 
-                  {/* SUB-ITEM ROWS */}
+                  {/* ── SUB-ITEM ROWS ── */}
                   {formItems[index]?.subItems?.length > 0 &&
                     formItems[index].subItems.map((sub) => {
                       const selected = formItems[index].selectedSubItems.find(
                         (s) => s.id === (sub.id || sub.itemId),
                       );
-
                       const checked = !!selected;
                       const qty = selected?.qty || 1;
                       const price = selected?.price ?? sub.basePrice ?? 0;
@@ -1584,60 +2373,73 @@ export default function QuotationItemsTable({
                       return (
                         <tr
                           key={sub.id}
-                          className={`transition-all duration-200 ${
+                          className={`border-b border-slate-100/40 transition-all duration-200 ${
                             checked
-                              ? "bg-gradient-to-r from-indigo-50/50 to-indigo-50/30 hover:from-indigo-50/70 hover:to-indigo-50/40 shadow-[inset_0_1px_0_rgba(99,102,241,0.1)]"
-                              : "bg-slate-50/40 hover:bg-slate-50/70"
+                              ? "bg-gradient-to-r from-indigo-50/60 via-indigo-50/25 to-transparent hover:from-indigo-100/50 hover:via-indigo-50/35"
+                              : "bg-slate-50/30 hover:bg-slate-50/60"
                           }`}
                         >
                           {/* ITEM + CHECKBOX */}
-                          <td className="px-6 py-3 align-top w-[340px]">
-                            <div className="flex items-center gap-3 pl-6">
-                              <div
-                                className={`h-4 w-1 rounded-full ${
-                                  checked ? "bg-indigo-300" : "bg-slate-200"
-                                }`}
-                              />
+                          <td className="px-4 pl-8 py-4 align-top">
+                            <div className="flex items-start gap-3 pl-4">
+                              <div className="mt-1 flex flex-col items-center">
+                                <div
+                                  className={`w-[2px] h-3 rounded-full ${checked ? "bg-indigo-300" : "bg-slate-200"}`}
+                                />
+                                <div
+                                  className={`w-[2px] h-1.5 rounded-full mt-0.5 ${checked ? "bg-indigo-200" : "bg-slate-150"}`}
+                                />
+                              </div>
                               <input
                                 type="checkbox"
                                 checked={formItems[index].selectedSubItems.some(
                                   (s) => s.id === (sub.id || sub.itemId),
                                 )}
                                 onChange={() => toggleSubItem(index, sub)}
-                                className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                className="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600 accent-indigo-600 cursor-pointer focus:ring-indigo-500 focus:ring-offset-0"
                               />
                               <div className="flex min-w-0 flex-col">
                                 <span
-                                  className={`text-xs font-medium leading-5 whitespace-normal break-words ${
-                                    checked
-                                      ? "text-slate-800"
-                                      : "text-slate-500"
-                                  }`}
+                                  className={`text-[12px] font-semibold leading-5 ${checked ? "text-slate-800" : "text-slate-400"}`}
                                 >
                                   {sub.name}
                                 </span>
-                                <span className="text-[10px] text-slate-400">
+                                <span
+                                  className={`text-[10px] mt-0.5 ${checked ? "text-indigo-400" : "text-slate-350"}`}
+                                >
                                   {sub.uom || "Sub item"}
                                 </span>
                               </div>
                             </div>
                           </td>
+
                           {/* SKU */}
-                          <td className="px-6 py-3 align-top w-[170px]">
-                            <span className="pl-2 border-l border-slate-100 text-xs text-slate-400">
-                              {sub.sku || "—"}
-                            </span>
+                          <td className="px-4 py-4 align-top">
+                            <div className="flex items-center gap-2">
+                              <div
+                                className={`h-5 w-[2px] rounded-full ${checked ? "bg-indigo-200" : "bg-slate-150"}`}
+                              />
+                              <span
+                                className={`text-[11px] font-mono ${checked ? "text-slate-400" : "text-slate-300"}`}
+                              >
+                                {sub.sku || "—"}
+                              </span>
+                            </div>
                           </td>
+
                           {/* CATEGORY */}
-                          <td className="px-6 py-3 align-top w-[180px]">
-                            <span className="pl-2 text-xs text-slate-400">
+                          <td className="px-4 py-4 align-top">
+                            <span
+                              className={`text-[11px] ${checked ? "text-slate-400" : "text-slate-300"}`}
+                            >
                               {sub.category || "—"}
                             </span>
                           </td>
+
                           {/* DESCRIPTION */}
-                          <td className="px-6 py-3 align-top w-[480px]">
+                          <td className="px-4 py-4 align-top">
                             <textarea
-                              rows={4} // Increased from 2 to 3 for more space
+                              rows={3}
                               value={
                                 formItems[index].selectedSubItems.find(
                                   (s) => s.id === (sub.id || sub.itemId),
@@ -1655,17 +2457,15 @@ export default function QuotationItemsTable({
                                 )
                               }
                               onBlur={() => autoSave(formItems)}
-                              className={`w-full resize-none rounded-xl border px-3 py-2 text-xs leading-5 transition-all duration-200 ${
-                                // Updated class for premium look
-                                checked
-                                  ? "border-slate-200/80 bg-white text-slate-800 shadow-sm outline-none hover:border-slate-300 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/15 focus:shadow-md"
-                                  : "cursor-not-allowed border-transparent bg-transparent text-slate-400"
+                              className={`w-full resize-none rounded-xl border px-3.5 py-2.5 text-[12px] leading-5 outline-none transition-all duration-200 ${
+                                checked ? subInputEnabled : disabledInput
                               }`}
-                              placeholder="Description"
+                              placeholder="Description…"
                             />
                           </td>
+
                           {/* QTY */}
-                          <td className="px-6 py-3 align-top w-[110px]">
+                          <td className="px-4 py-4 align-top">
                             <input
                               type="number"
                               min="1"
@@ -1686,15 +2486,14 @@ export default function QuotationItemsTable({
                                 )
                               }
                               onBlur={() => autoSave(formItems)}
-                              className={`w-20 rounded-xl border px-2.5 py-1.5 text-right text-xs transition ${
-                                checked
-                                  ? "border-slate-200 bg-white text-slate-800 outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-500/10"
-                                  : "cursor-not-allowed border-transparent bg-transparent text-slate-400"
+                              className={`w-full rounded-xl border px-3 py-2.5 text-right text-[12px] tabular-nums outline-none transition-all duration-200 ${
+                                checked ? subInputEnabled : disabledInput
                               }`}
                             />
                           </td>
+
                           {/* PRICE */}
-                          <td className="px-6 py-3 align-top w-[150px]">
+                          <td className="px-4 py-4 align-top">
                             <input
                               type="number"
                               min="0"
@@ -1715,22 +2514,25 @@ export default function QuotationItemsTable({
                                 )
                               }
                               onBlur={() => autoSave(formItems)}
-                              className={`w-24 rounded-xl border px-2.5 py-1.5 text-right text-xs transition ${
-                                checked
-                                  ? "border-slate-200 bg-white text-slate-800 outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-500/10"
-                                  : "cursor-not-allowed border-transparent bg-transparent text-slate-400"
+                              className={`w-full rounded-xl border px-3 py-2.5 text-right text-[12px] tabular-nums outline-none transition-all duration-200 ${
+                                checked ? subInputEnabled : disabledInput
                               }`}
                             />
                           </td>
+
                           {/* DISCOUNT */}
-                          <td className="px-6 py-3 align-top w-[140px]">
-                            <div className="relative w-24">
+                          <td className="px-4 py-4 align-top">
+                            <div className="relative">
                               <input
                                 type="number"
                                 min="0"
                                 max="100"
                                 value={
-                                  checked ? (Number.isFinite(discount) ? discount : "") : 0
+                                  checked
+                                    ? Number.isFinite(discount)
+                                      ? discount
+                                      : ""
+                                    : 0
                                 }
                                 disabled={!checked}
                                 onChange={(e) =>
@@ -1742,31 +2544,33 @@ export default function QuotationItemsTable({
                                   )
                                 }
                                 onBlur={() => autoSave(formItems)}
-                                className={`w-full rounded-xl border px-2.5 py-1.5 pr-6 text-right text-xs transition ${
-                                  checked
-                                    ? "border-slate-200 bg-white text-slate-800 outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-500/10"
-                                    : "cursor-not-allowed border-transparent bg-transparent text-slate-400"
+                                className={`w-full rounded-xl border py-2.5 pl-3 pr-6 text-right text-[12px] tabular-nums outline-none transition-all duration-200 ${
+                                  checked ? subInputEnabled : disabledInput
                                 }`}
                               />
-                              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">
-                                %
-                              </span>
+                              {checked && (
+                                <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-slate-400">
+                                  %
+                                </span>
+                              )}
                             </div>
                           </td>
+
                           {/* TOTAL */}
-                          <td className="px-6 py-3 align-top w-[180px] text-right">
+                          <td className="px-4 py-4 align-top">
                             <div
-                              className={`inline-flex min-w-24 justify-end rounded-xl px-2.5 py-1.5 text-xs font-semibold ${
+                              className={`flex h-[38px] items-center justify-end rounded-xl px-3 text-[12px] font-bold tabular-nums transition-all duration-200 ${
                                 checked
-                                  ? "bg-emerald-50 text-emerald-700"
-                                  : "bg-transparent text-slate-300"
+                                  ? "bg-gradient-to-br from-emerald-50 to-teal-50/50 text-emerald-700 ring-1 ring-emerald-200/60 shadow-[0_2px_6px_rgba(16,185,129,0.08)]"
+                                  : "bg-transparent text-slate-200"
                               }`}
                             >
                               {checked ? formatINR(lineTotal) : formatINR(0)}
                             </div>
                           </td>
-                          {/* NOTES (SUB ITEM) */}
-                          <td className="px-6 py-3 align-top w-[260px]">
+
+                          {/* REMARKS */}
+                          <td className="px-4 py-4 align-top">
                             <textarea
                               rows={3}
                               value={
@@ -1784,20 +2588,19 @@ export default function QuotationItemsTable({
                                 )
                               }
                               onBlur={() => autoSave(formItems)}
-                              className={`w-full resize-none rounded-xl border px-2.5 py-1.5 text-xs transition ${
-                                checked
-                                  ? "border-slate-200 bg-white text-slate-800 focus:border-indigo-300 focus:ring-2 focus:ring-indigo-500/10"
-                                  : "cursor-not-allowed border-transparent bg-transparent text-slate-400"
+                              className={`w-full resize-none rounded-xl border px-3 py-2.5 text-[12px] outline-none transition-all duration-200 ${
+                                checked ? subInputEnabled : disabledInput
                               }`}
-                              placeholder="Notes"
+                              placeholder="Notes…"
                             />
                           </td>
+
                           {/* ACTION */}
-                          <td className="px-6 py-3 align-top w-[80px] text-center">
+                          <td className="px-4 pr-8 py-4 align-top text-center">
                             {checked && (
                               <button
                                 onClick={() => toggleSubItem(index, sub)}
-                                className="text-[11px] font-medium text-rose-500 transition hover:text-rose-700"
+                                className="rounded-lg px-2.5 py-1.5 text-[10px] font-bold text-rose-400 transition-all duration-150 hover:bg-rose-50 hover:text-rose-600 hover:shadow-sm"
                               >
                                 Remove
                               </button>
@@ -1807,38 +2610,37 @@ export default function QuotationItemsTable({
                       );
                     })}
 
-                  {/* GROUP TOTAL ROW */}
+                  {/* ── GROUP TOTAL ROW ── */}
                   {formItems[index]?.selectedSubItems?.length > 0 && (
-                    <tr className="bg-gradient-to-r from-indigo-50/60 via-indigo-50/40 to-indigo-50/30 shadow-[inset_0_1px_0_rgba(99,102,241,0.2)]">
+                    <tr className="border-b border-indigo-100/50 bg-gradient-to-r from-indigo-50/80 via-indigo-50/40 to-slate-50/20">
                       <td colSpan={6} />
-                      <td className="px-6 py-3.5 text-right text-xs font-bold uppercase tracking-wider text-slate-700">
+                      <td className="px-4 py-4 text-right text-[9px] font-bold uppercase tracking-[0.24em] text-indigo-500">
                         Group Total
                       </td>
-                      <td className="px-6 py-3.5 text-right">
-                        <div className="inline-flex min-w-32 justify-end rounded-2xl bg-gradient-to-br from-indigo-100 to-indigo-200/60 px-4 py-2.5 text-sm font-bold text-indigo-800 shadow-sm ring-1 ring-indigo-300/50">
+                      <td className="px-4 py-4">
+                        <div className="flex items-center justify-end rounded-xl bg-gradient-to-br from-indigo-100/90 via-indigo-100/70 to-violet-100/50 px-4 py-2.5 text-sm font-bold tabular-nums text-indigo-800 ring-1 ring-indigo-200/70 shadow-[0_4px_12px_rgba(99,102,241,0.14),inset_0_1px_0_rgba(255,255,255,0.6)]">
                           {formatINR(
                             (() => {
                               const parentTotal =
                                 Number(row.qty || 1) *
                                 Number(row.price || 0) *
                                 (1 - Number(row.discount || 0) / 100);
-
                               const subTotal = formItems[
                                 index
-                              ].selectedSubItems.reduce((sum, sub) => {
-                                const qty = Number(sub.qty || 1);
-                                const price = Number(sub.price || 0);
-                                const discount = Number(sub.discount || 0);
-
-                                return sum + qty * price * (1 - discount / 100);
-                              }, 0);
-
+                              ].selectedSubItems.reduce(
+                                (sum, sub) =>
+                                  sum +
+                                  Number(sub.qty || 1) *
+                                    Number(sub.price || 0) *
+                                    (1 - Number(sub.discount || 0) / 100),
+                                0,
+                              );
                               return parentTotal + subTotal;
                             })(),
                           )}
                         </div>
                       </td>
-                      <td />
+                      <td colSpan={2} />
                     </tr>
                   )}
                 </FragmentWrapper>
@@ -1848,14 +2650,14 @@ export default function QuotationItemsTable({
         </table>
       </div>
 
-      {/* FOOTER */}
-      <div className="border-t border-slate-100 bg-slate-50/70 px-5 py-4 sm:px-6">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3"></div>
+      {/* ── FOOTER ── */}
+      <div className="border-t border-slate-100/80 bg-gradient-to-r from-slate-50/60 via-white/40 to-slate-50/30 px-8 py-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3" />
       </div>
     </div>
   );
 }
 
-function FragmentWrapper({ children, ...props }) {
+function FragmentWrapper({ children }) {
   return <>{children}</>;
 }

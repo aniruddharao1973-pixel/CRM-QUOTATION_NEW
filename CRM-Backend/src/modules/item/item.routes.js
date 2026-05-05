@@ -1,23 +1,42 @@
 // src/modules/item/item.routes.js
 
 import express from "express";
+import multer from "multer";
+
 import {
   createItem,
   getItems,
   getItemById,
   updateItem,
   deleteItem,
+  importItems, // 🔥 NEW
+  getItemTreeBySku,
 } from "./item.controller.js";
 
 import { protect, authorize } from "../../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
+/* ================= MULTER SETUP ================= */
+const upload = multer({
+  storage: multer.memoryStorage(), // ✅ keep simple (buffer-based)
+});
+
 /* ================= CREATE ================= */
 router.post("/", protect, createItem);
 
+/* ================= IMPORT ================= */
+// 🔥 NEW ROUTE
+router.post(
+  "/import",
+  protect,
+  upload.single("file"), // frontend must send "file"
+  importItems,
+);
+
 /* ================= READ ================= */
 router.get("/", protect, getItems);
+router.get("/by-sku/:sku", protect, getItemTreeBySku);
 router.get("/:id", protect, getItemById);
 
 /* ================= UPDATE ================= */

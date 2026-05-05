@@ -1694,8 +1694,9 @@ export default function QuotationDetail() {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectComment, setRejectComment] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
+  // const [activePdf, setActivePdf] = useState(null);
 
-  console.log("PDF DATA →", data);
+  // console.log("PDF DATA →", data);
 
   /* ================= FETCH ================= */
   useEffect(() => {
@@ -2053,8 +2054,8 @@ export default function QuotationDetail() {
               <div className="grid grid-cols-2 gap-3 px-6 py-5 sm:grid-cols-4 bg-white border-t-2 border-slate-200 shadow-inner rounded-b-[28px]">
                 {isAdmin && (
                   <div className="relative group h-full">
-                    <div className="h-full rounded-2xl border border-slate-100 bg-white p-4 flex items-center shadow-sm transition-all duration-200 hover:shadow-md hover:border-slate-200">
-                      {/* CARD HEADER */}
+                    {/* CARD HEADER */}
+                    <div className="h-full cursor-pointer rounded-2xl border border-slate-100 bg-white p-4 flex items-center shadow-sm transition-all duration-200 hover:shadow-md hover:border-slate-200">
                       <div className="flex items-center gap-3">
                         <div
                           className="rounded-xl p-2.5 text-white flex-shrink-0"
@@ -2079,6 +2080,7 @@ export default function QuotationDetail() {
 
                     {/* DROPDOWN */}
                     <div className="absolute left-0 mt-3 w-80 rounded-3xl border border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.18)] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 overflow-hidden">
+                      {/* HEADER */}
                       <div className="px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-indigo-50 via-white to-indigo-50">
                         <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
                           Export Options
@@ -2091,22 +2093,20 @@ export default function QuotationDetail() {
                       {/* V1 */}
                       <PDFDownloadLink
                         document={
-                          data ? (
-                            <QuotationPdfDocument
-                              quotation={{
-                                ...data,
-                                items: sanitizeItems(data.items),
-                              }}
-                              totals={totals || {}}
-                            />
-                          ) : null
+                          <QuotationPdfDocument
+                            quotation={{
+                              ...data,
+                              items: sanitizeItems(data.items),
+                            }}
+                            totals={totals || {}}
+                          />
                         }
                         fileName={`${data?.quotationNo || "quotation"}-COMMERCIAL_V1.pdf`}
-                        className="flex items-start gap-3 px-5 py-4 hover:bg-indigo-50/60 transition"
+                        className="flex items-start gap-3 px-5 py-4 hover:bg-indigo-50/70 active:scale-[0.99] transition-all"
                       >
                         {({ loading }) => (
                           <>
-                            <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
+                            <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600 shadow-sm">
                               📄
                             </div>
                             <div className="flex-1">
@@ -2114,7 +2114,7 @@ export default function QuotationDetail() {
                                 <span className="text-sm font-semibold text-slate-900">
                                   Commercial Proposal — V1
                                 </span>
-                                <span className="text-[11px] text-slate-400">
+                                <span className="text-[11px] font-medium text-indigo-500">
                                   {loading ? "Generating..." : "Download"}
                                 </span>
                               </div>
@@ -2131,22 +2131,20 @@ export default function QuotationDetail() {
                       {/* V2 */}
                       <PDFDownloadLink
                         document={
-                          data ? (
-                            <QuotationPdfV2
-                              quotation={{
-                                ...data,
-                                items: sanitizeItems(data.items),
-                              }}
-                              totals={totals || {}}
-                            />
-                          ) : null
+                          <QuotationPdfV2
+                            quotation={{
+                              ...data,
+                              items: sanitizeItems(data.items),
+                            }}
+                            totals={totals || {}}
+                          />
                         }
                         fileName={`${data?.quotationNo || "quotation"}-COMMERCIAL_V2.pdf`}
-                        className="flex items-start gap-3 px-5 py-4 hover:bg-indigo-50/60 transition"
+                        className="flex items-start gap-3 px-5 py-4 hover:bg-indigo-50/70 active:scale-[0.99] transition-all"
                       >
                         {({ loading }) => (
                           <>
-                            <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+                            <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600 shadow-sm">
                               📊
                             </div>
                             <div className="flex-1">
@@ -2154,7 +2152,7 @@ export default function QuotationDetail() {
                                 <span className="text-sm font-semibold text-slate-900">
                                   Commercial Proposal — V2
                                 </span>
-                                <span className="text-[11px] text-slate-400">
+                                <span className="text-[11px] font-medium text-emerald-500">
                                   {loading ? "Generating..." : "Download"}
                                 </span>
                               </div>
@@ -2165,27 +2163,26 @@ export default function QuotationDetail() {
                           </>
                         )}
                       </PDFDownloadLink>
+
                       <div className="h-px bg-slate-100 mx-4" />
 
                       {/* V3 */}
                       <PDFDownloadLink
                         document={
-                          data ? (
-                            <QuotationPdfV3
-                              quotation={{
-                                ...data,
-                                items: sanitizeItems(data.items),
-                              }}
-                              totals={totals || {}}
-                            />
-                          ) : null
+                          <QuotationPdfV3
+                            quotation={{
+                              ...data,
+                              items: sanitizeItems(data.items),
+                            }}
+                            totals={totals || {}}
+                          />
                         }
                         fileName={`${data?.quotationNo || "quotation"}-COMMERCIAL_V3.pdf`}
-                        className="flex items-start gap-3 px-5 py-4 hover:bg-indigo-50/60 transition"
+                        className="flex items-start gap-3 px-5 py-4 hover:bg-indigo-50/70 active:scale-[0.99] transition-all"
                       >
                         {({ loading }) => (
                           <>
-                            <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl bg-violet-100 text-violet-600">
+                            <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl bg-violet-100 text-violet-600 shadow-sm">
                               🚀
                             </div>
                             <div className="flex-1">
@@ -2193,7 +2190,7 @@ export default function QuotationDetail() {
                                 <span className="text-sm font-semibold text-slate-900">
                                   Commercial Proposal — V3
                                 </span>
-                                <span className="text-[11px] text-slate-400">
+                                <span className="text-[11px] font-medium text-violet-500">
                                   {loading ? "Generating..." : "Download"}
                                 </span>
                               </div>
@@ -2207,6 +2204,7 @@ export default function QuotationDetail() {
                     </div>
                   </div>
                 )}
+
                 {[
                   {
                     icon: <DollarSign className="h-4 w-4" />,
@@ -2494,15 +2492,18 @@ export default function QuotationDetail() {
                                     <div className="w-px h-2 bg-slate-300" />
                                     <div className="w-3 h-px bg-slate-300" />
                                   </div>
-                                  <span className="font-mono text-[11px] font-semibold text-slate-400">
+
+                                  {/* ✅ Styled SKU badge (same pattern as parent but lighter) */}
+                                  <div className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-1 font-mono text-[11px] font-bold text-emerald-700">
+                                    <Tag className="h-3 w-3 text-emerald-500" />
                                     {sub.sku || "—"}
-                                  </span>
+                                  </div>
                                 </div>
                               </td>
 
                               {/* DESCRIPTION */}
                               <td className="px-5 py-3.5 align-top">
-                                <div className="text-sm leading-snug text-slate-600 pr-2">
+                                <div className="text-sm leading-snug text-slate-700 pr-2">
                                   {sub.name || "—"}
                                 </div>
                               </td>
@@ -2510,7 +2511,7 @@ export default function QuotationDetail() {
                               {/* CATEGORY */}
                               <td className="px-5 py-3.5 align-top">
                                 {sub.category ? (
-                                  <span className="inline-flex rounded-full border border-teal-200 bg-teal-50 px-2.5 py-1 text-[11px] font-semibold text-teal-700 whitespace-nowrap">
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 px-2.5 py-1 text-[10px] font-bold text-white shadow-sm">
                                     {sub.category}
                                   </span>
                                 ) : (
@@ -2519,7 +2520,7 @@ export default function QuotationDetail() {
                               </td>
 
                               {/* MAKE */}
-                              <td className="px-5 py-3.5 align-top text-sm text-slate-500">
+                              <td className="px-5 py-3.5 align-top text-sm text-slate-600">
                                 {sub.make || (
                                   <span className="text-slate-300">—</span>
                                 )}
@@ -2527,7 +2528,7 @@ export default function QuotationDetail() {
 
                               {/* MFG PN */}
                               <td className="px-5 py-3.5 align-top">
-                                <span className="font-mono text-xs text-slate-500">
+                                <span className="font-mono text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-md">
                                   {sub.mfgPartNo || (
                                     <span className="text-slate-300">—</span>
                                   )}
@@ -2540,8 +2541,10 @@ export default function QuotationDetail() {
                               </td>
 
                               {/* QTY */}
-                              <td className="px-5 py-3.5 align-top text-right text-sm font-semibold text-slate-600">
-                                {sub.quantity}
+                              <td className="px-5 py-3.5 align-top text-right">
+                                <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100 text-xs font-bold text-slate-700">
+                                  {sub.quantity}
+                                </span>
                               </td>
 
                               {/* PRICE */}
@@ -2552,7 +2555,7 @@ export default function QuotationDetail() {
                               {/* DISCOUNT */}
                               <td className="px-5 py-3.5 align-top text-right">
                                 {sub.discount > 0 ? (
-                                  <span className="inline-flex rounded-full border border-rose-200 bg-rose-50 px-2 py-1 text-[11px] font-semibold text-rose-600">
+                                  <span className="inline-flex rounded-full border border-rose-200 bg-rose-50 px-2 py-1 text-[10px] font-semibold text-rose-600">
                                     −{sub.discount}%
                                   </span>
                                 ) : (
@@ -2560,9 +2563,11 @@ export default function QuotationDetail() {
                                 )}
                               </td>
 
-                              {/* TOTAL */}
-                              <td className="px-5 py-3.5 align-top text-right text-sm font-bold text-slate-700">
-                                {formatINR(sub.lineTotal)}
+                              {/* ✅ TOTAL (green highlight like parent but softer) */}
+                              <td className="px-5 py-3.5 align-top text-right">
+                                <div className="inline-flex items-center rounded-lg bg-gradient-to-r from-emerald-400 to-teal-500 px-3 py-1.5 text-xs font-bold text-white shadow-sm">
+                                  {formatINR(sub.lineTotal)}
+                                </div>
                               </td>
 
                               {/* REMARKS */}
@@ -2612,7 +2617,7 @@ export default function QuotationDetail() {
                       )}
 
                       {/* TAXABLE VALUE */}
-                      <tr className="border-t border-slate-100 bg-white">
+                      {/* <tr className="border-t border-slate-100 bg-white">
                         <td
                           colSpan={9}
                           className="px-6 py-3 text-right text-xs font-bold uppercase tracking-[0.22em] text-slate-400"
@@ -2623,7 +2628,7 @@ export default function QuotationDetail() {
                           {formatINR(totals.taxable)}
                         </td>
                         <td />
-                      </tr>
+                      </tr> */}
 
                       {/* CGST */}
                       <tr className="border-t border-slate-100 bg-slate-50/60">

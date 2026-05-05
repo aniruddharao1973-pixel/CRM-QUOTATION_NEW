@@ -1,3 +1,6 @@
+import { Buffer } from "buffer";   // ✅ ADD THIS
+window.Buffer = Buffer;            // ✅ ADD THIS
+
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { Provider } from "react-redux";

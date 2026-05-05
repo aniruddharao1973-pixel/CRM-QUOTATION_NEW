@@ -839,8 +839,7 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { fetchItems, deleteItem, createItem, buildItemTree } from "./itemSlice";
-import * as XLSX from "xlsx";
+import { fetchItems, deleteItem, importItems } from "./itemSlice";
 import {
   Package,
   Plus,
@@ -876,8 +875,21 @@ export default function ItemList() {
   const isAdmin = user?.role?.toLowerCase() === "admin";
 
   const [search, setSearch] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [viewMode, setViewMode] = useState("table");
   const [expandedIds, setExpandedIds] = useState({});
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importCategory, setImportCategory] = useState("");
+  const [importType, setImportType] = useState("flat");
+  const [importFile, setImportFile] = useState(null);
+  const [expandedCategories, setExpandedCategories] = useState({});
+
+  const toggleCategory = (cat) => {
+    setExpandedCategories((prev) => ({
+      ...prev,
+      [cat]: !prev[cat],
+    }));
+  };
 
   const toggleRow = (id) => {
     setExpandedIds((prev) => ({
@@ -894,8 +906,9 @@ export default function ItemList() {
   const filtered = useMemo(() => {
     const tree = list;
     const q = search.toLowerCase().trim();
+    const cat = selectedCategory.trim();
 
-    const matches = (item) =>
+    const matchesSearch = (item) =>
       item.name?.toLowerCase().includes(q) ||
       item.sku?.toLowerCase().includes(q) ||
       item.category?.toLowerCase().includes(q) ||
@@ -906,100 +919,61 @@ export default function ItemList() {
       nodes
         .map((node) => {
           const children = filterTree(node.children || []);
-          const selfMatch = !q || matches(node);
 
-          if (selfMatch || children.length) {
+          const selfSearchMatch = !q || matchesSearch(node);
+
+          const selfCategoryMatch =
+            !cat || cat === "All Categories" || node.category === cat;
+
+          const hasChildMatch = children.length > 0;
+
+          // 🔥 KEY LOGIC
+          if (
+            (selfSearchMatch && selfCategoryMatch) || // self matches
+            hasChildMatch // OR child matches
+          ) {
             return {
               ...node,
-              children,
+              // 🔥 if parent matches category → keep ALL children
+              children:
+                selfCategoryMatch && (!cat || cat === node.category)
+                  ? node.children || []
+                  : children,
             };
           }
+
           return null;
         })
         .filter(Boolean);
 
-    return q ? filterTree(tree) : tree;
-  }, [list, search]);
+    return filterTree(tree);
+  }, [list, search, selectedCategory]);
 
-  const handleImport = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  const categoryOptions = useMemo(() => {
+    const unique = new Set();
 
-    const data = await file.arrayBuffer();
-    const workbook = XLSX.read(data);
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-
-    const rows = XLSX.utils.sheet_to_json(sheet, {
-      header: 1,
-      defval: "",
-      blankrows: false,
+    list.forEach((item) => {
+      if (item.category) unique.add(item.category);
     });
 
-    console.log("📄 RAW ROWS:", rows);
+    return ["All Categories", ...Array.from(unique).sort()];
+  }, [list]);
+  /* ================= GROUP BY CATEGORY ================= */
+  const groupedByCategory = useMemo(() => {
+    const map = {};
 
-    if (!rows.length) {
-      alert("Excel file is empty");
-      return;
-    }
+    filtered.forEach((item) => {
+      const cat = item.category || "Uncategorized";
 
-    const dataRows = rows.slice(1);
-    let currentParentId = null;
-
-    for (const row of dataRows) {
-      try {
-        const number = String(row[0] ?? "").trim();
-        const category = String(row[1] ?? "").trim();
-        const sku = String(row[2] ?? "").trim();
-        const description = String(row[3] ?? "").trim();
-        const make = String(row[4] ?? "").trim();
-        const mfgPartNo = String(row[5] ?? "").trim();
-        const uom = String(row[7] ?? "").trim();
-        const unitPrice = row[8] ?? row[9] ?? null;
-
-        if (!number && !category && !sku && !description) continue;
-
-        if (number) {
-          const created = await dispatch(
-            createItem({
-              name: category || description,
-              sku: sku || null,
-              category: category || null,
-              description: description || null,
-              make: make || null,
-              mfgPartNo: mfgPartNo || null,
-              uom: uom || null,
-              basePrice: unitPrice !== null ? Number(unitPrice) : null,
-            }),
-          ).unwrap();
-
-          currentParentId = created.id;
-          continue;
-        }
-
-        if (description && currentParentId) {
-          await dispatch(
-            createItem({
-              name: description,
-              sku: sku || null,
-              category: category || null,
-              parentId: currentParentId,
-              description: description || null,
-              make: make || null,
-              mfgPartNo: mfgPartNo || null,
-              uom: uom || null,
-              basePrice: unitPrice !== null ? Number(unitPrice) : null,
-            }),
-          ).unwrap();
-        }
-      } catch (err) {
-        console.error("Import row failed:", row, err);
-        continue;
+      if (!map[cat]) {
+        map[cat] = [];
       }
-    }
 
-    alert("Import completed");
-    dispatch(fetchItems());
-  };
+      map[cat].push(item);
+    });
+
+    return map;
+  }, [filtered]);
 
   /* ================= STATS ================= */
   const stats = useMemo(() => {
@@ -1173,13 +1147,13 @@ export default function ItemList() {
           </td>
 
           <td className="p-4 text-right">
-            {item.children?.length > 0 ? (
-              <div className="text-sm font-semibold text-indigo-600">
-                {formatINR(getTotalPrice(item))}
-              </div>
-            ) : (
-              <span className="text-slate-300">—</span>
-            )}
+            <div className="text-sm font-semibold text-indigo-600">
+              {formatINR(
+                item.children?.length > 0
+                  ? getTotalPrice(item)
+                  : item.basePrice || 0,
+              )}
+            </div>
           </td>
 
           <td className="p-4">
@@ -1272,44 +1246,38 @@ export default function ItemList() {
             </div>
 
             {/* ACTION BUTTONS */}
-            <div className="flex gap-2">
-              <button
-                onClick={handleRefresh}
-                disabled={loading}
-                className="inline-flex items-center justify-center gap-2 rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 shadow-sm hover:shadow transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Refresh"
-              >
-                <RefreshCw
-                  className={`w-4 h-4 ${loading ? "animate-spin" : ""}`}
-                />
-                <span className="hidden sm:inline">Refresh</span>
-              </button>
+            <div className="flex flex-col lg:flex-row gap-3 w-full lg:w-auto">
+              {/* ===== IMPORT CONTROLS ===== */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowImportModal(true)}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-4 py-3 text-sm font-bold text-white hover:from-emerald-600 hover:to-emerald-700 shadow-md hover:shadow-lg transition-all"
+                >
+                  <Upload className="w-4 h-4" />
+                  Import
+                </button>
 
-              <input
-                type="file"
-                accept=".xlsx, .xls"
-                onChange={handleImport}
-                className="hidden"
-                id="excel-upload"
-              />
+                {/* <button
+                  onClick={handleRefresh}
+                  disabled={loading}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 shadow-sm hover:shadow transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Refresh"
+                >
+                  <RefreshCw
+                    className={`w-4 h-4 ${loading ? "animate-spin" : ""}`}
+                  />
+                  <span className="hidden sm:inline">Refresh</span>
+                </button> */}
 
-              <label
-                htmlFor="excel-upload"
-                className="inline-flex items-center justify-center gap-2 rounded-xl border-2 border-emerald-200 bg-emerald-50 hover:bg-emerald-100 px-4 py-3 text-sm font-bold text-emerald-700 shadow-sm hover:shadow cursor-pointer transition-all"
-              >
-                <Upload className="w-4 h-4" />
-                <span className="hidden sm:inline">Import Excel</span>
-                <span className="sm:hidden">Import</span>
-              </label>
-
-              <button
-                onClick={() => navigate("/items/new")}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 px-5 py-3 text-sm font-bold text-white hover:from-indigo-700 hover:to-indigo-800 shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:shadow-indigo-500/40 transition-all"
-              >
-                <Plus className="w-5 h-5" />
-                <span className="hidden sm:inline">Add Item</span>
-                <span className="sm:hidden">Add</span>
-              </button>
+                <button
+                  onClick={() => navigate("/items/new")}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 px-5 py-3 text-sm font-bold text-white hover:from-indigo-700 hover:to-indigo-800 shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:shadow-indigo-500/40 transition-all"
+                >
+                  <Plus className="w-5 h-5" />
+                  <span className="hidden sm:inline">Add Item</span>
+                  <span className="sm:hidden">Add</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1340,32 +1308,30 @@ export default function ItemList() {
         </div>
 
         {/* ================= TABLE CARD ================= */}
-        <div
-          className="bg-white rounded-[24px] border border-slate-200/80 shadow-[0_8px_32px_rgba(99,102,241,0.08)] overflow-hidden flex flex-col"
-          style={{ height: "calc(100vh - 280px)", minHeight: "480px" }}
-        >
-          {/* TABLE HEADER */}
+        <div className="flex h-[calc(100vh-280px)] min-h-[480px] flex-col overflow-hidden rounded-[28px] border border-slate-200/80 bg-white shadow-[0_10px_40px_rgba(99,102,241,0.08)]">
+          {/* TOP BAR */}
           <div
-            className="px-6 py-4 border-b border-indigo-100"
+            className="border-b border-indigo-100 px-5 py-4 sm:px-6"
             style={{
               background: "linear-gradient(135deg, #eef2ff 0%, #f8fafc 100%)",
             }}
           >
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div>
-                <h2 className="font-bold text-slate-900 text-xl mb-1">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+              <div className="space-y-1">
+                <h2 className="text-xl font-bold text-slate-900 sm:text-[22px]">
                   Items Catalog
                 </h2>
+
                 <p className="text-sm text-slate-600">
                   {filtered.length === list.length ? (
-                    <span>
+                    <>
                       <span className="font-bold text-slate-900">
                         {filtered.length}
                       </span>{" "}
                       total items
-                    </span>
+                    </>
                   ) : (
-                    <span>
+                    <>
                       <span className="font-bold text-indigo-600">
                         {filtered.length}
                       </span>{" "}
@@ -1373,78 +1339,100 @@ export default function ItemList() {
                       <span className="font-bold text-slate-900">
                         {list.length}
                       </span>{" "}
-                      items
-                      {search && " matching your search"}
-                    </span>
+                      items{search && " matching your search"}
+                    </>
                   )}
                 </p>
               </div>
 
-              <div className="flex items-center gap-2">
-                <button className="inline-flex items-center gap-2 rounded-lg border-2 border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all">
-                  <Filter className="w-3.5 h-3.5" />
-                  Filter
-                </button>
-                <button className="inline-flex items-center gap-2 rounded-lg border-2 border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all">
-                  <Download className="w-3.5 h-3.5" />
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 shadow-sm">
+                  <Filter className="h-3.5 w-3.5 text-slate-500" />
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="bg-transparent text-xs font-bold text-slate-700 outline-none cursor-pointer"
+                  >
+                    {categoryOptions.map((cat) => (
+                      <option
+                        key={cat}
+                        value={cat === "All Categories" ? "" : cat}
+                      >
+                        {cat}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {selectedCategory && (
+                  <button
+                    onClick={() => setSelectedCategory("")}
+                    className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 shadow-sm hover:bg-slate-50"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                    Clear
+                  </button>
+                )}
+
+                <button className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-sm transition-all hover:border-slate-300 hover:bg-slate-50">
+                  <Download className="h-3.5 w-3.5" />
                   Export
                 </button>
               </div>
             </div>
           </div>
 
-          {/* TABLE */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead
-                className="sticky top-0 z-10 backdrop-blur"
-                style={{
-                  background:
-                    "linear-gradient(135deg, #eef2ff 0%, #f8fafc 100%)",
-                }}
-              >
-                <tr className="border-b border-indigo-100">
-                  <th className="text-left px-5 py-3.5 text-[10px] font-black uppercase tracking-[0.22em] text-indigo-400">
+          {/* TABLE AREA */}
+          <div className="flex-1 overflow-auto">
+            <table className="min-w-full border-separate border-spacing-0 text-sm">
+              <thead className="sticky top-0 z-20">
+                <tr
+                  style={{
+                    background:
+                      "linear-gradient(135deg, #eef2ff 0%, #f8fafc 100%)",
+                  }}
+                >
+                  <th className="sticky top-0 z-20 w-[28%] border-b border-indigo-100 px-5 py-4 text-left text-[10px] font-black uppercase tracking-[0.24em] text-indigo-400">
                     Item Details
                   </th>
-                  <th className="text-left px-5 py-3.5 text-[10px] font-black uppercase tracking-[0.22em] text-indigo-400">
+                  <th className="sticky top-0 z-20 w-[12%] border-b border-indigo-100 px-5 py-4 text-left text-[10px] font-black uppercase tracking-[0.24em] text-indigo-400">
                     SKU
                   </th>
-                  <th className="text-left px-5 py-3.5 text-[10px] font-black uppercase tracking-[0.22em] text-indigo-400">
+                  <th className="sticky top-0 z-20 w-[14%] border-b border-indigo-100 px-5 py-4 text-left text-[10px] font-black uppercase tracking-[0.24em] text-indigo-400">
                     Category
                   </th>
-                  <th className="text-left px-5 py-3.5 text-[10px] font-black uppercase tracking-[0.22em] text-indigo-400">
+                  <th className="sticky top-0 z-20 w-[12%] border-b border-indigo-100 px-5 py-4 text-left text-[10px] font-black uppercase tracking-[0.24em] text-indigo-400">
                     Make
                   </th>
-                  <th className="text-left px-5 py-3.5 text-[10px] font-black uppercase tracking-[0.22em] text-indigo-400">
+                  <th className="sticky top-0 z-20 w-[14%] border-b border-indigo-100 px-5 py-4 text-left text-[10px] font-black uppercase tracking-[0.24em] text-indigo-400">
                     Mfg Part No
                   </th>
-                  <th className="text-left px-5 py-3.5 text-[10px] font-black uppercase tracking-[0.22em] text-indigo-400">
+                  <th className="sticky top-0 z-20 w-[8%] border-b border-indigo-100 px-5 py-4 text-left text-[10px] font-black uppercase tracking-[0.24em] text-indigo-400">
                     UOM
                   </th>
-                  <th className="text-right px-5 py-3.5 text-[10px] font-black uppercase tracking-[0.22em] text-indigo-400">
+                  <th className="sticky top-0 z-20 w-[10%] border-b border-indigo-100 px-5 py-4 text-right text-[10px] font-black uppercase tracking-[0.24em] text-indigo-400">
                     Base Price
                   </th>
-                  <th className="text-right px-5 py-3.5 text-[10px] font-black uppercase tracking-[0.22em] text-indigo-400">
+                  <th className="sticky top-0 z-20 w-[10%] border-b border-indigo-100 px-5 py-4 text-right text-[10px] font-black uppercase tracking-[0.24em] text-indigo-400">
                     Total Price
                   </th>
-                  <th className="text-center px-5 py-3.5 text-[10px] font-black uppercase tracking-[0.22em] text-indigo-400">
+                  <th className="sticky top-0 z-20 w-[6%] border-b border-indigo-100 px-5 py-4 text-center text-[10px] font-black uppercase tracking-[0.24em] text-indigo-400">
                     Actions
                   </th>
                 </tr>
               </thead>
 
-              <tbody>
+              <tbody className="bg-white">
                 {/* LOADING */}
                 {loading && (
                   <tr>
-                    <td colSpan={9} className="p-16">
+                    <td colSpan={9} className="px-6 py-20">
                       <div className="flex flex-col items-center gap-4">
                         <div className="relative">
-                          <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
-                          <Package className="w-8 h-8 text-indigo-600 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                          <div className="h-16 w-16 animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-600" />
+                          <Package className="absolute left-1/2 top-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2 text-indigo-600" />
                         </div>
-                        <p className="text-slate-600 font-semibold text-lg">
+                        <p className="text-lg font-semibold text-slate-600">
                           Loading items...
                         </p>
                       </div>
@@ -1452,56 +1440,101 @@ export default function ItemList() {
                   </tr>
                 )}
 
-                {/* ROWS */}
-                {!loading && filtered?.length > 0 && renderRows(filtered)}
+                {/* GROUPED ROWS */}
+                {!loading &&
+                  Object.entries(groupedByCategory).map(([category, items]) => {
+                    const isOpen = expandedCategories[category] ?? true;
+
+                    const totalValue = items.reduce(
+                      (sum, i) => sum + getTotalPrice(i),
+                      0,
+                    );
+
+                    return (
+                      <Fragment key={category}>
+                        {/* CATEGORY HEADER */}
+                        <tr
+                          className="group cursor-pointer border-b border-indigo-100 bg-indigo-50/60 transition-colors hover:bg-indigo-100/80"
+                          onClick={() => toggleCategory(category)}
+                        >
+                          <td colSpan={9} className="px-4 py-3 sm:px-5">
+                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-indigo-100">
+                                  {isOpen ? (
+                                    <ChevronDown className="h-4 w-4 text-indigo-600" />
+                                  ) : (
+                                    <ChevronRight className="h-4 w-4 text-indigo-600" />
+                                  )}
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-bold text-indigo-700">
+                                    {category}
+                                  </span>
+                                  <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-500 ring-1 ring-slate-200">
+                                    {items.length} items
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="text-sm font-bold text-indigo-700">
+                                {formatINR(totalValue)}
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+
+                        {/* CATEGORY ITEMS */}
+                        {isOpen && renderRows(items)}
+                      </Fragment>
+                    );
+                  })}
 
                 {/* EMPTY STATE */}
                 {!loading && filtered.length === 0 && (
                   <tr>
-                    <td colSpan={9} className="p-16">
+                    <td colSpan={9} className="px-6 py-20">
                       <div className="flex flex-col items-center gap-6 text-center">
                         <div className="relative">
-                          <div className="absolute inset-0 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-3xl blur-2xl opacity-40" />
-                          <div className="relative p-6 rounded-3xl bg-gradient-to-br from-slate-50 to-slate-100 border-2 border-slate-200">
+                          <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-indigo-100 to-purple-100 blur-2xl opacity-40" />
+                          <div className="relative rounded-3xl border-2 border-slate-200 bg-gradient-to-br from-slate-50 to-slate-100 p-6">
                             {search ? (
-                              <AlertCircle className="w-16 h-16 text-slate-400" />
+                              <AlertCircle className="h-16 w-16 text-slate-400" />
                             ) : (
-                              <Package className="w-16 h-16 text-slate-400" />
+                              <Package className="h-16 w-16 text-slate-400" />
                             )}
                           </div>
                         </div>
 
-                        <div>
-                          <h3 className="font-bold text-slate-900 text-2xl mb-2">
+                        <div className="max-w-md space-y-2">
+                          <h3 className="text-2xl font-bold text-slate-900">
                             {search ? "No items found" : "No items yet"}
                           </h3>
-
-                          <p className="text-slate-600 text-sm mb-6 max-w-md">
+                          <p className="text-sm text-slate-600">
                             {search
-                              ? "Try adjusting your search terms to find what you're looking for"
-                              : "Get started by creating your first item in the catalog"}
+                              ? "Try adjusting your search terms to find what you're looking for."
+                              : "Get started by creating your first item in the catalog."}
                           </p>
-
-                          {!search && (
-                            <button
-                              onClick={() => navigate("/items/new")}
-                              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 px-6 py-3 text-sm font-bold text-white hover:from-indigo-700 hover:to-indigo-800 shadow-lg shadow-indigo-500/30 hover:shadow-xl transition-all"
-                            >
-                              <Plus className="w-5 h-5" />
-                              Add First Item
-                            </button>
-                          )}
-
-                          {search && (
-                            <button
-                              onClick={() => setSearch("")}
-                              className="inline-flex items-center gap-2 rounded-xl border-2 border-slate-200 bg-white px-6 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 shadow-sm hover:shadow transition-all"
-                            >
-                              <X className="w-4 h-4" />
-                              Clear Search
-                            </button>
-                          )}
                         </div>
+
+                        {!search ? (
+                          <button
+                            onClick={() => navigate("/items/new")}
+                            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-500/30 transition-all hover:from-indigo-700 hover:to-indigo-800 hover:shadow-xl"
+                          >
+                            <Plus className="h-5 w-5" />
+                            Add First Item
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => setSearch("")}
+                            className="inline-flex items-center gap-2 rounded-xl border-2 border-slate-200 bg-white px-6 py-3 text-sm font-bold text-slate-700 shadow-sm transition-all hover:bg-slate-50 hover:shadow"
+                          >
+                            <X className="h-4 w-4" />
+                            Clear Search
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -1510,16 +1543,16 @@ export default function ItemList() {
             </table>
           </div>
 
-          {/* TABLE FOOTER */}
+          {/* FOOTER */}
           {!loading && filtered.length > 0 && (
             <div
-              className="px-6 py-3.5 border-t border-indigo-100"
+              className="border-t border-indigo-100 px-5 py-3.5 sm:px-6"
               style={{
                 background: "linear-gradient(135deg, #eef2ff 0%, #f8fafc 100%)",
               }}
             >
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm">
-                <div className="text-slate-600">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="text-sm text-slate-600">
                   Showing{" "}
                   <span className="font-bold text-slate-900">
                     {filtered.length}
@@ -1530,11 +1563,12 @@ export default function ItemList() {
                   </span>{" "}
                   items
                 </div>
+
                 <div className="flex items-center gap-3">
-                  <span className="text-slate-600 text-xs font-medium">
+                  <span className="text-xs font-medium text-slate-600">
                     Per page:
                   </span>
-                  <select className="rounded-lg border-2 border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 transition-all cursor-pointer">
+                  <select className="cursor-pointer rounded-lg border-2 border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none transition-all hover:border-slate-300 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100">
                     <option>10</option>
                     <option>25</option>
                     <option>50</option>
@@ -1546,6 +1580,130 @@ export default function ItemList() {
           )}
         </div>
       </div>
+      {showImportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-lg rounded-[24px] bg-white p-6 shadow-2xl">
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">
+                  Import Items
+                </h2>
+                <p className="text-sm text-slate-500">
+                  Select category, choose import type, then upload the Excel
+                  file.
+                </p>
+              </div>
+
+              <button
+                onClick={() => setShowImportModal(false)}
+                className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Category
+                </label>
+                <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+                  <Layers className="w-4 h-4 text-indigo-500" />
+                  <select
+                    value={importCategory}
+                    onChange={(e) => setImportCategory(e.target.value)}
+                    className="w-full bg-transparent text-sm font-semibold text-slate-700 outline-none"
+                  >
+                    <option value="">Select Category</option>
+                    <option value="Application Software">
+                      Application Software
+                    </option>
+                    <option value="Test Platform">Test Platform</option>
+                    <option value="Fixture & Adapter">Fixture & Adapter</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Import Type
+                </label>
+                <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-500" />
+                  <select
+                    value={importType}
+                    onChange={(e) => setImportType(e.target.value)}
+                    className="w-full bg-transparent text-sm font-semibold text-slate-700 outline-none"
+                  >
+                    <option value="flat">Simple list</option>
+                    <option value="grouped">Grouped items</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Excel File
+                </label>
+                <input
+                  type="file"
+                  accept=".xlsx, .xls"
+                  onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                  className="block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-700 file:mr-4 file:rounded-lg file:border-0 file:bg-indigo-600 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-indigo-700"
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={() => setShowImportModal(false)}
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={async () => {
+                  if (!importFile || !importCategory) {
+                    alert("Select category and file");
+                    return;
+                  }
+
+                  try {
+                    console.log("📤 UPLOAD:", {
+                      category: importCategory,
+                      importType,
+                      file: importFile.name,
+                    });
+
+                    await dispatch(
+                      importItems({
+                        file: importFile,
+                        category: importCategory,
+                        importType,
+                      }),
+                    ).unwrap();
+
+                    setShowImportModal(false);
+                    setImportFile(null);
+                    setImportCategory("");
+                    setImportType("flat");
+
+                    dispatch(fetchItems());
+                  } catch (err) {
+                    console.error(err);
+                    alert("Import failed");
+                  }
+                }}
+                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-700"
+              >
+                <Upload className="w-4 h-4" />
+                Import
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

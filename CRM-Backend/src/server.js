@@ -1,5 +1,3 @@
-
-
 // CRM-Backend/src/server.js
 import express from "express";
 import cors from "cors";
@@ -31,7 +29,6 @@ import { warmUpModel, getModelStatus } from "./ai/aiClient.js";
 
 import assignmentRoutes from "./routes/assignment.routes.js";
 
-
 dotenv.config();
 
 const app = express();
@@ -42,7 +39,7 @@ const server = http.createServer(app);
 ========================================================= */
 const allowedOrigins = [
   "http://localhost:5173",
-  "http://192.168.135.54:5173",
+  "http://192.168.135.69:5173",
   "https://crm-aniruddha-v2.vercel.app",
   "https://crm-aniruddha-v2-git-main-aniruddharao1973-pixels-projects.vercel.app",
 ];
@@ -154,8 +151,6 @@ app.use("/api/calendar", calendarRoutes);
 app.use("/api/assignment", assignmentRoutes);
 app.use("/api/quotations", quotationRoutes);
 app.use("/api/items", itemRoutes);
-
-
 
 app.use("/public", express.static("public"));
 

@@ -22,9 +22,11 @@ export const createItem = createAsyncThunk(
 /* ================= FETCH ALL ITEMS ================= */
 export const fetchItems = createAsyncThunk(
   "items/fetchAll",
-  async (_, { rejectWithValue }) => {
+  async (category, { rejectWithValue }) => {
     try {
-      const res = await API.get("/items");
+      const res = await API.get("/items", {
+        params: category ? { category } : {},
+      });
       return normalize(res);
     } catch (err) {
       return rejectWithValue(err.response?.data || "Fetch items failed");
@@ -60,6 +62,29 @@ export const deleteItem = createAsyncThunk(
       return id;
     } catch (err) {
       return rejectWithValue(err.response?.data || "Delete failed");
+    }
+  },
+);
+
+/* ================= IMPORT ITEMS ================= */
+export const importItems = createAsyncThunk(
+  "items/import",
+  async ({ file, category, importType }, { rejectWithValue }) => {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("category", category);
+      formData.append("importType", importType);
+
+      const res = await API.post("/items/import", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      return normalize(res);
+    } catch (err) {
+      return rejectWithValue(err.response?.data || "Import failed");
     }
   },
 );
@@ -104,6 +129,8 @@ const itemSlice = createSlice({
       })
       .addCase(fetchItems.fulfilled, (state, action) => {
         state.loading = false;
+
+        // ✅ backend already returns TREE → use directly
         state.list = Array.isArray(action.payload) ? action.payload : [];
       })
       .addCase(fetchItems.rejected, (state, action) => {
@@ -147,6 +174,20 @@ const itemSlice = createSlice({
           });
 
         state.list = updateRecursive(state.list);
+      })
+
+      /* ===== IMPORT ===== */
+      .addCase(importItems.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(importItems.fulfilled, (state) => {
+        state.loading = false;
+        // 🔥 IMPORTANT: don't mutate list blindly
+        // instead trigger refetch from UI after import
+      })
+      .addCase(importItems.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       })
 
       /* ===== DELETE ===== */

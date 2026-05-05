@@ -1096,6 +1096,7 @@ import { fetchContactsDropdown } from "../contacts/contactSlice";
 import { fetchDealsByAccount } from "../deals/dealSlice";
 import { fetchItems } from "../items/itemSlice";
 import { formatINR } from "./quotationUtils";
+import API from "../../api/axios";
 
 import {
   ChevronLeft,
@@ -1417,6 +1418,10 @@ export default function QuotationForm() {
 
         const next = { ...item, [key]: value };
 
+        if (key === "subItems") {
+          next.subItems = value;
+        }
+
         if (key === "itemId") {
           const product = itemsList.find((p) => p.id === value);
 
@@ -1544,6 +1549,47 @@ export default function QuotationForm() {
     }));
   };
 
+  // 🔥 HANDLE SKU SEARCH (AUTO ADD ROW)
+  const handleSkuSearch = async (sku) => {
+    try {
+      const res = await API.get(`/items/by-sku/${encodeURIComponent(sku)}`);
+      const data = res.data;
+
+      if (!data?.parent) {
+        toast.error("SKU not found");
+        return;
+      }
+
+      const parent = data.parent;
+      const children = data.children || [];
+
+      setForm((prev) => {
+        const newItem = {
+          itemId: parent.id,
+          sku: parent.sku,
+          category: parent.category || "",
+          description: parent.description || "",
+          make: parent.make || "",
+          mfgPartNo: parent.mfgPartNo || "",
+          uom: parent.uom || "",
+          remarks: parent.defaultRemarks || "",
+          qty: 1,
+          price: Number(parent.basePrice || 0),
+          discount: 0,
+          subItems: children,
+          selectedSubItems: [],
+        };
+
+        return {
+          ...prev,
+          items: [...prev.items, newItem],
+        };
+      });
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to fetch SKU");
+    }
+  };
   const removeItem = (index) => {
     setForm((prev) => ({
       ...prev,
@@ -1769,6 +1815,7 @@ export default function QuotationForm() {
               toggleSubItem={toggleSubItem}
               updateSubItem={updateSubItem}
               autoSave={autoSave}
+              onSkuSearch={handleSkuSearch}
             />
 
             <div className="flex justify-center">

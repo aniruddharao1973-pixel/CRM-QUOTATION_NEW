@@ -14,7 +14,7 @@ import { proposalData } from "./data/proposalData";
 const styles = StyleSheet.create({
   page: {
     paddingTop: 22,
-    paddingBottom: 20,
+    paddingBottom: 70,
     paddingHorizontal: 36, // was 26
     fontSize: 9,
     fontFamily: "Helvetica",
@@ -252,7 +252,10 @@ const styles = StyleSheet.create({
     lineHeight: 1.35,
   },
   footer: {
-    marginTop: "auto",
+    position: "absolute",
+    bottom: 20,
+    left: 36,
+    right: 36,
     paddingTop: 8,
     borderTopWidth: 1,
     borderTopColor: "#CBD5F5",
@@ -786,7 +789,7 @@ const engagementRows = [
 
 function PdfHeader({ refNo, revNo, date }) {
   return (
-    <View style={styles.header}>
+    <View style={styles.header} fixed>
       <View style={styles.logoRow}>
         <Image src={logo} style={styles.logoImage} />
         {/* <Text style={styles.tagline}>Efficiency Enhanced</Text> */}
@@ -810,13 +813,16 @@ function PdfHeader({ refNo, revNo, date }) {
   );
 }
 
-function PdfFooter({ pageNumber, totalPages = 12 }) {
+function PdfFooter() {
   return (
-    <View style={styles.footer}>
+    <View style={styles.footer} fixed>
       <View style={styles.footerLeft}>
-        <Text style={styles.footerMain}>
-          Page {pageNumber} of {totalPages}
-        </Text>
+        <Text
+          style={styles.footerMain}
+          render={({ pageNumber, totalPages }) =>
+            `Page ${pageNumber} of ${totalPages}`
+          }
+        />
         <Text style={styles.footerSub}>
           Confidential – Intended for the Addressee &amp; Recipient only
         </Text>
@@ -834,9 +840,9 @@ function PdfFooter({ pageNumber, totalPages = 12 }) {
   );
 }
 
-function SectionCard({ title, children, soft = false }) {
+function SectionCard({ title, children, soft = false, ...props }) {
   return (
-    <View style={soft ? styles.sectionCardSoft : styles.sectionCard}>
+    <View {...props} style={soft ? styles.sectionCardSoft : styles.sectionCard}>
       {title ? (
         <View
           style={soft ? styles.sectionHeaderSoft : styles.sectionHeaderBlue}
@@ -887,28 +893,45 @@ function InfoCard({ title, items }) {
 
 function TableBlock({ columns, data, highlightLastRow = false }) {
   return (
-    <View style={styles.tableWrap}>
-      <View style={styles.tableHeader}>
+    <View style={styles.tableWrap} wrap>
+      {/* HEADER */}
+      <View style={styles.tableHeader} fixed>
         {columns.map((col, i) => {
           const isLastCol = i === columns.length - 1;
           return (
-            <Text
+            <View
               key={col.key}
-              style={[
-                styles.tableCellHeader,
-                {
-                  width: col.width,
-                  textAlign: col.align || "left",
-                  borderRightWidth: isLastCol ? 0 : 1,
-                },
-              ]}
+              style={{
+                width: col.width,
+                borderRightWidth: isLastCol ? 0 : 1,
+                borderRightColor: "rgba(255,255,255,0.18)",
+                paddingVertical: 6,
+                paddingHorizontal: 4,
+                justifyContent: "center",
+                alignItems:
+                  col.align === "right"
+                    ? "flex-end"
+                    : col.align === "center"
+                      ? "center"
+                      : "flex-start",
+              }}
             >
-              {col.title}
-            </Text>
+              <Text
+                style={{
+                  fontSize: 8.2,
+                  fontWeight: "bold",
+                  color: "#FFFFFF",
+                  textAlign: col.align || "left",
+                }}
+              >
+                {col.title}
+              </Text>
+            </View>
           );
         })}
       </View>
 
+      {/* ROWS */}
       {data.map((row, rowIndex) => {
         const isLast = rowIndex === data.length - 1;
         const isHighlighted = highlightLastRow && isLast;
@@ -917,6 +940,7 @@ function TableBlock({ columns, data, highlightLastRow = false }) {
         return (
           <View
             key={rowIndex}
+            wrap={false}
             style={[
               isLast ? styles.tableRowLast : styles.tableRow,
               isMainRow && { backgroundColor: "#F8FAFC" },
@@ -924,32 +948,46 @@ function TableBlock({ columns, data, highlightLastRow = false }) {
           >
             {columns.map((col, colIndex) => {
               const isLastCol = colIndex === columns.length - 1;
-              const cellStyle = isHighlighted
-                ? isLastCol
-                  ? styles.tableCellHighlightedLast
-                  : styles.tableCellHighlighted
-                : isLastCol
-                  ? styles.tableCellLast
-                  : styles.tableCell;
+
+              const textColor = isHighlighted ? "#2563EB" : "#4B5563";
+              const fontWeight = isHighlighted ? "bold" : "normal";
 
               return (
-                <Text
+                <View
                   key={col.key}
-                  style={[
-                    cellStyle,
-                    {
-                      width: col.width,
-                      textAlign: col.align || "left",
-                      borderRightWidth: isLastCol ? 0 : 1,
-                    },
-                  ]}
+                  style={{
+                    width: col.width,
+                    borderRightWidth: isLastCol ? 0 : 1,
+                    borderRightColor: "#E5EAF2",
+                    paddingVertical: 6,
+                    paddingHorizontal: 4,
+
+                    // ✅ PERFECT ALIGNMENT FIX
+                    justifyContent: "center",
+                    alignItems:
+                      col.align === "right"
+                        ? "flex-end"
+                        : col.align === "center"
+                          ? "center"
+                          : "flex-start",
+                  }}
                 >
-                  {typeof row[col.key] === "string"
-                    ? cleanPdfText(row[col.key])
-                    : row[col.key] != null
-                      ? row[col.key]
-                      : "-"}
-                </Text>
+                  <Text
+                    style={{
+                      fontSize: 8.2,
+                      color: textColor,
+                      fontWeight,
+                      textAlign: col.align || "left",
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    {typeof row[col.key] === "string"
+                      ? cleanPdfText(row[col.key])
+                      : row[col.key] != null
+                        ? row[col.key]
+                        : "-"}
+                  </Text>
+                </View>
               );
             })}
           </View>
@@ -1164,10 +1202,20 @@ function NumberedTermsTable({ title, rows }) {
                 paddingHorizontal: 5,
                 borderRightWidth: 1,
                 borderRightColor: "#E5E7EB",
+
+                // ✅ ADD THIS
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
               }}
             >
               <Text
-                style={{ fontSize: 8, fontWeight: "bold", color: "#111827" }}
+                style={{
+                  fontSize: 8.5,
+                  fontWeight: "bold",
+                  color: "#111827",
+                  textAlign: "center",
+                }}
               >
                 {row.no}
               </Text>
@@ -1283,6 +1331,32 @@ export function ProposalPDF({ quotation, totals }) {
         ),
       });
     });
+    // 🔥 ADDITIONAL STATIC ROWS (Packing & Installation)
+
+    pricingRows.push(
+      {
+        sl: pricingRows.length + 1,
+        sku: "", // empty
+        hsn: HSN_SAC,
+        description: "Packing, Forwarding, Freight and Transit Insurance",
+        qty: 1,
+        unitPrice: "-", // empty
+        discount: "-",
+        gst: "-",
+        total: formatCurrency(50000),
+      },
+      {
+        sl: pricingRows.length + 1,
+        sku: "", // empty
+        hsn: HSN_SAC,
+        description: "Installation & Commissioning",
+        qty: 1,
+        unitPrice: "-", // empty
+        discount: "-",
+        gst: "-",
+        total: formatCurrency(100000),
+      },
+    );
   });
   const warranty = proposalData.warranty;
   const softwareSupport = proposalData.softwareSupport;
@@ -1724,7 +1798,7 @@ export function ProposalPDF({ quotation, totals }) {
           </View>
         </View>
 
-        <PdfFooter pageNumber={1} />
+        <PdfFooter />
       </Page>
 
       <Page size="A4" style={styles.page}>
@@ -1754,7 +1828,7 @@ export function ProposalPDF({ quotation, totals }) {
           data={revisionHistory}
         />
 
-        <PdfFooter pageNumber={2} />
+        <PdfFooter />
       </Page>
 
       <Page size="A4" style={styles.page}>
@@ -1763,11 +1837,13 @@ export function ProposalPDF({ quotation, totals }) {
           revNo={metadata.rev}
           date={metadata.date}
         />
+
+        {/* ================= TITLE ================= */}
         <View
           style={{
             alignItems: "center",
-            marginBottom: 14,
-            paddingVertical: 10,
+            marginBottom: 16,
+            paddingVertical: 12,
             borderTopWidth: 1,
             borderBottomWidth: 1,
             borderColor: "#DBEAFE",
@@ -1782,83 +1858,117 @@ export function ProposalPDF({ quotation, totals }) {
               letterSpacing: 1,
             }}
           >
-            Confidentiality &amp; General Conditions
+            Confidentiality & General Conditions
           </Text>
+
           <View
             style={{
-              width: 40,
-              height: 2,
-              backgroundColor: "#60A5FA",
+              width: 50,
+              height: 2.5,
+              backgroundColor: "#3B82F6",
               borderRadius: 2,
-              marginTop: 5,
+              marginTop: 6,
             }}
           />
         </View>
 
-        {[
-          `This techno commercial proposal (the "Proposal") is submitted with the intent of executing a definitive and legally binding agreement (the "Agreement") following an award of business to Micrologic Integrated Systems (P) Limited (Micrologic).`,
-
-          `The Proposal itself is a legally binding offer to contract and in the event of an award to Micrologic, it shall execute an Agreement that will be the complete agreement between the parties, however, where the parties do not execute any such Agreement, then the terms and conditions mentioned in this Proposal shall govern any purchase order(s) issued by the Customer in reference to the specific project.`,
-
-          `This Proposal constitutes confidential and proprietary information of Micrologic and requires that Customer treat the information contained in this Proposal as confidential. Customer may use the information contained in this Proposal solely for the purposes of evaluating this Proposal and executing the Agreement with Micrologic. This Proposal and all supporting documentation and drawings, Images and concepts provided to Customer in connection with this Proposal shall remain the property of Micrologic and must be returned immediately upon request.`,
-
-          `This Proposal is based upon the set of requirements provided by Customer to Micrologic, and certain reasonable assumptions taken by Micrologic. If Customer alters the requirements or if any assumption stated herein are false or inaccurate, then this Proposal, including pricing, may change. Implementation of any services detailed in this Proposal is subject to applicable legal and regulatory norms and requirements in force as on the date when services are to be implemented and such implementation may vary to cater to the requirements of such applicable legal and regulatory norms and requirements.`,
-        ].map((text, index) => (
-          <View
-            key={index}
-            style={{
-              flexDirection: "row",
-              marginBottom: 8,
-              borderLeftWidth: 3,
-              borderLeftColor:
-                index === 0
-                  ? "#2563EB"
-                  : index === 1
-                    ? "#6366F1"
-                    : index === 2
-                      ? "#0EA5E9"
-                      : "#8B5CF6",
-              backgroundColor: "#F8FAFC",
-              borderRadius: 4,
-              paddingVertical: 8,
-              paddingHorizontal: 10,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 8.5,
-                lineHeight: 1.55,
-                color: "#374151",
-                textAlign: "justify",
-                flex: 1,
-              }}
-            >
-              {text}
-            </Text>
-          </View>
-        ))}
-
+        {/* ================= BLOCK 1 ================= */}
         <View
           style={{
-            marginTop: 10,
-            borderRadius: 5,
+            marginBottom: 10,
+            borderLeftWidth: 4,
+            borderLeftColor: "#2563EB",
+            backgroundColor: "#F8FAFC",
+            borderRadius: 6,
+            paddingVertical: 10,
+            paddingHorizontal: 12,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 8.7,
+              lineHeight: 1.6,
+              color: "#374151",
+              textAlign: "justify",
+            }}
+          >
+            This techno commercial proposal (the "Proposal") is submitted with
+            the intent of executing a definitive and legally binding agreement
+            (the "Agreement") following an award of business to Micrologic
+            Integrated Systems (P) Limited (Micrologic).
+            {"\n\n"}
+            The Proposal itself is a legally binding offer to contract and in
+            the event of an award to Micrologic, it shall execute an Agreement
+            that will be the complete agreement between the parties. However,
+            where the parties do not execute any such Agreement, then the terms
+            and conditions mentioned in this Proposal shall govern any purchase
+            order(s) issued by the Customer in reference to the specific
+            project.
+          </Text>
+        </View>
+
+        {/* ================= BLOCK 2 ================= */}
+        <View
+          style={{
+            marginBottom: 10,
+            borderLeftWidth: 4,
+            borderLeftColor: "#0EA5E9",
+            backgroundColor: "#F8FAFC",
+            borderRadius: 6,
+            paddingVertical: 10,
+            paddingHorizontal: 12,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 8.7,
+              lineHeight: 1.6,
+              color: "#374151",
+              textAlign: "justify",
+            }}
+          >
+            This Proposal constitutes confidential and proprietary information
+            of Micrologic and requires that Customer treat the information
+            contained in this Proposal as confidential. Customer may use the
+            information contained in this Proposal solely for the purposes of
+            evaluating this Proposal and executing the Agreement with
+            Micrologic. This Proposal and all supporting documentation,
+            drawings, images, and concepts provided to Customer in connection
+            with this Proposal shall remain the property of Micrologic and must
+            be returned immediately upon request.
+            {"\n\n"}
+            This Proposal is based upon the set of requirements provided by
+            Customer to Micrologic, along with certain reasonable assumptions.
+            If Customer alters the requirements or if any assumption stated
+            herein is inaccurate, then this Proposal, including pricing, may
+            change. Implementation of any services detailed in this Proposal is
+            subject to applicable legal and regulatory norms in force at the
+            time of execution.
+          </Text>
+        </View>
+
+        {/* ================= IMPORTANT NOTICE ================= */}
+        <View
+          style={{
+            marginTop: 12,
+            borderRadius: 6,
             borderWidth: 1,
             borderColor: "#FCD34D",
             backgroundColor: "#FFFBEB",
             overflow: "hidden",
           }}
         >
-          {/* Colored top bar */}
-          <View style={{ height: 3, backgroundColor: "#F59E0B" }} />
+          <View style={{ height: 4, backgroundColor: "#F59E0B" }} />
+
           <View
             style={{
               flexDirection: "row",
               alignItems: "flex-start",
               paddingVertical: 10,
-              paddingHorizontal: 10,
+              paddingHorizontal: 12,
             }}
           >
-            {/* Icon box */}
+            {/* ICON */}
             <View
               style={{
                 width: 18,
@@ -1877,10 +1987,11 @@ export function ProposalPDF({ quotation, totals }) {
                 !
               </Text>
             </View>
+
             <View style={{ flex: 1 }}>
               <Text
                 style={{
-                  fontSize: 8,
+                  fontSize: 8.2,
                   fontWeight: "bold",
                   color: "#92400E",
                   marginBottom: 3,
@@ -1888,19 +1999,25 @@ export function ProposalPDF({ quotation, totals }) {
               >
                 IMPORTANT NOTICE
               </Text>
+
               <Text
-                style={{ fontSize: 8.3, lineHeight: 1.5, color: "#78350F" }}
+                style={{
+                  fontSize: 8.5,
+                  lineHeight: 1.55,
+                  color: "#78350F",
+                  textAlign: "justify",
+                }}
               >
-                These are customized equipment, this proposal is indicative of
-                the concept there could be changes during the detailed design
-                which will be dealt during Design Approval Process (DAP) &amp;
-                will be subjected to the customer approval.
+                These are customized equipment. This proposal is indicative of
+                the concept and may undergo changes during detailed design. Any
+                such changes will be handled during the Design Approval Process
+                (DAP) and will be subject to customer approval.
               </Text>
             </View>
           </View>
         </View>
 
-        <PdfFooter pageNumber={3} />
+        <PdfFooter />
       </Page>
 
       <Page size="A4" style={styles.page}>
@@ -1995,22 +2112,22 @@ export function ProposalPDF({ quotation, totals }) {
         <>
           <TableBlock columns={pricingColumns} data={pricingRows} />
 
-          <View style={styles.gstSummaryWrap}>
+          <View style={styles.gstSummaryWrap} wrap={false}>
             <View style={styles.gstBox}>
               <View style={styles.gstRow}>
                 <Text style={styles.gstLabel}>Subtotal</Text>
                 <Text style={styles.gstValue}>{formatCurrency(subtotal)}</Text>
               </View>
 
-              <View style={styles.gstRow}>
+              {/* <View style={styles.gstRow}>
                 <Text style={styles.gstLabel}>Taxable Value</Text>
                 <Text style={styles.gstValue}>{formatCurrency(subtotal)}</Text>
-              </View>
+              </View> */}
 
-              <View style={styles.gstRowLast}>
+              {/* <View style={styles.gstRowLast}>
                 <Text style={styles.gstLabel}>GST (18%)</Text>
                 <Text style={styles.gstValue}>{formatCurrency(gstAmount)}</Text>
-              </View>
+              </View> */}
 
               <View style={styles.gstGrandRow}>
                 <Text style={styles.gstGrandLabel}>Grand Total</Text>
@@ -2022,92 +2139,91 @@ export function ProposalPDF({ quotation, totals }) {
           </View>
         </>
 
-        <PdfFooter pageNumber={4} totalPages={12} />
+        <PdfFooter />
 
-        <View break>
-          <PdfHeader
-            refNo={metadata.ref}
-            revNo={metadata.rev}
-            date={metadata.date}
-          />
+        <SectionCard title="Payment Terms" soft break wrap={false}>
+          <View style={styles.bulletLine}>
+            <Text style={styles.bulletMark}>•</Text>
+            <Text style={styles.bulletText}>
+              40% Advance along with the Purchase Order.
+            </Text>
+          </View>
 
-          <SectionCard title="Payment Terms" soft>
-            <View style={styles.bulletLine}>
-              <Text style={styles.bulletMark}>•</Text>
-              <Text style={styles.bulletText}>
-                40% Advance along with the Purchase Order.
-              </Text>
-            </View>
-            <View style={styles.bulletLine}>
-              <Text style={styles.bulletMark}>•</Text>
-              <Text style={styles.bulletText}>
-                40% Against proforma invoice before dispatch after successful
-                FAT.
-              </Text>
-            </View>
-            <View style={styles.bulletLine}>
-              <Text style={styles.bulletMark}>•</Text>
-              <Text style={styles.bulletText}>
-                20% After successful installation and commissioning at site
-                (SAT).
-              </Text>
-            </View>
+          <View style={styles.bulletLine}>
+            <Text style={styles.bulletMark}>•</Text>
+            <Text style={styles.bulletText}>
+              40% Against proforma invoice before dispatch after successful FAT.
+            </Text>
+          </View>
 
-            <View
-              style={{
-                backgroundColor: "#F1F5F9",
-                paddingVertical: 7,
-                paddingHorizontal: 8,
-                borderRadius: 4,
-                marginTop: 8,
-              }}
+          <View style={styles.bulletLine}>
+            <Text style={styles.bulletMark}>•</Text>
+            <Text style={styles.bulletText}>
+              20% After successful installation and commissioning at site (SAT).
+            </Text>
+          </View>
+
+          <View
+            style={{
+              backgroundColor: "#F1F5F9",
+              paddingVertical: 7,
+              paddingHorizontal: 8,
+              borderRadius: 4,
+              marginTop: 8,
+            }}
+          >
+            <Text
+              style={{ fontSize: 8.3, fontWeight: "bold", color: "#4B5563" }}
             >
-              <Text
-                style={{ fontSize: 8.3, fontWeight: "bold", color: "#4B5563" }}
-              >
-                Note: All payments should be made via NEFT/RTGS to the
-                above-mentioned bank account.
-              </Text>
-            </View>
-          </SectionCard>
+              Note: All payments should be made via NEFT/RTGS to the
+              above-mentioned bank account.
+            </Text>
+          </View>
+        </SectionCard>
 
-          <HighlightBox
-            text={
-              quotation?.notes ||
-              "These are customized equipment; final design may change during DAP with customer approval."
+        <HighlightBox
+          text={
+            quotation?.notes ||
+            "These are customized equipment; final design may change during DAP with customer approval."
+          }
+        />
+
+        <HighlightBox
+          text={
+            quotation?.notes ||
+            "Including an additional 18% charge on the billing time. This will be reflected in the final invoice amount."
+          }
+        />
+
+        <SectionCard title="Price Basis & Delivery" soft>
+          <Text
+            style={{
+              fontSize: 8.5,
+              fontWeight: "bold",
+              color: "#4B5563",
+              marginBottom: 6,
+            }}
+          >
+            {quotation?.priceBasis ||
+              "Ex-Works Micrologic, Duties, Taxes, Freight, Insurance Extra"}
+          </Text>
+
+          <TableBlock
+            columns={deliveryColumns}
+            data={
+              quotation?.deliveryTimeline || [
+                {
+                  sl: "1",
+                  desc: "10-12 Weeks from the date of receipt of Purchase Order and Advance",
+                },
+                {
+                  sl: "2",
+                  desc: "Delivery depends on customer dependent activities like receipt of Advance, DAP approval, etc. Timeline will be finalized after project kickoff.",
+                },
+              ]
             }
           />
-
-          <SectionCard title="Price Basis & Delivery" soft>
-            <Text
-              style={{
-                fontSize: 8.5,
-                fontWeight: "bold",
-                color: "#4B5563",
-                marginBottom: 6,
-              }}
-            >
-              {quotation?.priceBasis ||
-                "Ex-Works Micrologic, Duties, Taxes, Freight, Insurance Extra"}
-            </Text>
-
-            <TableBlock
-              columns={deliveryColumns}
-              data={
-                quotation?.deliveryTimeline || [
-                  {
-                    sl: "1",
-                    desc: "10-12 Weeks from the date of receipt of Purchase Order and Advance",
-                  },
-                  {
-                    sl: "2",
-                    desc: "Delivery depends on customer dependent activities like receipt of Advance, DAP approval, etc. Timeline will be finalized after project kickoff.",
-                  },
-                ]
-              }
-            />
-          </SectionCard>
-        </View>
+        </SectionCard>
 
         <SectionCard title="Important Notes" soft>
           {pricing.generalNotes.map((note, index) => (
@@ -2118,7 +2234,7 @@ export function ProposalPDF({ quotation, totals }) {
           ))}
         </SectionCard>
 
-        <PdfFooter pageNumber={5} totalPages={12} />
+        <PdfFooter />
       </Page>
 
       <Page size="A4" style={styles.page}>
@@ -2154,7 +2270,7 @@ export function ProposalPDF({ quotation, totals }) {
           <BulletList items={softwareSupport} />
         </SectionCard>
 
-        <PdfFooter pageNumber={6} totalPages={12} />
+        <PdfFooter />
       </Page>
 
       <Page size="A4" style={styles.page}>
@@ -2192,7 +2308,7 @@ export function ProposalPDF({ quotation, totals }) {
           <BulletList items={benefits} />
         </SectionCard>
 
-        <PdfFooter pageNumber={7} totalPages={12} />
+        <PdfFooter />
       </Page>
 
       <Page size="A4" style={styles.page}>
@@ -2247,7 +2363,7 @@ export function ProposalPDF({ quotation, totals }) {
 
         <StepFlow steps={processSteps} />
 
-        <PdfFooter pageNumber={8} totalPages={12} />
+        <PdfFooter />
       </Page>
 
       <Page size="A4" style={styles.page}>
@@ -2262,7 +2378,7 @@ export function ProposalPDF({ quotation, totals }) {
           rows={commercialTermsRows}
         />
 
-        <PdfFooter pageNumber={9} totalPages={12} />
+        <PdfFooter />
       </Page>
 
       <Page size="A4" style={styles.page}>
@@ -2373,7 +2489,7 @@ export function ProposalPDF({ quotation, totals }) {
           ))}
         </View>
 
-        <PdfFooter pageNumber={10} totalPages={12} />
+        <PdfFooter />
       </Page>
 
       <Page size="A4" style={styles.page}>
@@ -2388,7 +2504,7 @@ export function ProposalPDF({ quotation, totals }) {
           rows={engagementRows}
         />
 
-        <PdfFooter pageNumber={11} totalPages={12} />
+        <PdfFooter />
       </Page>
 
       <Page size="A4" style={styles.page} wrap={false}>
@@ -2503,7 +2619,7 @@ export function ProposalPDF({ quotation, totals }) {
           </Text>
         </View>
 
-        <PdfFooter pageNumber={12} totalPages={12} />
+        <PdfFooter />
       </Page>
     </Document>
   );
