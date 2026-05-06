@@ -11,6 +11,7 @@ import {
   importDeals,
   updateStageHistoryNote,
   getPipelineStats,
+  getDealByLogId,
 } from "../controllers/deal.controller.js";
 import { protect, authorize } from "../middlewares/auth.middleware.js";
 import { validateDeal } from "../middlewares/validate.middleware.js";
@@ -36,6 +37,8 @@ router
   .delete(authorize("ADMIN", "MANAGER"), deleteDeal);
 
 router.put("/stage-history/:id", updateStageHistoryNote);
+
+router.get("/by-log-id/:logId", getDealByLogId);
 
 router.get("/pipeline/stats", protect, getPipelineStats);
 

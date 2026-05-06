@@ -4565,7 +4565,7 @@ const DealList = () => {
   const wonDeals = pipelineStats ? pipelineStats.won : "—";
   const negotiationDeals = pipelineStats ? pipelineStats.negotiation : "—";
   const proposalDeals = pipelineStats ? pipelineStats.proposal : "—";
-  console.log("pipelineStats:", pipelineStats);
+  // console.log("pipelineStats:", pipelineStats);
 
   return (
     <div className="h-full flex flex-col">

@@ -234,3 +234,61 @@ export const getItemTreeBySku = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+/* ================= SEARCH ITEMS ================= */
+export const searchItems = async (req, res) => {
+  try {
+    const q = String(req.query.q || "").trim();
+
+    if (!q) {
+      return res.json([]);
+    }
+
+    const items = await prisma.item.findMany({
+      where: {
+        OR: [
+          {
+            sku: {
+              contains: q,
+              mode: "insensitive",
+            },
+          },
+          {
+            name: {
+              contains: q,
+              mode: "insensitive",
+            },
+          },
+          {
+            description: {
+              contains: q,
+              mode: "insensitive",
+            },
+          },
+        ],
+      },
+
+      include: {
+        children: {
+          orderBy: {
+            createdAt: "asc",
+          },
+        },
+      },
+
+      orderBy: {
+        createdAt: "asc",
+      },
+
+      take: 15,
+    });
+
+    res.json(items);
+  } catch (err) {
+    console.error("❌ ITEM SEARCH ERROR:", err);
+
+    res.status(500).json({
+      message: err.message,
+    });
+  }
+};

@@ -660,14 +660,14 @@ export default function ItemDetail() {
 
                   <div className="min-w-0">
                     <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">
-                      {item.name}
+                      {item.sku || "-"}
                     </h1>
 
                     <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-500">
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 font-mono text-xs font-semibold text-slate-700 shadow-sm">
+                      {/* <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 font-mono text-xs font-semibold text-slate-700 shadow-sm">
                         <Tag className="h-3.5 w-3.5 text-slate-400" />
                         {item.sku || "-"}
-                      </span>
+                      </span> */}
 
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">
                         <BadgeCheck className="h-3.5 w-3.5" />
@@ -731,7 +731,6 @@ export default function ItemDetail() {
                   <div className="space-y-5">
                     <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-5">
                       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                        <InfoTile label="Item Name" value={item.name} />
                         <InfoTile label="SKU" value={item.sku} mono />
                         <InfoTile label="Category" value={item.category} />
                         <InfoTile label="Make" value={item.make} />
@@ -755,9 +754,34 @@ export default function ItemDetail() {
                           </h3>
                         </div>
                       </div>
-                      <p className="whitespace-pre-wrap rounded-2xl border border-slate-100 bg-slate-50/70 px-4 py-4 text-sm leading-7 text-slate-700">
-                        {item.description || "No description provided."}
-                      </p>
+                      <div className="rounded-2xl border border-slate-100 bg-slate-50/70">
+                        <div className="max-h-[420px] overflow-y-auto px-4 py-3">
+                          {item.description ? (
+                            <div className="space-y-2">
+                              {item.description
+                                .split(/\r?\n|,/)
+                                .map((line) => line.trim())
+                                .filter(Boolean)
+                                .map((line, index) => (
+                                  <div
+                                    key={index}
+                                    className="flex items-start gap-3 rounded-xl border border-slate-100 bg-white px-3 py-2 shadow-sm"
+                                  >
+                                    <div className="mt-[7px] h-1.5 w-1.5 rounded-full bg-indigo-500" />
+
+                                    <p className="flex-1 text-sm leading-6 text-slate-700">
+                                      {line}
+                                    </p>
+                                  </div>
+                                ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-slate-500">
+                              No description provided.
+                            </p>
+                          )}
+                        </div>
+                      </div>
                     </div>
 
                     <div className="rounded-[24px] border border-amber-100 bg-amber-50/70 p-5">

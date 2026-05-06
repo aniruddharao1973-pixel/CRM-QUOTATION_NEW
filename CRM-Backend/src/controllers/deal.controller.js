@@ -871,3 +871,50 @@ export const getPipelineStats = asyncHandler(async (req, res) => {
     },
   });
 });
+
+export const getDealByLogId = asyncHandler(async (req, res) => {
+  const { logId } = req.params;
+
+  const deal = await prisma.deal.findFirst({
+    where: {
+      dealLogId: {
+        equals: logId,
+        mode: "insensitive",
+      },
+    },
+
+    include: {
+      account: {
+        select: {
+          id: true,
+          accountName: true,
+        },
+      },
+
+      contact: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+        },
+      },
+    },
+  });
+
+  if (!deal) {
+    throw new ApiError(404, "Deal not found");
+  }
+
+  const contacts = deal.contact ? [deal.contact] : [];
+
+  res.json({
+    success: true,
+
+    deal,
+
+    account: deal.account,
+
+    contacts,
+  });
+});

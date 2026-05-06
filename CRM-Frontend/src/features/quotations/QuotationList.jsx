@@ -937,6 +937,12 @@ export default function QuotationList() {
   const { user } = useSelector((state) => state.auth); // ⚠️ adjust if needed
   const isAdmin = user?.role?.toLowerCase() === "admin";
 
+  const formatAmount = (value) => {
+    const amount = Number(value || 0);
+
+    return formatINR(Math.round(amount)).replace(".00", "");
+  };
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [expandedRow, setExpandedRow] = useState(null);
@@ -1135,10 +1141,10 @@ export default function QuotationList() {
           />
           <StatCard
             label="Total Pipeline"
-            value={formatINR(stats.value)}
+            value={formatAmount(stats.value)}
             icon={<TrendingUp className="h-5 w-5" />}
             color="amber"
-            subtext={`Avg: ${formatINR(stats.avgValue)}`}
+            subtext={`Avg: ${formatAmount(stats.avgValue)}`}
           />
         </div>
 
@@ -1360,13 +1366,13 @@ export default function QuotationList() {
 
                         <td className="px-5 py-5 text-right">
                           <div className="font-semibold text-slate-700">
-                            {formatINR(q.subtotal || 0)}
+                            {formatAmount(q.subtotal || 0)}
                           </div>
                         </td>
 
                         <td className="px-5 py-5 text-right">
                           <div className="text-base font-bold text-slate-900">
-                            {formatINR(q.grandTotal || 0)}
+                            {formatAmount(q.grandTotal || 0)}
                           </div>
                         </td>
 

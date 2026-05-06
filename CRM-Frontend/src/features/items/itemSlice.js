@@ -89,6 +89,22 @@ export const importItems = createAsyncThunk(
   },
 );
 
+/* ================= SEARCH ITEMS ================= */
+export const searchItems = createAsyncThunk(
+  "items/search",
+  async (query, { rejectWithValue }) => {
+    try {
+      const res = await API.get("/items/search", {
+        params: { q: query },
+      });
+
+      return normalize(res);
+    } catch (err) {
+      return rejectWithValue(err.response?.data || "Search failed");
+    }
+  },
+);
+
 /* ================= HIERARCHY HELPER ================= */
 export const buildItemTree = (items) => {
   const map = {};
@@ -114,6 +130,7 @@ const itemSlice = createSlice({
   name: "items",
   initialState: {
     list: [],
+    searchResults: [],
     loading: false,
     error: null,
   },
@@ -134,6 +151,23 @@ const itemSlice = createSlice({
         state.list = Array.isArray(action.payload) ? action.payload : [];
       })
       .addCase(fetchItems.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      /* ===== SEARCH ===== */
+      .addCase(searchItems.pending, (state) => {
+        state.loading = true;
+      })
+
+      .addCase(searchItems.fulfilled, (state, action) => {
+        state.loading = false;
+        state.searchResults = Array.isArray(action.payload)
+          ? action.payload
+          : [];
+      })
+
+      .addCase(searchItems.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })

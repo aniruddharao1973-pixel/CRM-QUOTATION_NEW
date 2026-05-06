@@ -1636,6 +1636,1200 @@
 //   );
 // }
 
+// // src/features/quotations/QuotationDetail.jsx
+
+// import { useEffect, useMemo, Fragment, useState } from "react";
+// import { useParams, useNavigate } from "react-router-dom";
+// import { useDispatch, useSelector } from "react-redux";
+// import { PDFDownloadLink } from "@react-pdf/renderer";
+// import QuotationPdfDocument from "./pdf/QuotationPdfDocument";
+// import QuotationPdfV2 from "./pdf/QuotationPdfDocumentV2";
+// import QuotationPdfV3 from "./pdf/QuotationPdfDocumentV3";
+// import {
+//   Download,
+//   Pencil,
+//   ChevronLeft,
+//   FileText,
+//   Calendar,
+//   Building2,
+//   Package,
+//   Tag,
+//   Layers,
+//   MessageSquare,
+//   TrendingUp,
+//   DollarSign,
+//   Receipt,
+//   PercentIcon,
+//   Calculator,
+//   RefreshCw,
+//   FileCheck,
+//   Hash,
+//   Ruler,
+//   Wrench,
+// } from "lucide-react";
+
+// import {
+//   fetchQuotationById,
+//   clearSelectedQuotation,
+//   submitQuotation,
+//   approveQuotation,
+//   rejectQuotation,
+// } from "./quotationSlice";
+// import { formatINR } from "./quotationUtils";
+
+// export default function QuotationDetail() {
+//   const { id } = useParams();
+//   const navigate = useNavigate();
+//   const dispatch = useDispatch();
+
+//   const { selected: data, loading } = useSelector((state) => state.quotation);
+
+//   const user = useSelector((state) => state.auth.user);
+
+//   const role = user?.role;
+//   const statusUpper = (data?.status || "").toUpperCase();
+
+//   const isSalesRep = role === "SALES_REP";
+//   const isAdmin = role === "ADMIN";
+//   const [showRejectModal, setShowRejectModal] = useState(false);
+//   const [rejectComment, setRejectComment] = useState("");
+//   const [actionLoading, setActionLoading] = useState(false);
+//   // const [activePdf, setActivePdf] = useState(null);
+
+//   // console.log("PDF DATA →", data);
+
+//   /* ================= FETCH ================= */
+//   useEffect(() => {
+//     dispatch(fetchQuotationById(id));
+
+//     return () => {
+//       dispatch(clearSelectedQuotation());
+//     };
+//   }, [dispatch, id]);
+
+//   const handleSubmit = async () => {
+//     try {
+//       setActionLoading(true);
+
+//       const res = await dispatch(submitQuotation(id)).unwrap();
+
+//       // 🔥 redirect to latest version (new ID returned from backend)
+//       if (res?.id) {
+//         navigate(`/quotations/${res.id}`);
+//       } else {
+//         // fallback (should rarely happen)
+//         dispatch(fetchQuotationById(id));
+//       }
+//     } catch (err) {
+//       console.error(err);
+//       alert("Submit failed");
+//     } finally {
+//       setActionLoading(false);
+//     }
+//   };
+
+//   const handleApprove = async () => {
+//     try {
+//       setActionLoading(true);
+//       await dispatch(approveQuotation(id)).unwrap();
+//       dispatch(fetchQuotationById(id));
+//     } catch (err) {
+//       console.error(err);
+//       alert("Approval failed");
+//     } finally {
+//       setActionLoading(false);
+//     }
+//   };
+
+//   const handleReject = async () => {
+//     if (!rejectComment.trim()) {
+//       alert("Rejection reason required");
+//       return;
+//     }
+
+//     try {
+//       setActionLoading(true);
+//       await dispatch(rejectQuotation({ id, comment: rejectComment })).unwrap();
+
+//       setShowRejectModal(false);
+//       setRejectComment("");
+
+//       dispatch(fetchQuotationById(id));
+//     } catch (err) {
+//       console.error(err);
+//       alert("Rejection failed");
+//     } finally {
+//       setActionLoading(false);
+//     }
+//   };
+
+//   /* ================= TOTALS ================= */
+//   const totals = useMemo(() => {
+//     if (!data) return null;
+
+//     return {
+//       subtotal: Number(data.subtotal || 0),
+//       discount: Number(data.discountTotal || 0),
+//       taxable: Math.max(
+//         Number(data.subtotal || 0) - Number(data.discountTotal || 0),
+//         0,
+//       ),
+//       cgst: Number(data.taxTotal || 0) / 2,
+//       sgst: Number(data.taxTotal || 0) / 2,
+//       grandTotal: Number(data.grandTotal || 0),
+//     };
+//   }, [data]);
+
+//   const stripJunk = (value) => {
+//     if (value == null) return value;
+//     return String(value)
+//       .normalize("NFKC")
+//       .replace(/\u00B9/g, "") // ¹ (misencoded ₹)
+//       .replace(/[\u00B2\u00B3\u2070-\u2079]/g, "") // other superscripts
+//       .trim();
+//   };
+
+//   const sanitizeItems = (items = []) =>
+//     items.map((item) => ({
+//       ...item,
+//       description: stripJunk(item.description),
+//       price: stripJunk(item.price),
+//       sku: stripJunk(item.sku),
+//       subItems: (item.subItems || []).map((sub) => ({
+//         ...sub,
+//         description: stripJunk(sub.description),
+//         name: stripJunk(sub.name),
+//         price: stripJunk(sub.price),
+//         sku: stripJunk(sub.sku),
+//         mfgPartNo: stripJunk(sub.mfgPartNo),
+//       })),
+//     }));
+
+//   const itemCount = data?.items?.length || 0;
+//   const categoryCount = useMemo(() => {
+//     const categories = new Set();
+//     (data?.items || []).forEach((item) => {
+//       if (item.category) categories.add(item.category);
+//       (item.subItems || []).forEach((sub) => {
+//         if (sub.category) categories.add(sub.category);
+//       });
+//     });
+//     return categories.size;
+//   }, [data]);
+
+//   /* ================= LOADING ================= */
+//   if (loading || !data) {
+//     return (
+//       <div className="flex min-h-[calc(100vh-64px)] items-center justify-center bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,0.10),_transparent_26%),radial-gradient(circle_at_top_right,_rgba(14,165,233,0.10),_transparent_24%),linear-gradient(to_bottom,_#f8fafc,_#f8fafc,_#eef2ff_120%)] px-4">
+//         <div className="rounded-3xl border border-white/70 bg-white/85 px-8 py-10 text-center shadow-[0_12px_40px_rgba(15,23,42,0.08)] backdrop-blur">
+//           <RefreshCw className="mx-auto mb-4 h-12 w-12 animate-spin text-indigo-500" />
+//           <p className="font-medium text-slate-600">
+//             Loading quotation details...
+//           </p>
+//         </div>
+//       </div>
+//     );
+//   }
+
+//   /* ================= UI HELPERS ================= */
+//   const status = (data.status || "Draft").toString();
+//   const statusColor = getStatusColor(status);
+
+//   return (
+//     <div className="min-h-[calc(100vh-64px)] bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,0.10),_transparent_25%),radial-gradient(circle_at_top_right,_rgba(14,165,233,0.10),_transparent_24%),linear-gradient(to_bottom,_#f8fafc,_#f8fafc,_#eef2ff_120%)] px-3 py-4 sm:px-5 sm:py-5">
+//       <div className="mx-auto w-full max-w-[1700px] space-y-5">
+//         {/* ================= TOP BAR ================= */}
+
+//         {/* ================= MAIN GRID ================= */}
+//         <div className="w-full">
+//           {/* LEFT COLUMN */}
+//           <div className="space-y-6">
+//             {/* OVERVIEW CARD */}
+//             <div
+//               className="rounded-[28px] border-0 shadow-[0_20px_60px_rgba(15,23,42,0.18)]"
+//               style={{
+//                 background:
+//                   "linear-gradient(135deg, #0f172a 0%, #1e293b 40%, #0f2027 100%)",
+//               }}
+//             >
+//               <div
+//                 className="border-b border-slate-200/60 px-6 py-5 rounded-t-[28px]"
+//                 style={{
+//                   background:
+//                     "linear-gradient(135deg, #0f172a 0%, #1e293b 40%, #0f2027 100%)",
+//                 }}
+//               >
+//                 <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+//                   {/* LEFT SIDE */}
+//                   <div className="flex items-center gap-4">
+//                     {/* BACK BUTTON */}
+//                     <button
+//                       onClick={() => navigate(-1)}
+//                       className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white/70 backdrop-blur-sm transition hover:bg-white/20 hover:text-white"
+//                     >
+//                       <ChevronLeft className="h-3.5 w-3.5" />
+//                       Back
+//                     </button>
+
+//                     {/* ICON */}
+//                     <div className="relative flex-shrink-0">
+//                       <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-400 to-violet-500 text-white shadow-[0_0_24px_rgba(139,92,246,0.45)]">
+//                         <FileText className="h-5 w-5" />
+//                       </div>
+//                       {/* glow ring */}
+//                       <div className="absolute inset-0 rounded-2xl ring-2 ring-violet-400/30" />
+//                     </div>
+
+//                     {/* TITLE + META */}
+//                     <div>
+//                       <h2 className="text-xl font-black tracking-tight text-white drop-shadow-sm lg:text-2xl">
+//                         {data.deal?.dealName || "—"}
+//                       </h2>
+
+//                       <div className="mt-2 flex flex-wrap items-center gap-2.5">
+//                         {/* QUOTATION NO */}
+//                         <div className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-bold text-white/80 backdrop-blur-sm">
+//                           <Hash className="h-3 w-3 text-indigo-300" />
+//                           {data.quotationNo}
+//                         </div>
+
+//                         {/* STATUS BADGE */}
+//                         <div
+//                           className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-black uppercase tracking-[0.18em] backdrop-blur-sm ${
+//                             statusUpper === "APPROVED"
+//                               ? "border-emerald-400/40 bg-emerald-400/15 text-emerald-300"
+//                               : statusUpper === "SUBMITTED"
+//                                 ? "border-amber-400/40 bg-amber-400/15 text-amber-300"
+//                                 : statusUpper === "REJECTED"
+//                                   ? "border-rose-400/40 bg-rose-400/15 text-rose-300"
+//                                   : "border-slate-400/30 bg-white/10 text-slate-300"
+//                           }`}
+//                         >
+//                           <span
+//                             className={`h-1.5 w-1.5 rounded-full animate-pulse ${
+//                               statusUpper === "APPROVED"
+//                                 ? "bg-emerald-400"
+//                                 : statusUpper === "SUBMITTED"
+//                                   ? "bg-amber-400"
+//                                   : statusUpper === "REJECTED"
+//                                     ? "bg-rose-400"
+//                                     : "bg-slate-400"
+//                             }`}
+//                           />
+//                           {status}
+//                         </div>
+//                       </div>
+//                     </div>
+//                   </div>
+
+//                   {/* RIGHT SIDE — ACTION BUTTONS */}
+//                   <div className="flex items-center gap-2.5 flex-wrap">
+//                     {/* SALES REP: Submit */}
+//                     {isSalesRep && statusUpper === "DRAFT" && (
+//                       <button
+//                         onClick={handleSubmit}
+//                         disabled={actionLoading}
+//                         className="inline-flex items-center gap-2 h-10 px-5 rounded-xl text-sm font-black text-white transition-all duration-200 disabled:opacity-50"
+//                         style={{
+//                           background:
+//                             "linear-gradient(135deg, #2563eb, #1d4ed8)",
+//                           boxShadow: "0 4px 16px rgba(37,99,235,0.45)",
+//                         }}
+//                         onMouseEnter={(e) =>
+//                           (e.currentTarget.style.boxShadow =
+//                             "0 6px 22px rgba(37,99,235,0.65)")
+//                         }
+//                         onMouseLeave={(e) =>
+//                           (e.currentTarget.style.boxShadow =
+//                             "0 4px 16px rgba(37,99,235,0.45)")
+//                         }
+//                       >
+//                         <FileCheck className="h-4 w-4" />
+//                         Submit
+//                       </button>
+//                     )}
+
+//                     {/* SALES REP: Resubmit */}
+//                     {isSalesRep && statusUpper === "REJECTED" && (
+//                       <button
+//                         onClick={() => navigate(`/quotations/${id}/edit`)}
+//                         className="inline-flex items-center gap-2 h-10 px-5 rounded-xl text-sm font-black text-white transition-all duration-200"
+//                         style={{
+//                           background:
+//                             "linear-gradient(135deg, #6366f1, #4f46e5)",
+//                           boxShadow: "0 4px 16px rgba(99,102,241,0.45)",
+//                         }}
+//                         onMouseEnter={(e) =>
+//                           (e.currentTarget.style.boxShadow =
+//                             "0 6px 22px rgba(99,102,241,0.65)")
+//                         }
+//                         onMouseLeave={(e) =>
+//                           (e.currentTarget.style.boxShadow =
+//                             "0 4px 16px rgba(99,102,241,0.45)")
+//                         }
+//                       >
+//                         <RefreshCw className="h-4 w-4" />
+//                         Resubmit
+//                       </button>
+//                     )}
+
+//                     {/* ADMIN: Approve */}
+//                     {isAdmin && statusUpper === "SUBMITTED" && (
+//                       <button
+//                         onClick={handleApprove}
+//                         disabled={actionLoading}
+//                         className="inline-flex items-center gap-2 h-10 px-5 rounded-xl text-sm font-black text-white transition-all duration-200 disabled:opacity-50"
+//                         style={{
+//                           background:
+//                             "linear-gradient(135deg, #10b981, #059669)",
+//                           boxShadow: "0 4px 16px rgba(16,185,129,0.40)",
+//                         }}
+//                         onMouseEnter={(e) =>
+//                           (e.currentTarget.style.boxShadow =
+//                             "0 6px 22px rgba(16,185,129,0.60)")
+//                         }
+//                         onMouseLeave={(e) =>
+//                           (e.currentTarget.style.boxShadow =
+//                             "0 4px 16px rgba(16,185,129,0.40)")
+//                         }
+//                       >
+//                         <FileCheck className="h-4 w-4" />
+//                         Approve
+//                       </button>
+//                     )}
+
+//                     {/* ADMIN: Reject */}
+//                     {isAdmin && statusUpper === "SUBMITTED" && (
+//                       <button
+//                         onClick={() => setShowRejectModal(true)}
+//                         disabled={actionLoading}
+//                         className="inline-flex items-center gap-2 h-10 px-5 rounded-xl text-sm font-black text-white transition-all duration-200 disabled:opacity-50"
+//                         style={{
+//                           background:
+//                             "linear-gradient(135deg, #f43f5e, #e11d48)",
+//                           boxShadow: "0 4px 16px rgba(244,63,94,0.40)",
+//                         }}
+//                         onMouseEnter={(e) =>
+//                           (e.currentTarget.style.boxShadow =
+//                             "0 6px 22px rgba(244,63,94,0.60)")
+//                         }
+//                         onMouseLeave={(e) =>
+//                           (e.currentTarget.style.boxShadow =
+//                             "0 4px 16px rgba(244,63,94,0.40)")
+//                         }
+//                       >
+//                         <MessageSquare className="h-4 w-4" />
+//                         Reject
+//                       </button>
+//                     )}
+
+//                     {/* EDIT */}
+//                     {(statusUpper === "DRAFT" ||
+//                       statusUpper === "REJECTED") && (
+//                       <button
+//                         onClick={() => navigate(`/quotations/${id}/edit`)}
+//                         className="inline-flex items-center gap-2 h-10 px-5 rounded-xl text-sm font-black text-white transition-all duration-200"
+//                         style={{
+//                           background:
+//                             "linear-gradient(135deg, #818cf8, #6366f1, #4f46e5)",
+//                           boxShadow: "0 4px 16px rgba(99,102,241,0.40)",
+//                         }}
+//                         onMouseEnter={(e) =>
+//                           (e.currentTarget.style.boxShadow =
+//                             "0 6px 22px rgba(99,102,241,0.65)")
+//                         }
+//                         onMouseLeave={(e) =>
+//                           (e.currentTarget.style.boxShadow =
+//                             "0 4px 16px rgba(99,102,241,0.40)")
+//                         }
+//                       >
+//                         <Pencil className="h-4 w-4" />
+//                         Edit
+//                       </button>
+//                     )}
+//                   </div>
+//                 </div>
+//               </div>
+
+//               <div className="grid grid-cols-2 gap-3 px-6 py-5 sm:grid-cols-4 bg-white border-t-2 border-slate-200 shadow-inner rounded-b-[28px]">
+//                 {isAdmin && (
+//                   <div className="relative group h-full">
+//                     {/* CARD HEADER */}
+//                     <div className="h-full cursor-pointer rounded-2xl border border-slate-100 bg-white p-4 flex items-center shadow-sm transition-all duration-200 hover:shadow-md hover:border-slate-200">
+//                       <div className="flex items-center gap-3">
+//                         <div
+//                           className="rounded-xl p-2.5 text-white flex-shrink-0"
+//                           style={{
+//                             background:
+//                               "linear-gradient(135deg, #818cf8, #6366f1)",
+//                             boxShadow: "0 4px 14px rgba(99,102,241,0.4)",
+//                           }}
+//                         >
+//                           <Download className="h-4 w-4" />
+//                         </div>
+//                         <div>
+//                           <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+//                             Export
+//                           </div>
+//                           <div className="text-sm font-black text-slate-900">
+//                             Proposal PDF
+//                           </div>
+//                         </div>
+//                       </div>
+//                     </div>
+
+//                     {/* DROPDOWN */}
+//                     <div className="absolute left-0 mt-3 w-80 rounded-3xl border border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.18)] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 overflow-hidden">
+//                       {/* HEADER */}
+//                       <div className="px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-indigo-50 via-white to-indigo-50">
+//                         <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+//                           Export Options
+//                         </p>
+//                         <p className="text-sm font-semibold text-slate-800 mt-1">
+//                           Choose proposal format
+//                         </p>
+//                       </div>
+
+//                       {/* V1 */}
+//                       <PDFDownloadLink
+//                         document={
+//                           <QuotationPdfDocument
+//                             quotation={{
+//                               ...data,
+//                               items: sanitizeItems(data.items),
+//                             }}
+//                             totals={totals || {}}
+//                           />
+//                         }
+//                         fileName={`${data?.quotationNo || "quotation"}-COMMERCIAL_V1.pdf`}
+//                         className="flex items-start gap-3 px-5 py-4 hover:bg-indigo-50/70 active:scale-[0.99] transition-all"
+//                       >
+//                         {({ loading }) => (
+//                           <>
+//                             <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600 shadow-sm">
+//                               📄
+//                             </div>
+//                             <div className="flex-1">
+//                               <div className="flex items-center justify-between">
+//                                 <span className="text-sm font-semibold text-slate-900">
+//                                   Commercial Proposal — V1
+//                                 </span>
+//                                 <span className="text-[11px] font-medium text-indigo-500">
+//                                   {loading ? "Generating..." : "Download"}
+//                                 </span>
+//                               </div>
+//                               <p className="text-xs text-slate-500 mt-1">
+//                                 Clean, minimal layout
+//                               </p>
+//                             </div>
+//                           </>
+//                         )}
+//                       </PDFDownloadLink>
+
+//                       <div className="h-px bg-slate-100 mx-4" />
+
+//                       {/* V2 */}
+//                       <PDFDownloadLink
+//                         document={
+//                           <QuotationPdfV2
+//                             quotation={{
+//                               ...data,
+//                               items: sanitizeItems(data.items),
+//                             }}
+//                             totals={totals || {}}
+//                           />
+//                         }
+//                         fileName={`${data?.quotationNo || "quotation"}-COMMERCIAL_V2.pdf`}
+//                         className="flex items-start gap-3 px-5 py-4 hover:bg-indigo-50/70 active:scale-[0.99] transition-all"
+//                       >
+//                         {({ loading }) => (
+//                           <>
+//                             <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600 shadow-sm">
+//                               📊
+//                             </div>
+//                             <div className="flex-1">
+//                               <div className="flex items-center justify-between">
+//                                 <span className="text-sm font-semibold text-slate-900">
+//                                   Commercial Proposal — V2
+//                                 </span>
+//                                 <span className="text-[11px] font-medium text-emerald-500">
+//                                   {loading ? "Generating..." : "Download"}
+//                                 </span>
+//                               </div>
+//                               <p className="text-xs text-slate-500 mt-1">
+//                                 Detailed breakdown
+//                               </p>
+//                             </div>
+//                           </>
+//                         )}
+//                       </PDFDownloadLink>
+
+//                       <div className="h-px bg-slate-100 mx-4" />
+
+//                       {/* V3 */}
+//                       <PDFDownloadLink
+//                         document={
+//                           <QuotationPdfV3
+//                             quotation={{
+//                               ...data,
+//                               items: sanitizeItems(data.items),
+//                             }}
+//                             totals={totals || {}}
+//                           />
+//                         }
+//                         fileName={`${data?.quotationNo || "quotation"}-COMMERCIAL_V3.pdf`}
+//                         className="flex items-start gap-3 px-5 py-4 hover:bg-indigo-50/70 active:scale-[0.99] transition-all"
+//                       >
+//                         {({ loading }) => (
+//                           <>
+//                             <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl bg-violet-100 text-violet-600 shadow-sm">
+//                               🚀
+//                             </div>
+//                             <div className="flex-1">
+//                               <div className="flex items-center justify-between">
+//                                 <span className="text-sm font-semibold text-slate-900">
+//                                   Commercial Proposal — V3
+//                                 </span>
+//                                 <span className="text-[11px] font-medium text-violet-500">
+//                                   {loading ? "Generating..." : "Download"}
+//                                 </span>
+//                               </div>
+//                               <p className="text-xs text-slate-500 mt-1">
+//                                 Advanced layout (latest version)
+//                               </p>
+//                             </div>
+//                           </>
+//                         )}
+//                       </PDFDownloadLink>
+//                     </div>
+//                   </div>
+//                 )}
+
+//                 {[
+//                   {
+//                     icon: <DollarSign className="h-4 w-4" />,
+//                     label: "Total Value",
+//                     value: formatINR(data.grandTotal),
+//                     from: "#10b981",
+//                     to: "#059669",
+//                     shadow: "rgba(16,185,129,0.35)",
+//                   },
+//                   {
+//                     icon: <Building2 className="h-4 w-4" />,
+//                     label: "Account",
+//                     value: data.account?.accountName || "—",
+//                     from: "#f43f5e",
+//                     to: "#e11d48",
+//                     shadow: "rgba(244,63,94,0.35)",
+//                   },
+//                   {
+//                     icon: <FileCheck className="h-4 w-4" />,
+//                     label: "Status",
+//                     value: status,
+//                     from: "#818cf8",
+//                     to: "#6366f1",
+//                     shadow: "rgba(99,102,241,0.35)",
+//                   },
+//                 ].map(({ icon, label, value, from, to, shadow }) => (
+//                   <div
+//                     key={label}
+//                     className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md hover:border-slate-200"
+//                     onMouseEnter={(e) =>
+//                       (e.currentTarget.style.transform = "translateY(-1px)")
+//                     }
+//                     onMouseLeave={(e) =>
+//                       (e.currentTarget.style.transform = "translateY(0)")
+//                     }
+//                   >
+//                     <div className="flex items-center gap-3">
+//                       <div
+//                         className="rounded-xl p-2.5 text-white shadow-lg flex-shrink-0"
+//                         style={{
+//                           background: `linear-gradient(135deg, ${from}, ${to})`,
+//                           boxShadow: `0 4px 14px ${shadow}`,
+//                         }}
+//                       >
+//                         {icon}
+//                       </div>
+//                       <div>
+//                         <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+//                           {label}
+//                         </div>
+//                         <div className="mt-1 text-sm font-black text-slate-900 leading-tight">
+//                           {value}
+//                         </div>
+//                       </div>
+//                     </div>
+//                   </div>
+//                 ))}
+//               </div>
+//             </div>
+
+//             {/* ITEMS TABLE */}
+//             <div className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-[0_20px_70px_rgba(15,23,42,0.08)]">
+//               {/* HEADER */}
+//               <div className="flex flex-col gap-4 border-b border-slate-100 bg-gradient-to-br from-slate-50 to-white px-7 py-6 md:flex-row md:items-center md:justify-between">
+//                 <div className="flex items-start gap-3.5">
+//                   <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/20">
+//                     <Package className="h-5 w-5" />
+//                   </div>
+//                   <div>
+//                     <h2 className="text-lg font-bold text-slate-900">
+//                       Line Items
+//                     </h2>
+//                     <p className="mt-0.5 text-sm font-medium text-slate-500">
+//                       {itemCount} {itemCount === 1 ? "item" : "items"}
+//                     </p>
+//                   </div>
+//                 </div>
+
+//                 <div className="flex flex-wrap gap-2">
+//                   <Pill
+//                     icon={<PercentIcon className="h-3.5 w-3.5" />}
+//                     label="GST Included"
+//                   />
+//                   <Pill
+//                     icon={<Calculator className="h-3.5 w-3.5" />}
+//                     label="Auto Totals"
+//                   />
+//                   <Pill
+//                     icon={<Receipt className="h-3.5 w-3.5" />}
+//                     label="Tax Summary"
+//                   />
+//                 </div>
+//               </div>
+
+//               {/* TABLE CONTAINER */}
+//               <div className="relative">
+//                 {/* Custom scrollbar wrapper */}
+//                 <div
+//                   className="max-h-[400px] overflow-auto sm:max-h-[450px] lg:max-h-[560px]"
+//                   style={{
+//                     scrollbarWidth: "thin",
+//                     scrollbarColor: "#10b981 #f1f5f9",
+//                   }}
+//                 >
+//                   <table
+//                       className="w-full text-[12px]"
+//                     style={{ minWidth: "1100px" }}
+//                   >
+//                     {/* THEAD */}
+//                     <thead className="sticky top-0 z-10">
+//                       <tr className="bg-slate-900">
+//                         {[
+//                           { label: "SKU", w: "120px", align: "text-left" },
+//                           {
+//                             label: "Description",
+//                             w: "260px",
+//                             align: "text-left",
+//                           },
+//                           { label: "Category", w: "150px", align: "text-left" },
+//                           { label: "Make", w: "110px", align: "text-left" },
+//                           { label: "Mfg PN", w: "120px", align: "text-left" },
+//                           { label: "UOM", w: "70px", align: "text-left" },
+//                           { label: "Qty", w: "60px", align: "text-right" },
+//                           { label: "Price", w: "110px", align: "text-right" },
+//                           { label: "Discount", w: "90px", align: "text-right" },
+//                           { label: "Total", w: "120px", align: "text-right" },
+//                           { label: "Remarks", w: "110px", align: "text-left" },
+//                         ].map(({ label, w, align }, i) => (
+//                           <th
+//                             key={label}
+//                             style={{ minWidth: w }}
+//                             className={`px-4 py-3 ${align} text-[9px] font-black uppercase tracking-[0.22em] text-slate-400 border-b border-slate-700/60 ${
+//                               i === 0 ? "pl-6" : ""
+//                             }`}
+//                           >
+//                             {label}
+//                           </th>
+//                         ))}
+//                       </tr>
+//                     </thead>
+
+//                     {/* TBODY */}
+//                     <tbody>
+//                       {(data.items || []).map((item, idx) => (
+//                         <Fragment key={item.id}>
+//                           {/* PARENT ROW */}
+//                           <tr
+//                             className="group relative border-b border-slate-100 transition-all duration-200"
+//                             style={{ background: "white" }}
+//                             onMouseEnter={(e) => {
+//                               e.currentTarget.style.background =
+//                                 "linear-gradient(90deg, #ecfdf5 0%, #f0fdfa 60%, #f8fafc 100%)";
+//                               e.currentTarget.style.boxShadow =
+//                                 "inset 3px 0 0 #10b981, 0 2px 12px rgba(16,185,129,0.08)";
+//                             }}
+//                             onMouseLeave={(e) => {
+//                               e.currentTarget.style.background = "white";
+//                               e.currentTarget.style.boxShadow = "none";
+//                             }}
+//                           >
+//                             {/* SKU */}
+//                             <td className="px-5 py-4 pl-6 align-top">
+//                               <div className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 px-2.5 py-1.5 font-mono text-[11px] font-black text-emerald-800 shadow-sm">
+//                                 <Tag className="h-3 w-3 text-emerald-500 flex-shrink-0" />
+//                                 <span className="truncate max-w-[70px]">
+//                                   {item.sku || "—"}
+//                                 </span>
+//                               </div>
+//                             </td>
+
+//                             {/* DESCRIPTION */}
+//                             <td className="px-5 py-4 align-top">
+//                               <div className="text-sm font-semibold leading-snug text-slate-900 pr-2">
+//                                 {item.description || "—"}
+//                               </div>
+//                             </td>
+
+//                             {/* CATEGORY */}
+//                             <td className="px-5 py-4 align-top">
+//                               {item.category ? (
+//                                 <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 px-3 py-1.5 text-[11px] font-bold text-white shadow-md shadow-emerald-500/25 whitespace-nowrap">
+//                                   <Layers className="h-3 w-3 flex-shrink-0" />
+//                                   {item.category}
+//                                 </span>
+//                               ) : (
+//                                 <span className="text-slate-300 text-sm">
+//                                   —
+//                                 </span>
+//                               )}
+//                             </td>
+
+//                             {/* MAKE */}
+//                             <td className="px-5 py-4 align-top">
+//                               <span className="text-sm font-semibold text-slate-700">
+//                                 {item.make || (
+//                                   <span className="text-slate-300">—</span>
+//                                 )}
+//                               </span>
+//                             </td>
+
+//                             {/* MFG PN */}
+//                             <td className="px-5 py-4 align-top">
+//                               <span className="font-mono text-xs font-semibold text-slate-600 bg-slate-100 px-2 py-1 rounded-md">
+//                                 {item.mfgPartNo || (
+//                                   <span className="text-slate-400 bg-transparent">
+//                                     —
+//                                   </span>
+//                                 )}
+//                               </span>
+//                             </td>
+
+//                             {/* UOM */}
+//                             <td className="px-5 py-4 align-top text-sm font-medium text-slate-500">
+//                               {item.uom || "—"}
+//                             </td>
+
+//                             {/* QTY */}
+//                             <td className="px-5 py-4 align-top text-right">
+//                               <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 text-sm font-black text-slate-800 ml-auto">
+//                                 {item.quantity ?? "—"}
+//                               </span>
+//                             </td>
+
+//                             {/* PRICE */}
+//                             <td className="px-5 py-4 align-top text-right text-sm font-semibold text-slate-700">
+//                               {item.price ? formatINR(item.price) : "—"}
+//                             </td>
+
+//                             {/* DISCOUNT */}
+//                             <td className="px-5 py-4 align-top text-right">
+//                               {item.discount > 0 ? (
+//                                 <span className="inline-flex items-center gap-0.5 rounded-full bg-rose-500 px-2.5 py-1 text-[11px] font-black text-white shadow-sm shadow-rose-400/40">
+//                                   −{item.discount}%
+//                                 </span>
+//                               ) : (
+//                                 <span className="text-slate-300">—</span>
+//                               )}
+//                             </td>
+
+//                             {/* TOTAL */}
+//                             <td className="px-5 py-4 align-top text-right">
+//                               <div className="inline-flex items-center rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 px-3.5 py-2 text-sm font-black text-white shadow-lg shadow-emerald-500/30">
+//                                 {formatINR(
+//                                   Number(item.quantity || 1) *
+//                                     Number(item.price || 0) *
+//                                     (1 - Number(item.discount || 0) / 100),
+//                                 )}
+//                               </div>
+//                             </td>
+
+//                             {/* REMARKS */}
+//                             <td className="px-5 py-4 align-top">
+//                               <span className="text-xs font-medium text-slate-500 max-w-[100px] block truncate">
+//                                 {item.remarks || (
+//                                   <span className="text-slate-300">—</span>
+//                                 )}
+//                               </span>
+//                             </td>
+//                           </tr>
+
+//                           {/* SUB ITEMS */}
+//                           {(item.selectedSubItems?.length
+//                             ? item.selectedSubItems
+//                             : item.subItems
+//                           )?.map((sub, subIdx) => (
+//                             <tr
+//                               key={sub.id}
+//                               className="border-b border-slate-50 transition-all duration-200"
+//                               style={{ background: "#fafafa" }}
+//                               onMouseEnter={(e) => {
+//                                 e.currentTarget.style.background =
+//                                   "linear-gradient(90deg, #f0fdf4 0%, #f8fffe 60%, #fafafa 100%)";
+//                                 e.currentTarget.style.boxShadow =
+//                                   "inset 3px 0 0 #6ee7b7";
+//                               }}
+//                               onMouseLeave={(e) => {
+//                                 e.currentTarget.style.background = "#fafafa";
+//                                 e.currentTarget.style.boxShadow = "none";
+//                               }}
+//                             >
+//                               {/* SKU */}
+//                               <td className="px-5 py-3.5 pl-6 align-top">
+//                                 <div className="flex items-center gap-2">
+//                                   <div className="flex flex-col items-center">
+//                                     <div className="w-px h-2 bg-slate-300" />
+//                                     <div className="w-3 h-px bg-slate-300" />
+//                                   </div>
+
+//                                   {/* ✅ Styled SKU badge (same pattern as parent but lighter) */}
+//                                   <div className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-1 font-mono text-[11px] font-bold text-emerald-700">
+//                                     <Tag className="h-3 w-3 text-emerald-500" />
+//                                     {sub.sku || "—"}
+//                                   </div>
+//                                 </div>
+//                               </td>
+
+//                               {/* DESCRIPTION */}
+//                               <td className="px-5 py-3.5 align-top">
+//                                 <div className="text-sm leading-snug text-slate-700 pr-2">
+//                                   {sub.name || "—"}
+//                                 </div>
+//                               </td>
+
+//                               {/* CATEGORY */}
+//                               <td className="px-5 py-3.5 align-top">
+//                                 {sub.category ? (
+//                                   <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 px-2.5 py-1 text-[10px] font-bold text-white shadow-sm">
+//                                     {sub.category}
+//                                   </span>
+//                                 ) : (
+//                                   <span className="text-slate-300">—</span>
+//                                 )}
+//                               </td>
+
+//                               {/* MAKE */}
+//                               <td className="px-5 py-3.5 align-top text-sm text-slate-600">
+//                                 {sub.make || (
+//                                   <span className="text-slate-300">—</span>
+//                                 )}
+//                               </td>
+
+//                               {/* MFG PN */}
+//                               <td className="px-5 py-3.5 align-top">
+//                                 <span className="font-mono text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-md">
+//                                   {sub.mfgPartNo || (
+//                                     <span className="text-slate-300">—</span>
+//                                   )}
+//                                 </span>
+//                               </td>
+
+//                               {/* UOM */}
+//                               <td className="px-5 py-3.5 align-top text-sm text-slate-400">
+//                                 {sub.uom || "—"}
+//                               </td>
+
+//                               {/* QTY */}
+//                               <td className="px-5 py-3.5 align-top text-right">
+//                                 <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100 text-xs font-bold text-slate-700">
+//                                   {sub.quantity}
+//                                 </span>
+//                               </td>
+
+//                               {/* PRICE */}
+//                               <td className="px-5 py-3.5 align-top text-right text-sm font-semibold text-slate-600">
+//                                 {formatINR(sub.price)}
+//                               </td>
+
+//                               {/* DISCOUNT */}
+//                               <td className="px-5 py-3.5 align-top text-right">
+//                                 {sub.discount > 0 ? (
+//                                   <span className="inline-flex rounded-full border border-rose-200 bg-rose-50 px-2 py-1 text-[10px] font-semibold text-rose-600">
+//                                     −{sub.discount}%
+//                                   </span>
+//                                 ) : (
+//                                   <span className="text-slate-300">—</span>
+//                                 )}
+//                               </td>
+
+//                               {/* ✅ TOTAL (green highlight like parent but softer) */}
+//                               <td className="px-5 py-3.5 align-top text-right">
+//                                 <div className="inline-flex items-center rounded-lg bg-gradient-to-r from-emerald-400 to-teal-500 px-3 py-1.5 text-xs font-bold text-white shadow-sm">
+//                                   {formatINR(sub.lineTotal)}
+//                                 </div>
+//                               </td>
+
+//                               {/* REMARKS */}
+//                               <td className="px-5 py-3.5 align-top text-xs text-slate-500">
+//                                 {sub.remarks?.trim() ? (
+//                                   sub.remarks
+//                                 ) : (
+//                                   <span className="text-slate-300">—</span>
+//                                 )}
+//                               </td>
+//                             </tr>
+//                           ))}
+//                         </Fragment>
+//                       ))}
+//                     </tbody>
+//                   </table>
+//                 </div>
+//               </div>
+//               {/* TOTAL SUMMARY OUTSIDE TABLE */}
+//               <div className="border-t border-slate-200 bg-gradient-to-br from-slate-50 via-white to-slate-100 px-6 py-6">
+//                 <div className="ml-auto w-full max-w-[420px] space-y-3">
+//                   {/* SUBTOTAL */}
+//                   <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+//                     <span className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">
+//                       Subtotal
+//                     </span>
+
+//                     <span className="text-base font-black text-slate-800">
+//                       {formatINR(totals.subtotal)}
+//                     </span>
+//                   </div>
+
+//                   {/* DISCOUNT */}
+//                   {totals.discount > 0 && (
+//                     <div className="flex items-center justify-between rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 shadow-sm">
+//                       <span className="text-xs font-black uppercase tracking-[0.22em] text-rose-500">
+//                         Discount
+//                       </span>
+
+//                       <span className="text-sm font-black text-rose-600">
+//                         −{formatINR(totals.discount)}
+//                       </span>
+//                     </div>
+//                   )}
+
+//                   {/* CGST */}
+//                   <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-5 py-3 shadow-sm">
+//                     <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-400">
+//                       CGST (9%)
+//                     </span>
+
+//                     <span className="text-sm font-black text-slate-700">
+//                       {formatINR(totals.cgst)}
+//                     </span>
+//                   </div>
+
+//                   {/* SGST */}
+//                   <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-5 py-3 shadow-sm">
+//                     <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-400">
+//                       SGST (9%)
+//                     </span>
+
+//                     <span className="text-sm font-black text-slate-700">
+//                       {formatINR(totals.sgst)}
+//                     </span>
+//                   </div>
+
+//                   {/* GRAND TOTAL */}
+//                   <div
+//                     className="overflow-hidden rounded-3xl shadow-[0_16px_40px_rgba(15,23,42,0.25)]"
+//                     style={{
+//                       background:
+//                         "linear-gradient(135deg, #0f172a 0%, #1e293b 45%, #0f172a 100%)",
+//                     }}
+//                   >
+//                     <div className="flex items-center justify-between px-6 py-5">
+//                       <div>
+//                         <div className="text-[11px] font-black uppercase tracking-[0.28em] text-white/50">
+//                           Grand Total
+//                         </div>
+
+//                         <div className="mt-1 text-[11px] font-medium text-emerald-300">
+//                           GST Included
+//                         </div>
+//                       </div>
+
+//                       <div className="text-right">
+//                         <div className="text-3xl font-black tracking-tight text-white">
+//                           {formatINR(totals.grandTotal)}
+//                         </div>
+//                       </div>
+//                     </div>
+//                   </div>
+//                 </div>
+//               </div>
+//             </div>
+//           </div>
+//         </div>
+//       </div>
+//       {showRejectModal && (
+//         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+//           <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl">
+//             <h3 className="text-lg font-bold text-slate-900">
+//               Reject Quotation
+//             </h3>
+
+//             <p className="mt-1 text-sm text-slate-500">
+//               Please provide a reason for rejection
+//             </p>
+
+//             <textarea
+//               value={rejectComment}
+//               onChange={(e) => setRejectComment(e.target.value)}
+//               placeholder="Enter rejection reason..."
+//               className="mt-4 w-full rounded-xl border border-slate-200 p-3 text-sm outline-none focus:ring-2 focus:ring-rose-500"
+//               rows={4}
+//             />
+
+//             <div className="mt-5 flex justify-end gap-2">
+//               <button
+//                 onClick={() => setShowRejectModal(false)}
+//                 className="rounded-xl border px-4 py-2 text-sm"
+//               >
+//                 Cancel
+//               </button>
+
+//               <button
+//                 onClick={handleReject}
+//                 disabled={actionLoading}
+//                 className="rounded-xl bg-rose-600 px-5 py-2 text-sm font-bold text-white hover:bg-rose-700 disabled:opacity-50"
+//               >
+//                 {actionLoading ? "Processing..." : "Confirm Reject"}
+//               </button>
+//             </div>
+//           </div>
+//         </div>
+//       )}
+//     </div>
+//   );
+// }
+
+// /* ================= COMPONENTS ================= */
+
+// function formatDate(value) {
+//   if (!value) return "-";
+//   const d = new Date(value);
+//   if (Number.isNaN(d.getTime())) return "-";
+//   return d.toLocaleDateString("en-IN", { dateStyle: "medium" });
+// }
+
+// function getStatusColor(status) {
+//   const normalized = (status || "").toString().trim().toUpperCase();
+
+//   const colors = {
+//     DRAFT: "bg-slate-100 text-slate-700 border-slate-200",
+//     SUBMITTED: "bg-amber-100 text-amber-700 border-amber-200",
+//     APPROVED: "bg-emerald-100 text-emerald-700 border-emerald-200",
+//     REJECTED: "bg-rose-100 text-rose-700 border-rose-200",
+//   };
+
+//   return colors[normalized] || "bg-slate-100 text-slate-700 border-slate-200";
+// }
+
+// function InfoItem({ icon, label, value }) {
+//   return (
+//     <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+//       <div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
+//         <span className="text-slate-400">{icon}</span>
+//         {label}
+//       </div>
+//       <div className="text-sm font-semibold text-slate-900">{value || "-"}</div>
+//     </div>
+//   );
+// }
+
+// function MiniStat({ icon, label, value }) {
+//   return (
+//     <div className="rounded-2xl border border-slate-100 bg-white/90 px-4 py-3.5 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+//       <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">
+//         <span className="text-indigo-400">{icon}</span>
+//         {label}
+//       </div>
+//       <div className="mt-2 text-sm font-semibold text-slate-800 leading-tight">
+//         {value || "-"}
+//       </div>
+//     </div>
+//   );
+// }
+
+// function SummaryRow({ icon, label, value, small = false, highlight }) {
+//   const highlightColors = {
+//     rose: "text-rose-600",
+//     emerald: "text-emerald-600",
+//   };
+
+//   return (
+//     <div className="flex items-center justify-between gap-3 py-1.5">
+//       <div className="flex items-center gap-2">
+//         {icon && <span className="text-slate-500">{icon}</span>}
+//         <span className={`text-slate-600 ${small ? "text-xs" : "text-sm"}`}>
+//           {label}
+//         </span>
+//       </div>
+//       <span
+//         className={`font-bold ${
+//           highlight ? highlightColors[highlight] : "text-slate-900"
+//         } ${small ? "text-sm" : "text-base"}`}
+//       >
+//         {value}
+//       </span>
+//     </div>
+//   );
+// }
+
+// function QuickStat({ icon, label, value, color = "indigo" }) {
+//   const colorClasses = {
+//     indigo: "from-indigo-500 to-indigo-600",
+//     emerald: "from-emerald-500 to-emerald-600",
+//     rose: "from-rose-500 to-rose-600",
+//   };
+
+//   return (
+//     <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md">
+//       <div className="flex items-center gap-3">
+//         <div
+//           className={`rounded-xl bg-gradient-to-br ${colorClasses[color]} p-2.5 text-white shadow-sm`}
+//         >
+//           {icon}
+//         </div>
+//         <div>
+//           <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+//             {label}
+//           </div>
+//           <div className="mt-1 text-sm font-bold text-slate-900">{value}</div>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
+
+// function Pill({ icon, label }) {
+//   return (
+//     <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-600 shadow-sm">
+//       {icon}
+//       {label}
+//     </span>
+//   );
+// }
+
+// function MiniCard({ label, value }) {
+//   return (
+//     <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+//       <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+//         {label}
+//       </div>
+//       <div className="mt-2 text-sm font-bold text-slate-900">
+//         {value || "-"}
+//       </div>
+//     </div>
+//   );
+// }
+
 // src/features/quotations/QuotationDetail.jsx
 
 import { useEffect, useMemo, Fragment, useState } from "react";
@@ -1645,18 +2839,17 @@ import { PDFDownloadLink } from "@react-pdf/renderer";
 import QuotationPdfDocument from "./pdf/QuotationPdfDocument";
 import QuotationPdfV2 from "./pdf/QuotationPdfDocumentV2";
 import QuotationPdfV3 from "./pdf/QuotationPdfDocumentV3";
+import { formatINR } from "./quotationUtils";
 import {
   Download,
   Pencil,
   ChevronLeft,
   FileText,
-  Calendar,
   Building2,
   Package,
   Tag,
   Layers,
   MessageSquare,
-  TrendingUp,
   DollarSign,
   Receipt,
   PercentIcon,
@@ -1664,8 +2857,6 @@ import {
   RefreshCw,
   FileCheck,
   Hash,
-  Ruler,
-  Wrench,
 } from "lucide-react";
 
 import {
@@ -1675,7 +2866,6 @@ import {
   approveQuotation,
   rejectQuotation,
 } from "./quotationSlice";
-import { formatINR } from "./quotationUtils";
 
 export default function QuotationDetail() {
   const { id } = useParams();
@@ -1683,6 +2873,8 @@ export default function QuotationDetail() {
   const dispatch = useDispatch();
 
   const { selected: data, loading } = useSelector((state) => state.quotation);
+
+  const formatAmount = (value) => formatINR(value).replace(".00", "");
 
   const user = useSelector((state) => state.auth.user);
 
@@ -1838,606 +3030,623 @@ export default function QuotationDetail() {
   return (
     <div className="min-h-[calc(100vh-64px)] bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,0.10),_transparent_25%),radial-gradient(circle_at_top_right,_rgba(14,165,233,0.10),_transparent_24%),linear-gradient(to_bottom,_#f8fafc,_#f8fafc,_#eef2ff_120%)] px-3 py-4 sm:px-5 sm:py-5">
       <div className="mx-auto w-full max-w-[1700px] space-y-5">
-        {/* ================= TOP BAR ================= */}
+        <div className="w-full space-y-5">
+          {/* ================= OVERVIEW CARD ================= */}
+          <div
+            className="rounded-[28px] border border-white/60 shadow-[0_20px_60px_rgba(15,23,42,0.14)] overflow-visible"
+            style={{
+              background:
+                "linear-gradient(135deg, #0f172a 0%, #1e293b 42%, #0f2027 100%)",
+            }}
+          >
+            <div className="border-b border-white/10 px-5 py-5 sm:px-6 sm:py-6">
+              <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                {/* LEFT SIDE */}
+                <div className="flex items-start gap-4">
+                  <button
+                    onClick={() => navigate(-1)}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white/70 backdrop-blur-sm transition hover:bg-white/20 hover:text-white"
+                  >
+                    <ChevronLeft className="h-3.5 w-3.5" />
+                    Back
+                  </button>
 
-        {/* ================= MAIN GRID ================= */}
-        <div className="w-full">
-          {/* LEFT COLUMN */}
-          <div className="space-y-6">
-            {/* OVERVIEW CARD */}
-            <div
-              className="rounded-[28px] border-0 shadow-[0_20px_60px_rgba(15,23,42,0.18)]"
-              style={{
-                background:
-                  "linear-gradient(135deg, #0f172a 0%, #1e293b 40%, #0f2027 100%)",
-              }}
-            >
-              <div
-                className="border-b border-slate-200/60 px-6 py-5 rounded-t-[28px]"
-                style={{
-                  background:
-                    "linear-gradient(135deg, #0f172a 0%, #1e293b 40%, #0f2027 100%)",
-                }}
-              >
-                <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-                  {/* LEFT SIDE */}
-                  <div className="flex items-center gap-4">
-                    {/* BACK BUTTON */}
-                    <button
-                      onClick={() => navigate(-1)}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white/70 backdrop-blur-sm transition hover:bg-white/20 hover:text-white"
-                    >
-                      <ChevronLeft className="h-3.5 w-3.5" />
-                      Back
-                    </button>
-
-                    {/* ICON */}
-                    <div className="relative flex-shrink-0">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-400 to-violet-500 text-white shadow-[0_0_24px_rgba(139,92,246,0.45)]">
-                        <FileText className="h-5 w-5" />
-                      </div>
-                      {/* glow ring */}
-                      <div className="absolute inset-0 rounded-2xl ring-2 ring-violet-400/30" />
+                  <div className="relative flex-shrink-0">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-400 to-violet-500 text-white shadow-[0_0_24px_rgba(139,92,246,0.45)]">
+                      <FileText className="h-5 w-5" />
                     </div>
+                    <div className="absolute inset-0 rounded-2xl ring-2 ring-violet-400/30" />
+                  </div>
 
-                    {/* TITLE + META */}
-                    <div>
-                      <h2 className="text-xl font-black tracking-tight text-white drop-shadow-sm lg:text-2xl">
-                        {data.deal?.dealName || "—"}
-                      </h2>
+                  <div className="min-w-0">
+                    <h2 className="truncate text-xl font-black tracking-tight text-white drop-shadow-sm lg:text-[28px]">
+                      {data.deal?.dealName || "—"}
+                    </h2>
 
-                      <div className="mt-2 flex flex-wrap items-center gap-2.5">
-                        {/* QUOTATION NO */}
-                        <div className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-bold text-white/80 backdrop-blur-sm">
-                          <Hash className="h-3 w-3 text-indigo-300" />
-                          {data.quotationNo}
-                        </div>
+                    <div className="mt-2 flex flex-wrap items-center gap-2.5">
+                      <div className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-bold text-white/80 backdrop-blur-sm">
+                        <Hash className="h-3 w-3 text-indigo-300" />
+                        {data.quotationNo}
+                      </div>
 
-                        {/* STATUS BADGE */}
-                        <div
-                          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-black uppercase tracking-[0.18em] backdrop-blur-sm ${
+                      <div
+                        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-black uppercase tracking-[0.18em] backdrop-blur-sm ${
+                          statusUpper === "APPROVED"
+                            ? "border-emerald-400/40 bg-emerald-400/15 text-emerald-300"
+                            : statusUpper === "SUBMITTED"
+                              ? "border-amber-400/40 bg-amber-400/15 text-amber-300"
+                              : statusUpper === "REJECTED"
+                                ? "border-rose-400/40 bg-rose-400/15 text-rose-300"
+                                : "border-slate-400/30 bg-white/10 text-slate-300"
+                        }`}
+                      >
+                        <span
+                          className={`h-1.5 w-1.5 rounded-full animate-pulse ${
                             statusUpper === "APPROVED"
-                              ? "border-emerald-400/40 bg-emerald-400/15 text-emerald-300"
+                              ? "bg-emerald-400"
                               : statusUpper === "SUBMITTED"
-                                ? "border-amber-400/40 bg-amber-400/15 text-amber-300"
+                                ? "bg-amber-400"
                                 : statusUpper === "REJECTED"
-                                  ? "border-rose-400/40 bg-rose-400/15 text-rose-300"
-                                  : "border-slate-400/30 bg-white/10 text-slate-300"
+                                  ? "bg-rose-400"
+                                  : "bg-slate-400"
                           }`}
-                        >
-                          <span
-                            className={`h-1.5 w-1.5 rounded-full animate-pulse ${
-                              statusUpper === "APPROVED"
-                                ? "bg-emerald-400"
-                                : statusUpper === "SUBMITTED"
-                                  ? "bg-amber-400"
-                                  : statusUpper === "REJECTED"
-                                    ? "bg-rose-400"
-                                    : "bg-slate-400"
-                            }`}
-                          />
-                          {status}
-                        </div>
+                        />
+                        {status}
                       </div>
                     </div>
                   </div>
+                </div>
 
-                  {/* RIGHT SIDE — ACTION BUTTONS */}
-                  <div className="flex items-center gap-2.5 flex-wrap">
-                    {/* SALES REP: Submit */}
-                    {isSalesRep && statusUpper === "DRAFT" && (
-                      <button
-                        onClick={handleSubmit}
-                        disabled={actionLoading}
-                        className="inline-flex items-center gap-2 h-10 px-5 rounded-xl text-sm font-black text-white transition-all duration-200 disabled:opacity-50"
-                        style={{
-                          background:
-                            "linear-gradient(135deg, #2563eb, #1d4ed8)",
-                          boxShadow: "0 4px 16px rgba(37,99,235,0.45)",
-                        }}
-                        onMouseEnter={(e) =>
-                          (e.currentTarget.style.boxShadow =
-                            "0 6px 22px rgba(37,99,235,0.65)")
-                        }
-                        onMouseLeave={(e) =>
-                          (e.currentTarget.style.boxShadow =
-                            "0 4px 16px rgba(37,99,235,0.45)")
-                        }
-                      >
-                        <FileCheck className="h-4 w-4" />
-                        Submit
+                {/* RIGHT SIDE — ACTION BUTTONS */}
+                <div className="flex flex-wrap items-center gap-2.5">
+                  {isAdmin && (
+                    <div className="relative group">
+                      <button className="inline-flex h-10 items-center gap-2 rounded-xl border border-white/10 bg-white/10 px-4 text-sm font-black text-white backdrop-blur-sm transition-all duration-200 hover:bg-white/20">
+                        <Download className="h-4 w-4 text-indigo-300" />
+                        Proposal PDF
                       </button>
-                    )}
 
-                    {/* SALES REP: Resubmit */}
-                    {isSalesRep && statusUpper === "REJECTED" && (
-                      <button
-                        onClick={() => navigate(`/quotations/${id}/edit`)}
-                        className="inline-flex items-center gap-2 h-10 px-5 rounded-xl text-sm font-black text-white transition-all duration-200"
-                        style={{
-                          background:
-                            "linear-gradient(135deg, #6366f1, #4f46e5)",
-                          boxShadow: "0 4px 16px rgba(99,102,241,0.45)",
-                        }}
-                        onMouseEnter={(e) =>
-                          (e.currentTarget.style.boxShadow =
-                            "0 6px 22px rgba(99,102,241,0.65)")
-                        }
-                        onMouseLeave={(e) =>
-                          (e.currentTarget.style.boxShadow =
-                            "0 4px 16px rgba(99,102,241,0.45)")
-                        }
-                      >
-                        <RefreshCw className="h-4 w-4" />
-                        Resubmit
-                      </button>
-                    )}
+                      <div className="absolute right-0 top-full z-[9999] mt-3 w-80 overflow-hidden rounded-3xl border border-slate-200 bg-white opacity-0 invisible shadow-[0_20px_60px_rgba(15,23,42,0.18)] transition-all duration-200 group-hover:visible group-hover:opacity-100">
+                        <div className="border-b border-slate-100 bg-gradient-to-r from-indigo-50 via-white to-indigo-50 px-5 py-4">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+                            Export Options
+                          </p>
 
-                    {/* ADMIN: Approve */}
-                    {isAdmin && statusUpper === "SUBMITTED" && (
-                      <button
-                        onClick={handleApprove}
-                        disabled={actionLoading}
-                        className="inline-flex items-center gap-2 h-10 px-5 rounded-xl text-sm font-black text-white transition-all duration-200 disabled:opacity-50"
-                        style={{
-                          background:
-                            "linear-gradient(135deg, #10b981, #059669)",
-                          boxShadow: "0 4px 16px rgba(16,185,129,0.40)",
-                        }}
-                        onMouseEnter={(e) =>
-                          (e.currentTarget.style.boxShadow =
-                            "0 6px 22px rgba(16,185,129,0.60)")
-                        }
-                        onMouseLeave={(e) =>
-                          (e.currentTarget.style.boxShadow =
-                            "0 4px 16px rgba(16,185,129,0.40)")
-                        }
-                      >
-                        <FileCheck className="h-4 w-4" />
-                        Approve
-                      </button>
-                    )}
+                          <p className="mt-1 text-sm font-semibold text-slate-800">
+                            Choose proposal format
+                          </p>
+                        </div>
 
-                    {/* ADMIN: Reject */}
-                    {isAdmin && statusUpper === "SUBMITTED" && (
-                      <button
-                        onClick={() => setShowRejectModal(true)}
-                        disabled={actionLoading}
-                        className="inline-flex items-center gap-2 h-10 px-5 rounded-xl text-sm font-black text-white transition-all duration-200 disabled:opacity-50"
-                        style={{
-                          background:
-                            "linear-gradient(135deg, #f43f5e, #e11d48)",
-                          boxShadow: "0 4px 16px rgba(244,63,94,0.40)",
-                        }}
-                        onMouseEnter={(e) =>
-                          (e.currentTarget.style.boxShadow =
-                            "0 6px 22px rgba(244,63,94,0.60)")
-                        }
-                        onMouseLeave={(e) =>
-                          (e.currentTarget.style.boxShadow =
-                            "0 4px 16px rgba(244,63,94,0.40)")
-                        }
-                      >
-                        <MessageSquare className="h-4 w-4" />
-                        Reject
-                      </button>
-                    )}
+                        {/* PDF V1 */}
+                        <PDFDownloadLink
+                          document={
+                            <QuotationPdfDocument
+                              quotation={{
+                                ...data,
+                                items: sanitizeItems(data.items),
+                              }}
+                              totals={totals || {}}
+                            />
+                          }
+                          fileName={`${data?.quotationNo || "quotation"}-COMMERCIAL_V1.pdf`}
+                          className="flex items-start gap-3 px-5 py-4 transition-all hover:bg-indigo-50/70"
+                        >
+                          {({ loading }) => (
+                            <>
+                              <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600 shadow-sm">
+                                📄
+                              </div>
 
-                    {/* EDIT */}
-                    {(statusUpper === "DRAFT" ||
-                      statusUpper === "REJECTED") && (
-                      <button
-                        onClick={() => navigate(`/quotations/${id}/edit`)}
-                        className="inline-flex items-center gap-2 h-10 px-5 rounded-xl text-sm font-black text-white transition-all duration-200"
-                        style={{
-                          background:
-                            "linear-gradient(135deg, #818cf8, #6366f1, #4f46e5)",
-                          boxShadow: "0 4px 16px rgba(99,102,241,0.40)",
-                        }}
-                        onMouseEnter={(e) =>
-                          (e.currentTarget.style.boxShadow =
-                            "0 6px 22px rgba(99,102,241,0.65)")
-                        }
-                        onMouseLeave={(e) =>
-                          (e.currentTarget.style.boxShadow =
-                            "0 4px 16px rgba(99,102,241,0.40)")
-                        }
-                      >
-                        <Pencil className="h-4 w-4" />
-                        Edit
-                      </button>
-                    )}
-                  </div>
+                              <div className="flex-1">
+                                <div className="flex items-center justify-between gap-3">
+                                  <span className="text-sm font-semibold text-slate-900">
+                                    Commercial Proposal — V1
+                                  </span>
+
+                                  <span className="text-[11px] font-medium text-indigo-500">
+                                    {loading ? "Generating..." : "Download"}
+                                  </span>
+                                </div>
+
+                                <p className="mt-1 text-xs text-slate-500">
+                                  Clean, minimal layout
+                                </p>
+                              </div>
+                            </>
+                          )}
+                        </PDFDownloadLink>
+
+                        <div className="mx-4 h-px bg-slate-100" />
+
+                        {/* PDF V2 */}
+                        <PDFDownloadLink
+                          document={
+                            <QuotationPdfV2
+                              quotation={{
+                                ...data,
+                                items: sanitizeItems(data.items),
+                              }}
+                              totals={totals || {}}
+                            />
+                          }
+                          fileName={`${data?.quotationNo || "quotation"}-COMMERCIAL_V2.pdf`}
+                          className="flex items-start gap-3 px-5 py-4 transition-all hover:bg-indigo-50/70"
+                        >
+                          {({ loading }) => (
+                            <>
+                              <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600 shadow-sm">
+                                📊
+                              </div>
+
+                              <div className="flex-1">
+                                <div className="flex items-center justify-between gap-3">
+                                  <span className="text-sm font-semibold text-slate-900">
+                                    Commercial Proposal — V2
+                                  </span>
+
+                                  <span className="text-[11px] font-medium text-emerald-500">
+                                    {loading ? "Generating..." : "Download"}
+                                  </span>
+                                </div>
+
+                                <p className="mt-1 text-xs text-slate-500">
+                                  Detailed breakdown
+                                </p>
+                              </div>
+                            </>
+                          )}
+                        </PDFDownloadLink>
+
+                        <div className="mx-4 h-px bg-slate-100" />
+
+                        {/* PDF V3 */}
+                        <PDFDownloadLink
+                          document={
+                            <QuotationPdfV3
+                              quotation={{
+                                ...data,
+                                items: sanitizeItems(data.items),
+                              }}
+                              totals={totals || {}}
+                            />
+                          }
+                          fileName={`${data?.quotationNo || "quotation"}-COMMERCIAL_V3.pdf`}
+                          className="flex items-start gap-3 px-5 py-4 transition-all hover:bg-indigo-50/70"
+                        >
+                          {({ loading }) => (
+                            <>
+                              <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl bg-violet-100 text-violet-600 shadow-sm">
+                                🚀
+                              </div>
+
+                              <div className="flex-1">
+                                <div className="flex items-center justify-between gap-3">
+                                  <span className="text-sm font-semibold text-slate-900">
+                                    Commercial Proposal — V3
+                                  </span>
+
+                                  <span className="text-[11px] font-medium text-violet-500">
+                                    {loading ? "Generating..." : "Download"}
+                                  </span>
+                                </div>
+
+                                <p className="mt-1 text-xs text-slate-500">
+                                  Advanced layout (latest version)
+                                </p>
+                              </div>
+                            </>
+                          )}
+                        </PDFDownloadLink>
+                      </div>
+                    </div>
+                  )}
+                  {isSalesRep && statusUpper === "DRAFT" && (
+                    <button
+                      onClick={handleSubmit}
+                      disabled={actionLoading}
+                      className="inline-flex h-10 items-center gap-2 rounded-xl px-5 text-sm font-black text-white transition-all duration-200 disabled:opacity-50"
+                      style={{
+                        background: "linear-gradient(135deg, #2563eb, #1d4ed8)",
+                        boxShadow: "0 4px 16px rgba(37,99,235,0.45)",
+                      }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.boxShadow =
+                          "0 6px 22px rgba(37,99,235,0.65)")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.boxShadow =
+                          "0 4px 16px rgba(37,99,235,0.45)")
+                      }
+                    >
+                      <FileCheck className="h-4 w-4" />
+                      Submit
+                    </button>
+                  )}
+
+                  {isSalesRep && statusUpper === "REJECTED" && (
+                    <button
+                      onClick={() => navigate(`/quotations/${id}/edit`)}
+                      className="inline-flex h-10 items-center gap-2 rounded-xl px-5 text-sm font-black text-white transition-all duration-200"
+                      style={{
+                        background: "linear-gradient(135deg, #6366f1, #4f46e5)",
+                        boxShadow: "0 4px 16px rgba(99,102,241,0.45)",
+                      }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.boxShadow =
+                          "0 6px 22px rgba(99,102,241,0.65)")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.boxShadow =
+                          "0 4px 16px rgba(99,102,241,0.45)")
+                      }
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      Resubmit
+                    </button>
+                  )}
+
+                  {isAdmin && statusUpper === "SUBMITTED" && (
+                    <button
+                      onClick={handleApprove}
+                      disabled={actionLoading}
+                      className="inline-flex h-10 items-center gap-2 rounded-xl px-5 text-sm font-black text-white transition-all duration-200 disabled:opacity-50"
+                      style={{
+                        background: "linear-gradient(135deg, #10b981, #059669)",
+                        boxShadow: "0 4px 16px rgba(16,185,129,0.40)",
+                      }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.boxShadow =
+                          "0 6px 22px rgba(16,185,129,0.60)")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.boxShadow =
+                          "0 4px 16px rgba(16,185,129,0.40)")
+                      }
+                    >
+                      <FileCheck className="h-4 w-4" />
+                      Approve
+                    </button>
+                  )}
+
+                  {isAdmin && statusUpper === "SUBMITTED" && (
+                    <button
+                      onClick={() => setShowRejectModal(true)}
+                      disabled={actionLoading}
+                      className="inline-flex h-10 items-center gap-2 rounded-xl px-5 text-sm font-black text-white transition-all duration-200 disabled:opacity-50"
+                      style={{
+                        background: "linear-gradient(135deg, #f43f5e, #e11d48)",
+                        boxShadow: "0 4px 16px rgba(244,63,94,0.40)",
+                      }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.boxShadow =
+                          "0 6px 22px rgba(244,63,94,0.60)")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.boxShadow =
+                          "0 4px 16px rgba(244,63,94,0.40)")
+                      }
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                      Reject
+                    </button>
+                  )}
+
+                  {(statusUpper === "DRAFT" || statusUpper === "REJECTED") && (
+                    <button
+                      onClick={() => navigate(`/quotations/${id}/edit`)}
+                      className="inline-flex h-10 items-center gap-2 rounded-xl px-5 text-sm font-black text-white transition-all duration-200"
+                      style={{
+                        background:
+                          "linear-gradient(135deg, #818cf8, #6366f1, #4f46e5)",
+                        boxShadow: "0 4px 16px rgba(99,102,241,0.40)",
+                      }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.boxShadow =
+                          "0 6px 22px rgba(99,102,241,0.65)")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.boxShadow =
+                          "0 4px 16px rgba(99,102,241,0.40)")
+                      }
+                    >
+                      <Pencil className="h-4 w-4" />
+                      Edit
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ================= ITEMS TABLE CARD ================= */}
+          <div className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-[0_20px_70px_rgba(15,23,42,0.08)]">
+            <div className="flex flex-col gap-4 border-b border-slate-100 bg-gradient-to-br from-slate-50 to-white px-6 py-5 md:flex-row md:items-center sm:px-7">
+              {/* LEFT SIDE */}
+              <div className="flex items-start gap-3.5">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/20">
+                  <Package className="h-5 w-5" />
+                </div>
+
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900">
+                    Line Items
+                  </h2>
+
+                  <p className="mt-0.5 text-sm font-medium text-slate-500">
+                    {itemCount} {itemCount === 1 ? "item" : "items"}
+                  </p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 px-6 py-5 sm:grid-cols-4 bg-white border-t-2 border-slate-200 shadow-inner rounded-b-[28px]">
-                {isAdmin && (
-                  <div className="relative group h-full">
-                    {/* CARD HEADER */}
-                    <div className="h-full cursor-pointer rounded-2xl border border-slate-100 bg-white p-4 flex items-center shadow-sm transition-all duration-200 hover:shadow-md hover:border-slate-200">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="rounded-xl p-2.5 text-white flex-shrink-0"
-                          style={{
-                            background:
-                              "linear-gradient(135deg, #818cf8, #6366f1)",
-                            boxShadow: "0 4px 14px rgba(99,102,241,0.4)",
-                          }}
-                        >
-                          <Download className="h-4 w-4" />
-                        </div>
-                        <div>
-                          <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
-                            Export
-                          </div>
-                          <div className="text-sm font-black text-slate-900">
-                            Proposal PDF
-                          </div>
-                        </div>
-                      </div>
+              {/* RIGHT SIDE */}
+              <div className="ml-auto flex flex-wrap items-center justify-end gap-3">
+                {/* TOTAL VALUE */}
+                <div className="flex items-center gap-3 rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white px-4 py-3 shadow-sm">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/25">
+                    <DollarSign className="h-5 w-5" />
+                  </div>
+
+                  <div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-600/70">
+                      Total Value
                     </div>
 
-                    {/* DROPDOWN */}
-                    <div className="absolute left-0 mt-3 w-80 rounded-3xl border border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.18)] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 overflow-hidden">
-                      {/* HEADER */}
-                      <div className="px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-indigo-50 via-white to-indigo-50">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
-                          Export Options
-                        </p>
-                        <p className="text-sm font-semibold text-slate-800 mt-1">
-                          Choose proposal format
-                        </p>
-                      </div>
-
-                      {/* V1 */}
-                      <PDFDownloadLink
-                        document={
-                          <QuotationPdfDocument
-                            quotation={{
-                              ...data,
-                              items: sanitizeItems(data.items),
-                            }}
-                            totals={totals || {}}
-                          />
-                        }
-                        fileName={`${data?.quotationNo || "quotation"}-COMMERCIAL_V1.pdf`}
-                        className="flex items-start gap-3 px-5 py-4 hover:bg-indigo-50/70 active:scale-[0.99] transition-all"
-                      >
-                        {({ loading }) => (
-                          <>
-                            <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600 shadow-sm">
-                              📄
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm font-semibold text-slate-900">
-                                  Commercial Proposal — V1
-                                </span>
-                                <span className="text-[11px] font-medium text-indigo-500">
-                                  {loading ? "Generating..." : "Download"}
-                                </span>
-                              </div>
-                              <p className="text-xs text-slate-500 mt-1">
-                                Clean, minimal layout
-                              </p>
-                            </div>
-                          </>
-                        )}
-                      </PDFDownloadLink>
-
-                      <div className="h-px bg-slate-100 mx-4" />
-
-                      {/* V2 */}
-                      <PDFDownloadLink
-                        document={
-                          <QuotationPdfV2
-                            quotation={{
-                              ...data,
-                              items: sanitizeItems(data.items),
-                            }}
-                            totals={totals || {}}
-                          />
-                        }
-                        fileName={`${data?.quotationNo || "quotation"}-COMMERCIAL_V2.pdf`}
-                        className="flex items-start gap-3 px-5 py-4 hover:bg-indigo-50/70 active:scale-[0.99] transition-all"
-                      >
-                        {({ loading }) => (
-                          <>
-                            <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600 shadow-sm">
-                              📊
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm font-semibold text-slate-900">
-                                  Commercial Proposal — V2
-                                </span>
-                                <span className="text-[11px] font-medium text-emerald-500">
-                                  {loading ? "Generating..." : "Download"}
-                                </span>
-                              </div>
-                              <p className="text-xs text-slate-500 mt-1">
-                                Detailed breakdown
-                              </p>
-                            </div>
-                          </>
-                        )}
-                      </PDFDownloadLink>
-
-                      <div className="h-px bg-slate-100 mx-4" />
-
-                      {/* V3 */}
-                      <PDFDownloadLink
-                        document={
-                          <QuotationPdfV3
-                            quotation={{
-                              ...data,
-                              items: sanitizeItems(data.items),
-                            }}
-                            totals={totals || {}}
-                          />
-                        }
-                        fileName={`${data?.quotationNo || "quotation"}-COMMERCIAL_V3.pdf`}
-                        className="flex items-start gap-3 px-5 py-4 hover:bg-indigo-50/70 active:scale-[0.99] transition-all"
-                      >
-                        {({ loading }) => (
-                          <>
-                            <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl bg-violet-100 text-violet-600 shadow-sm">
-                              🚀
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm font-semibold text-slate-900">
-                                  Commercial Proposal — V3
-                                </span>
-                                <span className="text-[11px] font-medium text-violet-500">
-                                  {loading ? "Generating..." : "Download"}
-                                </span>
-                              </div>
-                              <p className="text-xs text-slate-500 mt-1">
-                                Advanced layout (latest version)
-                              </p>
-                            </div>
-                          </>
-                        )}
-                      </PDFDownloadLink>
+                    <div className="mt-1 text-base font-black text-slate-900">
+                      {formatAmount(data.grandTotal)}
                     </div>
                   </div>
-                )}
+                </div>
 
-                {[
-                  {
-                    icon: <DollarSign className="h-4 w-4" />,
-                    label: "Total Value",
-                    value: formatINR(data.grandTotal),
-                    from: "#10b981",
-                    to: "#059669",
-                    shadow: "rgba(16,185,129,0.35)",
-                  },
-                  {
-                    icon: <Building2 className="h-4 w-4" />,
-                    label: "Account",
-                    value: data.account?.accountName || "—",
-                    from: "#f43f5e",
-                    to: "#e11d48",
-                    shadow: "rgba(244,63,94,0.35)",
-                  },
-                  {
-                    icon: <FileCheck className="h-4 w-4" />,
-                    label: "Status",
-                    value: status,
-                    from: "#818cf8",
-                    to: "#6366f1",
-                    shadow: "rgba(99,102,241,0.35)",
-                  },
-                ].map(({ icon, label, value, from, to, shadow }) => (
-                  <div
-                    key={label}
-                    className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md hover:border-slate-200"
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.transform = "translateY(-1px)")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.transform = "translateY(0)")
-                    }
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="rounded-xl p-2.5 text-white shadow-lg flex-shrink-0"
-                        style={{
-                          background: `linear-gradient(135deg, ${from}, ${to})`,
-                          boxShadow: `0 4px 14px ${shadow}`,
-                        }}
-                      >
-                        {icon}
-                      </div>
-                      <div>
-                        <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
-                          {label}
-                        </div>
-                        <div className="mt-1 text-sm font-black text-slate-900 leading-tight">
-                          {value}
-                        </div>
-                      </div>
+                {/* ACCOUNT */}
+                <div className="flex max-w-[340px] items-center gap-3 rounded-2xl border border-rose-100 bg-gradient-to-br from-rose-50 to-white px-4 py-3 shadow-sm">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-rose-500 to-pink-600 text-white shadow-lg shadow-rose-500/25">
+                    <Building2 className="h-5 w-5" />
+                  </div>
+
+                  <div className="min-w-0">
+                    <div className="text-[10px] font-black uppercase tracking-[0.22em] text-rose-600/70">
+                      Account
+                    </div>
+
+                    <div className="mt-1 truncate text-sm font-black text-slate-900">
+                      {data.account?.accountName || "—"}
                     </div>
                   </div>
-                ))}
+                </div>
               </div>
             </div>
 
-            {/* ITEMS TABLE */}
-            <div className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-[0_20px_70px_rgba(15,23,42,0.08)]">
-              {/* HEADER */}
-              <div className="flex flex-col gap-4 border-b border-slate-100 bg-gradient-to-br from-slate-50 to-white px-7 py-6 md:flex-row md:items-center md:justify-between">
-                <div className="flex items-start gap-3.5">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/20">
-                    <Package className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-bold text-slate-900">
-                      Line Items
-                    </h2>
-                    <p className="mt-0.5 text-sm font-medium text-slate-500">
-                      {itemCount} {itemCount === 1 ? "item" : "items"}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  <Pill
-                    icon={<PercentIcon className="h-3.5 w-3.5" />}
-                    label="GST Included"
-                  />
-                  <Pill
-                    icon={<Calculator className="h-3.5 w-3.5" />}
-                    label="Auto Totals"
-                  />
-                  <Pill
-                    icon={<Receipt className="h-3.5 w-3.5" />}
-                    label="Tax Summary"
-                  />
-                </div>
-              </div>
-
-              {/* TABLE CONTAINER */}
-              <div className="relative">
-                {/* Custom scrollbar wrapper */}
-                <div
-                  className="max-h-[400px] overflow-auto sm:max-h-[450px] lg:max-h-[560px]"
-                  style={{
-                    scrollbarWidth: "thin",
-                    scrollbarColor: "#10b981 #f1f5f9",
-                  }}
+            <div className="relative">
+              <div
+                className="max-h-[400px] overflow-x-auto overflow-y-auto sm:max-h-[450px] lg:max-h-[560px]"
+                style={{
+                  scrollbarWidth: "thin",
+                  scrollbarColor: "#94a3b8 #f1f5f9",
+                }}
+              >
+                <table
+                  className="w-max min-w-full border-separate border-spacing-0 text-[12px] leading-relaxed"
+                  style={{ minWidth: "1400px" }}
                 >
-                  <table
-                    className="w-full text-sm"
-                    style={{ minWidth: "1100px" }}
-                  >
-                    {/* THEAD */}
-                    <thead className="sticky top-0 z-10">
-                      <tr className="bg-slate-900">
-                        {[
-                          { label: "SKU", w: "120px", align: "text-left" },
-                          {
-                            label: "Description",
-                            w: "260px",
-                            align: "text-left",
-                          },
-                          { label: "Category", w: "150px", align: "text-left" },
-                          { label: "Make", w: "110px", align: "text-left" },
-                          { label: "Mfg PN", w: "120px", align: "text-left" },
-                          { label: "UOM", w: "70px", align: "text-left" },
-                          { label: "Qty", w: "60px", align: "text-right" },
-                          { label: "Price", w: "110px", align: "text-right" },
-                          { label: "Discount", w: "90px", align: "text-right" },
-                          { label: "Total", w: "120px", align: "text-right" },
-                          { label: "Remarks", w: "110px", align: "text-left" },
-                        ].map(({ label, w, align }, i) => (
-                          <th
-                            key={label}
-                            style={{ minWidth: w }}
-                            className={`px-5 py-4 ${align} text-[10px] font-black uppercase tracking-[0.22em] text-slate-400 border-b border-slate-700/60 ${
-                              i === 0 ? "pl-6" : ""
-                            }`}
-                          >
-                            {label}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
+                  {/* THEAD */}
+                  <thead className="sticky top-0 z-20">
+                    <tr className="bg-slate-50/95 backdrop-blur shadow-sm">
+                      {[
+                        { label: "SKU", w: "150px", align: "text-left" },
+                        {
+                          label: "Description",
+                          w: "420px",
+                          align: "text-left",
+                        },
+                        { label: "Category", w: "220px", align: "text-left" },
+                        { label: "Make", w: "160px", align: "text-left" },
+                        { label: "Mfg PN", w: "220px", align: "text-left" },
+                        { label: "UOM", w: "110px", align: "text-left" },
+                        { label: "Qty", w: "90px", align: "text-right" },
+                        { label: "Price", w: "160px", align: "text-right" },
+                        { label: "Discount", w: "140px", align: "text-right" },
+                        { label: "Total", w: "180px", align: "text-right" },
+                        { label: "Remarks", w: "200px", align: "text-left" },
+                      ].map(({ label, w, align }, i) => (
+                        <th
+                          key={label}
+                          style={{
+                            minWidth: w,
+                            width: w,
+                          }}
+                          className={`border-b border-r border-slate-200/70 px-5 py-3 ${align} text-[9px] font-black uppercase tracking-[0.22em] text-slate-500 ${
+                            i === 0 ? "pl-6" : ""
+                          } last:border-r-0`}
+                        >
+                          {label}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
 
-                    {/* TBODY */}
-                    <tbody>
-                      {(data.items || []).map((item, idx) => (
-                        <Fragment key={item.id}>
-                          {/* PARENT ROW */}
+                  {/* TBODY */}
+                  <tbody>
+                    {(data.items || []).map((item) => (
+                      <Fragment key={item.id}>
+                        {/* PARENT ROW */}
+                        <tr className="group relative bg-white transition-all duration-200 hover:bg-slate-50/70">
+                          {/* SKU */}
+                          <td className="border-b border-r border-slate-100 px-5 py-4 pl-6 align-top last:border-r-0">
+                            <div className="inline-flex max-w-full items-center gap-2 rounded-xl border border-emerald-300 bg-gradient-to-br from-emerald-50 to-emerald-100 px-3 py-1.5 font-mono text-[11px] font-extrabold tracking-wide text-emerald-800 shadow-[0_2px_8px_rgba(16,185,129,0.18)]">
+                              <span className="truncate max-w-[70px]">
+                                {item.sku || "—"}
+                              </span>
+                            </div>
+                          </td>
+
+                          {/* DESCRIPTION */}
+                          <td className="border-b border-r border-slate-100 px-5 py-4 align-top last:border-r-0">
+                            <div className="pr-2 text-[12px] font-semibold leading-snug text-slate-900">
+                              {item.description || "—"}
+                            </div>
+                          </td>
+
+                          {/* CATEGORY */}
+                          <td className="border-b border-r border-slate-100 px-5 py-4 align-top last:border-r-0">
+                            {item.category ? (
+                              <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700 ring-1 ring-emerald-200">
+                                <Layers className="h-3 w-3 flex-shrink-0" />
+                                {item.category}
+                              </span>
+                            ) : (
+                              <span className="text-sm text-slate-300">—</span>
+                            )}
+                          </td>
+
+                          {/* MAKE */}
+                          <td className="border-b border-r border-slate-100 px-5 py-4 align-top last:border-r-0">
+                            <span className="text-[12px] font-semibold text-slate-700">
+                              {item.make || (
+                                <span className="text-slate-300">—</span>
+                              )}
+                            </span>
+                          </td>
+
+                          {/* MFG PN */}
+                          <td className="border-b border-r border-slate-100 px-5 py-4 align-top last:border-r-0">
+                            <span className="inline-flex max-w-full whitespace-nowrap rounded-md bg-slate-100 px-2.5 py-1 font-mono text-[11px] font-bold text-slate-700">
+                              {item.mfgPartNo || (
+                                <span className="bg-transparent text-slate-400">
+                                  —
+                                </span>
+                              )}
+                            </span>
+                          </td>
+
+                          {/* UOM */}
+                          <td className="border-b border-r border-slate-100 px-5 py-4 align-top text-[12px] font-medium text-slate-500 last:border-r-0">
+                            {item.uom || "—"}
+                          </td>
+
+                          {/* QTY */}
+                          <td className="border-b border-r border-slate-100 px-5 py-4 align-top text-right last:border-r-0">
+                            <span className="ml-auto inline-flex h-7 w-7 items-center justify-center rounded-xl bg-slate-100 text-xs font-black text-slate-800">
+                              {item.quantity ?? "—"}
+                            </span>
+                          </td>
+
+                          {/* PRICE */}
+                          <td className="border-b border-r border-slate-100 px-5 py-4 align-top text-right text-[12px] font-semibold text-slate-700 last:border-r-0">
+                            {item.price ? formatAmount(item.price) : "—"}
+                          </td>
+
+                          {/* DISCOUNT */}
+                          <td className="border-b border-r border-slate-100 px-5 py-4 align-top text-right last:border-r-0">
+                            {item.discount > 0 ? (
+                              <span className="inline-flex items-center gap-0.5 rounded-full bg-rose-50 px-2.5 py-1 text-[10px] font-black text-rose-600 ring-1 ring-rose-200">
+                                −{item.discount}%
+                              </span>
+                            ) : (
+                              <span className="text-slate-300">—</span>
+                            )}
+                          </td>
+
+                          {/* TOTAL */}
+                          <td className="border-b border-r border-slate-100 px-5 py-4 align-top text-right last:border-r-0">
+                            <div className="inline-flex items-center rounded-xl bg-emerald-600 px-3 py-1.5 text-[12px] font-black text-white shadow-sm">
+                              {formatINR(
+                                Number(item.quantity || 1) *
+                                  Number(item.price || 0) *
+                                  (1 - Number(item.discount || 0) / 100),
+                              )}
+                            </div>
+                          </td>
+
+                          {/* REMARKS */}
+                          <td className="border-b border-r border-slate-100 px-5 py-4 align-top last:border-r-0">
+                            <span className="block max-w-[100px] truncate text-xs font-medium text-slate-500">
+                              {item.remarks || (
+                                <span className="text-slate-300">—</span>
+                              )}
+                            </span>
+                          </td>
+                        </tr>
+
+                        {/* SUB ITEMS */}
+                        {(item.selectedSubItems?.length
+                          ? item.selectedSubItems
+                          : item.subItems
+                        )?.map((sub) => (
                           <tr
-                            className="group relative border-b border-slate-100 transition-all duration-200"
-                            style={{ background: "white" }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.background =
-                                "linear-gradient(90deg, #ecfdf5 0%, #f0fdfa 60%, #f8fafc 100%)";
-                              e.currentTarget.style.boxShadow =
-                                "inset 3px 0 0 #10b981, 0 2px 12px rgba(16,185,129,0.08)";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.background = "white";
-                              e.currentTarget.style.boxShadow = "none";
-                            }}
+                            key={sub.id}
+                            className="bg-slate-50/60 transition-all duration-200 hover:bg-slate-100/60"
                           >
                             {/* SKU */}
-                            <td className="px-5 py-4 pl-6 align-top">
-                              <div className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 px-2.5 py-1.5 font-mono text-[11px] font-black text-emerald-800 shadow-sm">
-                                <Tag className="h-3 w-3 text-emerald-500 flex-shrink-0" />
-                                <span className="truncate max-w-[70px]">
-                                  {item.sku || "—"}
-                                </span>
+                            <td className="border-b border-r border-slate-100 px-5 py-3 pl-6 align-top last:border-r-0">
+                              <div className="flex items-center gap-2">
+                                <div className="flex flex-col items-center">
+                                  <div className="h-2 w-px bg-slate-300" />
+                                  <div className="h-px w-3 bg-slate-300" />
+                                </div>
+
+                                <div className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-1 font-mono text-[10px] font-bold text-emerald-700">
+                                  <Tag className="h-3 w-3 text-emerald-500" />
+                                  {sub.sku || "—"}
+                                </div>
                               </div>
                             </td>
 
                             {/* DESCRIPTION */}
-                            <td className="px-5 py-4 align-top">
-                              <div className="text-sm font-semibold leading-snug text-slate-900 pr-2">
-                                {item.description || "—"}
+                            <td className="border-b border-r border-slate-100 px-5 py-3 align-top last:border-r-0">
+                              <div className="pr-2 text-[11px] leading-snug text-slate-700">
+                                {sub.name || "—"}
                               </div>
                             </td>
 
                             {/* CATEGORY */}
-                            <td className="px-5 py-4 align-top">
-                              {item.category ? (
-                                <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 px-3 py-1.5 text-[11px] font-bold text-white shadow-md shadow-emerald-500/25 whitespace-nowrap">
-                                  <Layers className="h-3 w-3 flex-shrink-0" />
-                                  {item.category}
+                            <td className="border-b border-r border-slate-100 px-5 py-3 align-top last:border-r-0">
+                              {sub.category ? (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700 ring-1 ring-emerald-200">
+                                  {sub.category}
                                 </span>
                               ) : (
-                                <span className="text-slate-300 text-sm">
-                                  —
-                                </span>
+                                <span className="text-slate-300">—</span>
                               )}
                             </td>
 
                             {/* MAKE */}
-                            <td className="px-5 py-4 align-top">
-                              <span className="text-sm font-semibold text-slate-700">
-                                {item.make || (
+                            <td className="border-b border-r border-slate-100 px-5 py-3 align-top text-[11px] text-slate-600 last:border-r-0">
+                              {sub.make || (
+                                <span className="text-slate-300">—</span>
+                              )}
+                            </td>
+
+                            {/* MFG PN */}
+                            <td className="border-b border-r border-slate-100 px-5 py-3 align-top last:border-r-0">
+                              <span className="rounded-md bg-slate-100 px-2 py-1 font-mono text-[10px] text-slate-500">
+                                {sub.mfgPartNo || (
                                   <span className="text-slate-300">—</span>
                                 )}
                               </span>
                             </td>
 
-                            {/* MFG PN */}
-                            <td className="px-5 py-4 align-top">
-                              <span className="font-mono text-xs font-semibold text-slate-600 bg-slate-100 px-2 py-1 rounded-md">
-                                {item.mfgPartNo || (
-                                  <span className="text-slate-400 bg-transparent">
-                                    —
-                                  </span>
-                                )}
-                              </span>
-                            </td>
-
                             {/* UOM */}
-                            <td className="px-5 py-4 align-top text-sm font-medium text-slate-500">
-                              {item.uom || "—"}
+                            <td className="border-b border-r border-slate-100 px-5 py-3 align-top text-[11px] text-slate-400 last:border-r-0">
+                              {sub.uom || "—"}
                             </td>
 
                             {/* QTY */}
-                            <td className="px-5 py-4 align-top text-right">
-                              <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 text-sm font-black text-slate-800 ml-auto">
-                                {item.quantity ?? "—"}
+                            <td className="border-b border-r border-slate-100 px-5 py-3 align-top text-right last:border-r-0">
+                              <span className="ml-auto inline-flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100 text-xs font-bold text-slate-700">
+                                {sub.quantity}
                               </span>
                             </td>
 
                             {/* PRICE */}
-                            <td className="px-5 py-4 align-top text-right text-sm font-semibold text-slate-700">
-                              {item.price ? formatINR(item.price) : "—"}
+                            <td className="border-b border-r border-slate-100 px-5 py-3 align-top text-right text-[11px] font-semibold text-slate-600 last:border-r-0">
+                              {formatAmount(sub.price)}
                             </td>
 
                             {/* DISCOUNT */}
-                            <td className="px-5 py-4 align-top text-right">
-                              {item.discount > 0 ? (
-                                <span className="inline-flex items-center gap-0.5 rounded-full bg-rose-500 px-2.5 py-1 text-[11px] font-black text-white shadow-sm shadow-rose-400/40">
-                                  −{item.discount}%
+                            <td className="border-b border-r border-slate-100 px-5 py-3 align-top text-right last:border-r-0">
+                              {sub.discount > 0 ? (
+                                <span className="inline-flex rounded-full border border-rose-200 bg-rose-50 px-2 py-1 text-[10px] font-semibold text-rose-600">
+                                  −{sub.discount}%
                                 </span>
                               ) : (
                                 <span className="text-slate-300">—</span>
@@ -2445,247 +3654,110 @@ export default function QuotationDetail() {
                             </td>
 
                             {/* TOTAL */}
-                            <td className="px-5 py-4 align-top text-right">
-                              <div className="inline-flex items-center rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 px-3.5 py-2 text-sm font-black text-white shadow-lg shadow-emerald-500/30">
-                                {formatINR(
-                                  Number(item.quantity || 1) *
-                                    Number(item.price || 0) *
-                                    (1 - Number(item.discount || 0) / 100),
-                                )}
+                            <td className="border-b border-r border-slate-100 px-5 py-3 align-top text-right last:border-r-0">
+                              <div className="inline-flex items-center rounded-lg bg-emerald-500 px-2.5 py-1.5 text-[11px] font-bold text-white shadow-sm">
+                                {formatAmount(sub.lineTotal)}
                               </div>
                             </td>
 
                             {/* REMARKS */}
-                            <td className="px-5 py-4 align-top">
-                              <span className="text-xs font-medium text-slate-500 max-w-[100px] block truncate">
-                                {item.remarks || (
-                                  <span className="text-slate-300">—</span>
-                                )}
-                              </span>
+                            <td className="border-b border-r border-slate-100 px-5 py-3 align-top text-xs text-slate-500 last:border-r-0">
+                              {sub.remarks?.trim() ? (
+                                sub.remarks
+                              ) : (
+                                <span className="text-slate-300">—</span>
+                              )}
                             </td>
                           </tr>
+                        ))}
+                      </Fragment>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
 
-                          {/* SUB ITEMS */}
-                          {(item.selectedSubItems?.length
-                            ? item.selectedSubItems
-                            : item.subItems
-                          )?.map((sub, subIdx) => (
-                            <tr
-                              key={sub.id}
-                              className="border-b border-slate-50 transition-all duration-200"
-                              style={{ background: "#fafafa" }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.background =
-                                  "linear-gradient(90deg, #f0fdf4 0%, #f8fffe 60%, #fafafa 100%)";
-                                e.currentTarget.style.boxShadow =
-                                  "inset 3px 0 0 #6ee7b7";
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.background = "#fafafa";
-                                e.currentTarget.style.boxShadow = "none";
-                              }}
-                            >
-                              {/* SKU */}
-                              <td className="px-5 py-3.5 pl-6 align-top">
-                                <div className="flex items-center gap-2">
-                                  <div className="flex flex-col items-center">
-                                    <div className="w-px h-2 bg-slate-300" />
-                                    <div className="w-3 h-px bg-slate-300" />
-                                  </div>
+            {/* ENHANCED TOTAL SUMMARY */}
+            <div className="border-t border-slate-200 bg-gradient-to-b from-slate-50 via-white to-slate-100/80 px-5 py-5 sm:px-6 lg:px-7">
+              <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+                {/* RIGHT SIDE */}
+                <div className="ml-auto flex w-full max-w-[430px] flex-col justify-start self-start">
+                  <div className="sticky top-5 space-y-3">
+                    {/* DISCOUNT */}
+                    {totals.discount > 0 && (
+                      <div className="group relative overflow-hidden rounded-2xl border border-rose-200/80 bg-gradient-to-r from-rose-50 via-white to-rose-50/40 px-5 py-4 shadow-[0_4px_14px_rgba(244,63,94,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_28px_rgba(244,63,94,0.12)]">
+                        <div className="absolute inset-y-0 left-0 w-1 rounded-full bg-gradient-to-b from-rose-400 to-rose-200" />
 
-                                  {/* ✅ Styled SKU badge (same pattern as parent but lighter) */}
-                                  <div className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-1 font-mono text-[11px] font-bold text-emerald-700">
-                                    <Tag className="h-3 w-3 text-emerald-500" />
-                                    {sub.sku || "—"}
-                                  </div>
-                                </div>
-                              </td>
+                        <div className="flex items-center justify-between gap-4">
+                          <div>
+                            <div className="text-[11px] font-black uppercase tracking-[0.24em] text-rose-500">
+                              Discount
+                            </div>
 
-                              {/* DESCRIPTION */}
-                              <td className="px-5 py-3.5 align-top">
-                                <div className="text-sm leading-snug text-slate-700 pr-2">
-                                  {sub.name || "—"}
-                                </div>
-                              </td>
+                            <div className="mt-1 text-xs font-medium text-rose-400">
+                              Applied reduction
+                            </div>
+                          </div>
 
-                              {/* CATEGORY */}
-                              <td className="px-5 py-3.5 align-top">
-                                {sub.category ? (
-                                  <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 px-2.5 py-1 text-[10px] font-bold text-white shadow-sm">
-                                    {sub.category}
-                                  </span>
-                                ) : (
-                                  <span className="text-slate-300">—</span>
-                                )}
-                              </td>
+                          <div className="text-right">
+                            <div className="text-lg font-black tracking-tight text-rose-600">
+                              −{formatAmount(totals.discount)}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
-                              {/* MAKE */}
-                              <td className="px-5 py-3.5 align-top text-sm text-slate-600">
-                                {sub.make || (
-                                  <span className="text-slate-300">—</span>
-                                )}
-                              </td>
+                    {/* TAX CARDS */}
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2"></div>
 
-                              {/* MFG PN */}
-                              <td className="px-5 py-3.5 align-top">
-                                <span className="font-mono text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-md">
-                                  {sub.mfgPartNo || (
-                                    <span className="text-slate-300">—</span>
-                                  )}
-                                </span>
-                              </td>
+                    {/* GRAND TOTAL */}
+                    <div
+                      className="relative overflow-hidden rounded-[30px] border border-white/10 shadow-[0_30px_80px_rgba(15,23,42,0.40)]"
+                      style={{
+                        background:
+                          "linear-gradient(135deg,#020617 0%,#0f172a 24%,#1e293b 58%,#0f172a 100%)",
+                      }}
+                    >
+                      {/* GLOW */}
+                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(99,102,241,0.30),_transparent_32%),radial-gradient(circle_at_bottom_left,_rgba(16,185,129,0.18),_transparent_30%)]" />
 
-                              {/* UOM */}
-                              <td className="px-5 py-3.5 align-top text-sm text-slate-400">
-                                {sub.uom || "—"}
-                              </td>
+                      {/* SHINE */}
+                      <div className="absolute inset-x-0 top-0 h-px bg-white/20" />
 
-                              {/* QTY */}
-                              <td className="px-5 py-3.5 align-top text-right">
-                                <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100 text-xs font-bold text-slate-700">
-                                  {sub.quantity}
-                                </span>
-                              </td>
+                      <div className="relative px-6 py-6">
+                        <div className="flex items-start justify-between gap-5">
+                          <div>
+                            <div className="text-[11px] font-black uppercase tracking-[0.30em] text-white/45">
+                              Grand Total
+                            </div>
 
-                              {/* PRICE */}
-                              <td className="px-5 py-3.5 align-top text-right text-sm font-semibold text-slate-600">
-                                {formatINR(sub.price)}
-                              </td>
+                            <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1 text-[11px] font-bold text-emerald-300 backdrop-blur-sm">
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                              GST Included
+                            </div>
+                          </div>
 
-                              {/* DISCOUNT */}
-                              <td className="px-5 py-3.5 align-top text-right">
-                                {sub.discount > 0 ? (
-                                  <span className="inline-flex rounded-full border border-rose-200 bg-rose-50 px-2 py-1 text-[10px] font-semibold text-rose-600">
-                                    −{sub.discount}%
-                                  </span>
-                                ) : (
-                                  <span className="text-slate-300">—</span>
-                                )}
-                              </td>
+                          <div className="text-right">
+                            <div className="text-[34px] font-black leading-none tracking-[-0.04em] text-white sm:text-[42px]">
+                              {formatAmount(totals.grandTotal)}
+                            </div>
 
-                              {/* ✅ TOTAL (green highlight like parent but softer) */}
-                              <td className="px-5 py-3.5 align-top text-right">
-                                <div className="inline-flex items-center rounded-lg bg-gradient-to-r from-emerald-400 to-teal-500 px-3 py-1.5 text-xs font-bold text-white shadow-sm">
-                                  {formatINR(sub.lineTotal)}
-                                </div>
-                              </td>
-
-                              {/* REMARKS */}
-                              <td className="px-5 py-3.5 align-top text-xs text-slate-500">
-                                {sub.remarks?.trim() ? (
-                                  sub.remarks
-                                ) : (
-                                  <span className="text-slate-300">—</span>
-                                )}
-                              </td>
-                            </tr>
-                          ))}
-                        </Fragment>
-                      ))}
-                    </tbody>
-
-                    {/* TFOOT */}
-                    <tfoot>
-                      {/* SUBTOTAL */}
-                      <tr className="border-t-2 border-slate-200 bg-white">
-                        <td
-                          colSpan={9}
-                          className="px-6 py-4 text-right text-xs font-bold uppercase tracking-[0.22em] text-slate-400"
-                        >
-                          Subtotal
-                        </td>
-                        <td className="px-5 py-4 text-right text-base font-black text-slate-800">
-                          {formatINR(totals.subtotal)}
-                        </td>
-                        <td />
-                      </tr>
-
-                      {/* DISCOUNT */}
-                      {totals.discount > 0 && (
-                        <tr className="bg-rose-50/40 border-t border-slate-100">
-                          <td
-                            colSpan={9}
-                            className="px-6 py-3 text-right text-xs font-bold uppercase tracking-[0.22em] text-rose-500"
-                          >
-                            Discount
-                          </td>
-                          <td className="px-5 py-3 text-right text-sm font-black text-rose-600">
-                            −{formatINR(totals.discount)}
-                          </td>
-                          <td />
-                        </tr>
-                      )}
-
-                      {/* TAXABLE VALUE */}
-                      {/* <tr className="border-t border-slate-100 bg-white">
-                        <td
-                          colSpan={9}
-                          className="px-6 py-3 text-right text-xs font-bold uppercase tracking-[0.22em] text-slate-400"
-                        >
-                          Taxable Value
-                        </td>
-                        <td className="px-5 py-3 text-right text-sm font-black text-slate-800">
-                          {formatINR(totals.taxable)}
-                        </td>
-                        <td />
-                      </tr> */}
-
-                      {/* CGST */}
-                      <tr className="border-t border-slate-100 bg-slate-50/60">
-                        <td
-                          colSpan={9}
-                          className="px-6 py-2.5 text-right text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400"
-                        >
-                          CGST (9%)
-                        </td>
-                        <td className="px-5 py-2.5 text-right text-xs font-bold text-slate-600">
-                          {formatINR(totals.cgst)}
-                        </td>
-                        <td />
-                      </tr>
-
-                      {/* SGST */}
-                      <tr className="border-t border-slate-100 bg-slate-50/60">
-                        <td
-                          colSpan={9}
-                          className="px-6 py-2.5 text-right text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400"
-                        >
-                          SGST (9%)
-                        </td>
-                        <td className="px-5 py-2.5 text-right text-xs font-bold text-slate-600">
-                          {formatINR(totals.sgst)}
-                        </td>
-                        <td />
-                      </tr>
-
-                      {/* GRAND TOTAL */}
-                      <tr
-                        style={{
-                          background:
-                            "linear-gradient(90deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)",
-                        }}
-                      >
-                        <td
-                          colSpan={9}
-                          className="px-6 py-5 text-right text-xs font-black uppercase tracking-[0.28em] text-white/50"
-                        >
-                          Grand Total
-                        </td>
-                        <td className="px-5 py-5 text-right">
-                          <span className="text-2xl font-black tracking-tight text-white drop-shadow-md">
-                            {formatINR(totals.grandTotal)}
-                          </span>
-                        </td>
-                        <td style={{ background: "#0f172a" }} />
-                      </tr>
-                    </tfoot>
-                  </table>
+                            <div className="mt-2 text-xs font-medium tracking-wide text-slate-400">
+                              Final commercial value
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+
       {showRejectModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl">
@@ -2769,7 +3841,7 @@ function MiniStat({ icon, label, value }) {
         <span className="text-indigo-400">{icon}</span>
         {label}
       </div>
-      <div className="mt-2 text-sm font-semibold text-slate-800 leading-tight">
+      <div className="mt-2 text-sm font-semibold leading-tight text-slate-800">
         {value || "-"}
       </div>
     </div>

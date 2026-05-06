@@ -11,6 +11,7 @@ import {
   deleteItem,
   importItems, // 🔥 NEW
   getItemTreeBySku,
+  searchItems,
 } from "./item.controller.js";
 
 import { protect, authorize } from "../../middlewares/auth.middleware.js";
@@ -36,7 +37,11 @@ router.post(
 
 /* ================= READ ================= */
 router.get("/", protect, getItems);
+
+router.get("/search", protect, searchItems);
+
 router.get("/by-sku/:sku", protect, getItemTreeBySku);
+
 router.get("/:id", protect, getItemById);
 
 /* ================= UPDATE ================= */

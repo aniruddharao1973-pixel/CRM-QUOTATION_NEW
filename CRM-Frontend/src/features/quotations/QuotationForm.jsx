@@ -1228,8 +1228,17 @@ export default function QuotationForm() {
 
   const [isSaving, setIsSaving] = useState(false);
 
+  const [logContacts, setLogContacts] = useState([]);
+
+  const formatAmount = (value) => {
+    const amount = Number(value || 0);
+
+    return formatINR(Math.round(amount)).replace(".00", "");
+  };
+
   const [form, setForm] = useState({
     quotationNumber: createQuotationNumber(),
+    logId: "",
     accountId: "",
     accountName: "",
     dealId: "",
@@ -1268,6 +1277,9 @@ export default function QuotationForm() {
     if (quotation && id) {
       setForm({
         quotationNumber: quotation.quotationNo,
+
+        // ADD THIS
+        logId: quotation.logId || quotation.dealLogId || quotation.logID || "",
         accountId: quotation.accountId,
         accountName: quotation.accountName,
         dealId: quotation.dealId || "",
@@ -1542,13 +1554,20 @@ export default function QuotationForm() {
     });
   };
 
-  const addItem = () => {
+  const addItem = (prefilledItem = null) => {
     setForm((prev) => ({
       ...prev,
-      items: [...prev.items, newLineItem()],
+      items: [
+        ...prev.items,
+        prefilledItem
+          ? {
+              ...newLineItem(),
+              ...prefilledItem,
+            }
+          : newLineItem(),
+      ],
     }));
   };
-
   // 🔥 HANDLE SKU SEARCH (AUTO ADD ROW)
   const handleSkuSearch = async (sku) => {
     try {
@@ -1590,6 +1609,65 @@ export default function QuotationForm() {
       toast.error("Failed to fetch SKU");
     }
   };
+
+  const handleLogIdSearch = async (logId) => {
+    try {
+      if (!logId?.trim()) {
+        toast.error("Enter Log ID");
+        return;
+      }
+
+      const res = await API.get(
+        `/deals/by-log-id/${encodeURIComponent(logId)}`,
+      );
+
+      const data = res.data;
+
+      if (!data?.deal) {
+        toast.error("Log ID not found");
+        return;
+      }
+
+      const deal = data.deal;
+      const account = data.account;
+      const linkedContacts = data.contacts || [];
+
+      // ONLY FETCH DEALS
+      await dispatch(fetchDealsByAccount(account.id));
+
+      // IMPORTANT
+      setLogContacts(linkedContacts);
+
+      setForm((prev) => ({
+        ...prev,
+
+        accountId: account.id,
+        accountName: account.accountName,
+
+        dealId: deal.id,
+
+        contactIds: linkedContacts.map((c) => c.id),
+      }));
+
+      toast.success("Log ID loaded");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to fetch Log ID");
+    }
+  };
+
+  const handleClearLogLookup = () => {
+    setLogContacts([]);
+
+    setForm((prev) => ({
+      ...prev,
+      accountId: "",
+      accountName: "",
+      dealId: "",
+      contactIds: [],
+    }));
+  };
+
   const removeItem = (index) => {
     setForm((prev) => ({
       ...prev,
@@ -1721,7 +1799,7 @@ export default function QuotationForm() {
 
   return (
     <div className="min-h-[calc(100vh-64px)] bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,0.10),_transparent_25%),radial-gradient(circle_at_top_right,_rgba(14,165,233,0.10),_transparent_22%),linear-gradient(to_bottom,_#f8fafc,_#f8fafc,_#eef2ff_120%)] px-3 py-4 sm:px-5 sm:py-5">
-      <div className="mx-auto w-full max-w-[1700px] space-y-5">
+      <div className="mx-auto w-full max-w-[1700px] space-y-3">
         {/* HERO / TOP BAR */}
         <div className="overflow-hidden rounded-[28px] border border-white/70 bg-white/85 shadow-[0_12px_40px_rgba(15,23,42,0.06)] backdrop-blur-xl">
           <div className="relative px-4 py-3 sm:px-5 lg:px-6">
@@ -1729,46 +1807,44 @@ export default function QuotationForm() {
 
             <div className="relative flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
               {/* LEFT */}
-              <div className="flex items-start gap-4">
+              <div className="flex min-w-0 items-center gap-3">
+                {/* BACK */}
                 <button
                   onClick={() => navigate(-1)}
-                  className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50 hover:text-slate-900"
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50 hover:text-slate-900"
                   aria-label="Back"
                 >
-                  <ChevronLeft className="h-5 w-5" />
+                  <ChevronLeft className="h-4.5 w-4.5" />
                 </button>
 
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-600">
-                      <Sparkles className="h-3.5 w-3.5" />
-                      Quotation Builder
-                    </span>
-
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-indigo-700">
-                      {isEdit ? "Edit Mode" : "Create Mode"}
-                    </span>
+                {/* TITLE ROW */}
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                  {/* ICON */}
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700">
+                    <FileText className="h-4.5 w-4.5" />
                   </div>
 
-                  <div className="mt-2 flex flex-wrap items-center gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="rounded-xl bg-indigo-50 p-2 text-indigo-700">
-                        <FileText className="h-5 w-5" />
-                      </div>
+                  {/* TITLE */}
+                  <h1 className="truncate text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+                    {isEdit ? "Edit Quotation" : "Create Quotation"}
+                  </h1>
 
-                      <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-                        {isEdit ? "Edit Quotation" : "Create Quotation"}
-                      </h1>
-                    </div>
+                  {/* BUILDER */}
+                  <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-600">
+                    <Sparkles className="h-3 w-3" />
+                    Builder
+                  </span>
 
-                    {/* QUOTATION NUMBER */}
-                    <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
-                      <span className="inline-flex items-center gap-2 rounded-lg border border-indigo-100 bg-indigo-50 px-3 py-1.5 font-medium text-indigo-700">
-                        <Package className="h-4 w-4" />
-                        {form.quotationNumber || "—"}
-                      </span>
-                    </div>
-                  </div>
+                  {/* MODE */}
+                  <span className="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-indigo-700">
+                    {isEdit ? "Edit" : "Create"}
+                  </span>
+
+                  {/* QUOTATION NUMBER */}
+                  <span className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-100 bg-indigo-50 px-2.5 py-1 text-[11px] font-semibold text-indigo-700">
+                    <Package className="h-3.5 w-3.5" />
+                    {form.quotationNumber || "—"}
+                  </span>
                 </div>
               </div>
 
@@ -1796,13 +1872,15 @@ export default function QuotationForm() {
         {/* MAIN GRID */}
         <div className="grid grid-cols-1 gap-6">
           {/* LEFT CONTENT */}
-          <div className="space-y-6">
+          <div className="space-y-3">
             <QuotationDetailsSection
               form={form}
               updateField={updateField}
               accounts={accounts}
               deals={deals}
-              contacts={contacts}
+              contacts={logContacts.length ? logContacts : contacts}
+              onLogIdSearch={handleLogIdSearch}
+              onClearLogLookup={handleClearLogLookup}
             />
 
             <QuotationItemsTable
@@ -1816,93 +1894,32 @@ export default function QuotationForm() {
               updateSubItem={updateSubItem}
               autoSave={autoSave}
               onSkuSearch={handleSkuSearch}
+              resetItems={() =>
+                setForm((prev) => ({
+                  ...prev,
+                  items: [newLineItem()],
+                }))
+              }
             />
 
-            <div className="flex justify-center">
-              {/* RIGHT → TOTAL CARD */}
-              <div className="w-full lg:w-[600px] overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm flex flex-col">
-                {/* Header */}
-                <div className="relative overflow-hidden border-b border-slate-100 px-6 py-5">
-                  <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/70 via-white to-white" />
-                  <div className="relative">
-                    <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100">
-                      <svg
-                        className="h-4 w-4 text-indigo-600"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={1.8}
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M4.5 19.5h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"
-                        />
-                      </svg>
-                    </div>
-                    <h3 className="text-sm font-semibold tracking-tight text-slate-900">
-                      Summary
-                    </h3>
-                    <p className="mt-0.5 text-xs text-slate-600">
-                      Taxes calculated at 9% CGST + 9% SGST.
-                    </p>
-                  </div>
-                </div>
+            <div className="mt-3 flex justify-end">
+              <div className="w-full max-w-[320px]">
+                <div className="overflow-hidden rounded-2xl border border-indigo-200/70 bg-gradient-to-r from-indigo-600 via-indigo-600 to-violet-600 shadow-[0_10px_30px_rgba(79,70,229,0.18)]">
+                  <div className="flex items-center justify-between px-5 py-4">
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-indigo-200">
+                        Grand Total
+                      </p>
 
-                {/* Rows */}
-                <div className="flex flex-1 flex-col justify-between bg-slate-50/50 px-6 py-5">
-                  <div className="space-y-1">
-                    {/* Taxable */}
-                    <div className="flex items-center justify-between rounded-lg px-3 py-2.5 transition-colors hover:bg-white">
-                      <span className="text-xs font-medium uppercase tracking-wider text-slate-400">
-                        Taxable Value
-                      </span>
-                      <span className="text-sm font-semibold text-slate-700 tabular-nums">
-                        {formatINR(totals?.taxable || 0)}
-                      </span>
+                      <p className="mt-1 text-[11px] text-indigo-100/80">
+                        Inclusive of all taxes
+                      </p>
                     </div>
 
-                    {/* CGST */}
-                    <div className="flex items-center justify-between rounded-lg px-3 py-2.5 transition-colors hover:bg-white">
-                      <div className="flex items-center gap-2">
-                        <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-blue-600">
-                          CGST
-                        </span>
-                        <span className="text-xs text-slate-400">9%</span>
+                    <div className="text-right">
+                      <div className="text-3xl font-black tracking-tight text-white tabular-nums">
+                        {formatAmount(totals?.grandTotal || 0)}
                       </div>
-                      <span className="text-sm font-medium text-slate-600 tabular-nums">
-                        {formatINR(totals?.cgst || 0)}
-                      </span>
-                    </div>
-
-                    {/* SGST */}
-                    <div className="flex items-center justify-between rounded-lg px-3 py-2.5 transition-colors hover:bg-white">
-                      <div className="flex items-center gap-2">
-                        <span className="inline-flex items-center rounded-md bg-violet-50 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-violet-600">
-                          SGST
-                        </span>
-                        <span className="text-xs text-slate-400">9%</span>
-                      </div>
-                      <span className="text-sm font-medium text-slate-600 tabular-nums">
-                        {formatINR(totals?.sgst || 0)}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Grand Total */}
-                  <div className="mt-4 overflow-hidden rounded-xl bg-indigo-600 px-5 py-4 shadow-lg shadow-indigo-200">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-xs font-medium text-indigo-200 uppercase tracking-wider">
-                          Grand Total
-                        </p>
-                        <p className="mt-0.5 text-[10px] text-indigo-300">
-                          Inclusive of all taxes
-                        </p>
-                      </div>
-                      <span className="text-2xl font-bold tracking-tight text-white tabular-nums">
-                        {formatINR(totals?.grandTotal || 0)}
-                      </span>
                     </div>
                   </div>
                 </div>
