@@ -307,8 +307,7 @@ function App() {
 
   return (
     <>
-      {/* ✅ GLOBAL TOASTER */}
-      <Toaster position="bottom-right" toastOptions={{ duration: 3000 }} />
+      {/* ✅ GLOBAL TOASTER REMOVED FROM HERE (HANDLED IN MAIN.JSX) */}
 
       <Routes>
         {/* Public */}

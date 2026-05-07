@@ -379,17 +379,17 @@ const styles = StyleSheet.create({
     lineHeight: 1.35,
   },
   centeredIntro: {
-    fontSize: 8.2,
+    fontSize: 8,
     color: "#4B5563",
-    lineHeight: 1.4,
-    marginBottom: 8,
+    lineHeight: 1.2,
+    marginBottom: 4,
   },
   categoryBox: {
     backgroundColor: "#F1F5F9",
     borderWidth: 1,
     borderColor: "#E5E7EB",
-    padding: 7,
-    marginBottom: 8,
+    padding: 5,
+    marginBottom: 5,
   },
   categoryText: {
     fontSize: 8.3,
@@ -898,6 +898,7 @@ function TableBlock({ columns, data, highlightLastRow = false }) {
       <View style={styles.tableHeader} fixed>
         {columns.map((col, i) => {
           const isLastCol = i === columns.length - 1;
+
           return (
             <View
               key={col.key}
@@ -905,9 +906,12 @@ function TableBlock({ columns, data, highlightLastRow = false }) {
                 width: col.width,
                 borderRightWidth: isLastCol ? 0 : 1,
                 borderRightColor: "rgba(255,255,255,0.18)",
-                paddingVertical: 6,
-                paddingHorizontal: 4,
+
+                paddingVertical: 5,
+                paddingHorizontal: 2,
+
                 justifyContent: "center",
+
                 alignItems:
                   col.align === "right"
                     ? "flex-end"
@@ -918,10 +922,13 @@ function TableBlock({ columns, data, highlightLastRow = false }) {
             >
               <Text
                 style={{
-                  fontSize: 8.2,
+                  fontSize: 7.6,
                   fontWeight: "bold",
                   color: "#FFFFFF",
+
                   textAlign: col.align || "left",
+
+                  lineHeight: 1.1,
                 }}
               >
                 {col.title}
@@ -934,8 +941,18 @@ function TableBlock({ columns, data, highlightLastRow = false }) {
       {/* ROWS */}
       {data.map((row, rowIndex) => {
         const isLast = rowIndex === data.length - 1;
+
         const isHighlighted = highlightLastRow && isLast;
+
         const isMainRow = rowIndex === 0;
+
+        const isCategoryRow = row.isCategory;
+
+        const isCategoryGstRow = row.isCategoryGst;
+
+        const isGrandTotalRow = row.isGrandTotal;
+
+        const isQuotationTotalRow = row.description === "Total Quotation Value";
 
         return (
           <View
@@ -943,13 +960,36 @@ function TableBlock({ columns, data, highlightLastRow = false }) {
             wrap={false}
             style={[
               isLast ? styles.tableRowLast : styles.tableRow,
-              isMainRow && { backgroundColor: "#F8FAFC" },
+
+              isMainRow && {
+                backgroundColor: "#F8FAFC",
+              },
+
+              isCategoryRow && {
+                backgroundColor: "#DBEAFE",
+              },
+
+              isCategoryGstRow && {
+                backgroundColor: "#F8FAFC",
+              },
+
+              isGrandTotalRow && {
+                backgroundColor: "#FEF3C7",
+              },
             ]}
           >
             {columns.map((col, colIndex) => {
               const isLastCol = colIndex === columns.length - 1;
 
+              const cellValue =
+                isCategoryRow && col.key !== "description"
+                  ? ""
+                  : isCategoryGstRow && col.key !== "gst"
+                    ? ""
+                    : row[col.key];
+
               const textColor = isHighlighted ? "#2563EB" : "#4B5563";
+
               const fontWeight = isHighlighted ? "bold" : "normal";
 
               return (
@@ -957,13 +997,16 @@ function TableBlock({ columns, data, highlightLastRow = false }) {
                   key={col.key}
                   style={{
                     width: col.width,
-                    borderRightWidth: isLastCol ? 0 : 1,
-                    borderRightColor: "#E5EAF2",
-                    paddingVertical: 6,
-                    paddingHorizontal: 4,
 
-                    // ✅ PERFECT ALIGNMENT FIX
+                    borderRightWidth: isLastCol ? 0 : 1,
+
+                    borderRightColor: "#E5EAF2",
+
+                    paddingVertical: 5,
+                    paddingHorizontal: 2,
+
                     justifyContent: "center",
+
                     alignItems:
                       col.align === "right"
                         ? "flex-end"
@@ -974,18 +1017,38 @@ function TableBlock({ columns, data, highlightLastRow = false }) {
                 >
                   <Text
                     style={{
-                      fontSize: 8.2,
-                      color: textColor,
-                      fontWeight,
+                      fontSize: isCategoryRow
+                        ? 8.5
+                        : isCategoryGstRow
+                          ? 8
+                          : 7.8,
+
+                      color: isGrandTotalRow
+                        ? "#B45309"
+                        : isCategoryRow
+                          ? "#1E3A8A"
+                          : isCategoryGstRow
+                            ? "#DC2626"
+                            : textColor,
+
+                      fontWeight:
+                        isCategoryRow ||
+                        isCategoryGstRow ||
+                        isGrandTotalRow ||
+                        isQuotationTotalRow
+                          ? "bold"
+                          : fontWeight,
+
                       textAlign: col.align || "left",
-                      lineHeight: 1.4,
+
+                      lineHeight: 1.35,
                     }}
                   >
-                    {typeof row[col.key] === "string"
-                      ? cleanPdfText(row[col.key])
-                      : row[col.key] != null
+                    {typeof cellValue === "string"
+                      ? cleanPdfText(cellValue)
+                      : cellValue != null
                         ? row[col.key]
-                        : "-"}
+                        : ""}
                   </Text>
                 </View>
               );
@@ -1286,9 +1349,60 @@ export function ProposalPDF({ quotation, totals }) {
 
   const pricingRows = [];
 
+  const addedCategories = new Set();
+
   (quotation?.items || []).forEach((item) => {
+    // ✅ CATEGORY HEADER ONLY ONCE
+    const showCategoryGst = !pricingRows.some((r) => r.isCategoryGst);
+
+    if (showCategoryGst) {
+      pricingRows.push({
+        isCategoryGst: true,
+        skipSerial: true,
+
+        sl: "",
+        sku: "",
+        hsn: "",
+        description: "",
+
+        qty: "",
+        unitPrice: "",
+        discount: "",
+
+        gst: "18% Extra",
+
+        total: "",
+      });
+    }
+
+    // if (!addedCategories.has(item.category)) {
+    //   pricingRows.push({
+    //     isCategory: true,
+
+    //     skipSerial: true,
+
+    //     sl: "",
+    //     sku: "",
+    //     hsn: "",
+
+    //     description: item.category || "-",
+    //     category: "",
+
+    //     qty: "",
+    //     unitPrice: "",
+    //     discount: "",
+    //     gst: "",
+    //     total: "",
+    //   });
+
+    //   addedCategories.add(item.category);
+    // }
     pricingRows.push({
-      sl: pricingRows.length + 1,
+      sl: pricingRows.filter((r) => !r.skipSerial).length + 1,
+      category:
+        addedCategories.has(item.category) || !item.category
+          ? ""
+          : item.category,
       sku: cleanPdfText(item.sku || "-"),
       hsn: HSN_SAC,
       description: cleanPdfText(
@@ -1300,7 +1414,7 @@ export function ProposalPDF({ quotation, totals }) {
       qty: cleanNumber(item.quantity || 0),
       unitPrice: item.price != null ? formatCurrency(item.price) : "-",
       discount: item.discount != null ? `${item.discount}%` : "-",
-      gst: item.gst != null ? `${item.gst}%` : "18%",
+      gst: "",
       total: formatCurrency(
         cleanNumber(item.quantity || 1) *
           cleanNumber(item.price || 0) *
@@ -1308,11 +1422,45 @@ export function ProposalPDF({ quotation, totals }) {
       ),
     });
 
+    if (item.category) {
+      addedCategories.add(item.category);
+    }
+
+    // (item.subItems || []).forEach((sub) => {
+    //   pricingRows.push({
+    //     sl: pricingRows.length + 1,
+    //     sku: cleanPdfText(sub.sku || "-"),
+    //     hsn: HSN_SAC,
+    //     description: cleanPdfText(
+    //       (sub.description || sub.name || "-")
+    //         .normalize("NFKC")
+    //         .replace(/[\u00B9\u00B2\u00B3\u2070-\u2079]/g, "")
+    //         .replace(/[\u200B-\u200D\uFEFF\u00AD]/g, "")
+    //         .replace(/^[^a-zA-Z0-9]+/, ""),
+    //     ),
+    //     qty: cleanNumber(sub.quantity || 0),
+    //     unitPrice: sub.price != null ? formatCurrency(sub.price) : "-",
+    //     discount: sub.discount != null ? `${sub.discount}%` : "-",
+    //     gst: sub.gst != null ? `${sub.gst}%` : "18%",
+    //     total: formatCurrency(
+    //       cleanNumber(sub.quantity || 1) *
+    //         cleanNumber(sub.price || 0) *
+    //         (1 - cleanNumber(sub.discount || 0) / 100),
+    //     ),
+    //   });
+    // });
+
     (item.subItems || []).forEach((sub) => {
+      const isTestPlatform = item.category === "Test Platform";
+
       pricingRows.push({
-        sl: pricingRows.length + 1,
+        sl: pricingRows.filter((r) => !r.skipSerial).length + 1,
+        category: "",
+
         sku: cleanPdfText(sub.sku || "-"),
+
         hsn: HSN_SAC,
+
         description: cleanPdfText(
           (sub.description || sub.name || "-")
             .normalize("NFKC")
@@ -1320,44 +1468,115 @@ export function ProposalPDF({ quotation, totals }) {
             .replace(/[\u200B-\u200D\uFEFF\u00AD]/g, "")
             .replace(/^[^a-zA-Z0-9]+/, ""),
         ),
-        qty: cleanNumber(sub.quantity || 0),
-        unitPrice: sub.price != null ? formatCurrency(sub.price) : "-",
-        discount: sub.discount != null ? `${sub.discount}%` : "-",
-        gst: sub.gst != null ? `${sub.gst}%` : "18%",
-        total: formatCurrency(
-          cleanNumber(sub.quantity || 1) *
-            cleanNumber(sub.price || 0) *
-            (1 - cleanNumber(sub.discount || 0) / 100),
-        ),
+
+        // ✅ TEST PLATFORM = EMPTY COLUMNS
+        qty: isTestPlatform ? "" : cleanNumber(sub.quantity || 0),
+
+        unitPrice: isTestPlatform
+          ? ""
+          : sub.price != null
+            ? formatCurrency(sub.price)
+            : "-",
+
+        discount: isTestPlatform
+          ? ""
+          : sub.discount != null
+            ? `${sub.discount}%`
+            : "-",
+
+        gst: "",
+
+        total: isTestPlatform
+          ? ""
+          : formatCurrency(
+              cleanNumber(sub.quantity || 1) *
+                cleanNumber(sub.price || 0) *
+                (1 - cleanNumber(sub.discount || 0) / 100),
+            ),
       });
     });
     // 🔥 ADDITIONAL STATIC ROWS (Packing & Installation)
-
-    pricingRows.push(
-      {
-        sl: pricingRows.length + 1,
-        sku: "", // empty
-        hsn: HSN_SAC,
-        description: "Packing, Forwarding, Freight and Transit Insurance",
-        qty: 1,
-        unitPrice: "-", // empty
-        discount: "-",
-        gst: "-",
-        total: formatCurrency(50000),
-      },
-      {
-        sl: pricingRows.length + 1,
-        sku: "", // empty
-        hsn: HSN_SAC,
-        description: "Installation & Commissioning",
-        qty: 1,
-        unitPrice: "-", // empty
-        discount: "-",
-        gst: "-",
-        total: formatCurrency(100000),
-      },
-    );
   });
+
+  // ✅ ADD ONLY ONCE AFTER ALL CATEGORIES
+
+  const nextSl = pricingRows.filter((r) => !r.skipSerial).length + 1;
+
+  const subtotal = pricingRows.reduce((sum, row) => {
+    const qty = cleanNumber(row.qty);
+    const price = cleanNumber(row.unitPrice);
+    const discount = cleanNumber(row.discount);
+    return sum + qty * price * (1 - discount / 100);
+  }, 0);
+
+  const gstRate = 18;
+
+  const gstAmount = subtotal * (gstRate / 100);
+
+  const grandTotal = subtotal + gstAmount;
+
+  const packingCharges = 50000;
+
+  const installationCharges = 100000;
+
+  const finalGrandTotal = grandTotal + packingCharges + installationCharges;
+
+  pricingRows.push(
+    {
+      sl: nextSl,
+      category: "",
+      sku: "",
+      hsn: "",
+      description: "Total Quotation Value",
+      qty: "",
+      unitPrice: "",
+      discount: "",
+      gst: "",
+      total: formatCurrency(grandTotal),
+    },
+
+    {
+      sl: nextSl + 1,
+      category: "",
+      sku: "",
+      hsn: HSN_SAC,
+      description: "Packing, Forwarding, Freight and Transit Insurance",
+      qty: "",
+      unitPrice: "",
+      discount: "",
+      gst: "",
+      total: formatCurrency(packingCharges),
+    },
+
+    {
+      sl: nextSl + 2,
+      category: "",
+      sku: "",
+      hsn: HSN_SAC,
+      description: "Installation & Commissioning",
+      qty: "",
+      unitPrice: "",
+      discount: "",
+      gst: "",
+      total: formatCurrency(installationCharges),
+    },
+
+    {
+      sl: nextSl + 3,
+      category: "",
+      sku: "",
+      hsn: "",
+      description: "GRAND TOTAL",
+      qty: "",
+      unitPrice: "",
+      discount: "",
+      gst: "",
+      total: formatCurrency(finalGrandTotal),
+
+      // ✅ custom flag
+      isGrandTotal: true,
+    },
+  );
   const warranty = proposalData.warranty;
   const softwareSupport = proposalData.softwareSupport;
   const revisionHistory = proposalData.revisionHistory;
@@ -1406,19 +1625,47 @@ export function ProposalPDF({ quotation, totals }) {
   const projectItems = [
     { label: "Project", value: quotation?.deal?.dealName || "-" },
     { label: "Ref Documents", value: "-" },
-    { label: "Tech Prop Ref", value: "-" },
+    { label: "Tech Prop Ref", value: "MISPL/TECH " },
     { label: "Doc Owner", value: "Chaitra S B" },
     { label: "Approved By", value: "Bhavya K S" },
   ];
 
   const pricingColumns = [
-    { key: "sl", title: "SL#", width: "6%", align: "center" },
-    { key: "sku", title: "SKU", width: "14%", align: "center" },
-    { key: "hsn", title: "HSN/SAC", width: "10%", align: "center" },
+    { key: "sl", title: "SL#", width: "5%", align: "center" },
 
-    { key: "description", title: "Description", width: "30%" },
+    {
+      key: "category",
+      title: "Category",
+      width: "12%",
+      align: "center",
+    },
 
-    { key: "qty", title: "QTY", width: "6%", align: "center" },
+    {
+      key: "sku",
+      title: "SKU",
+      width: "10%",
+      align: "center",
+    },
+
+    {
+      key: "hsn",
+      title: "HSN/SAC",
+      width: "9%",
+      align: "center",
+    },
+
+    {
+      key: "description",
+      title: "Description",
+      width: "30%",
+    },
+
+    {
+      key: "qty",
+      title: "QTY",
+      width: "4%",
+      align: "center",
+    },
 
     {
       key: "unitPrice",
@@ -1427,34 +1674,24 @@ export function ProposalPDF({ quotation, totals }) {
       align: "right",
     },
 
-    { key: "discount", title: "Disc %", width: "8%", align: "center" },
-    { key: "gst", title: "GST", width: "8%", align: "center" },
+    {
+      key: "discount",
+      title: "Discount",
+      width: "8%",
+      align: "center",
+    },
 
     {
       key: "total",
-      title: "Total",
-      width: "12%",
+      title: "Final Price",
+      width: "10%",
       align: "right",
     },
   ];
-
   const deliveryColumns = [
     { key: "sl", title: "SL#", width: "10%", align: "center" },
     { key: "desc", title: "Delivery Timeline Details", width: "90%" },
   ];
-
-  const subtotal = pricingRows.reduce((sum, row) => {
-    const qty = cleanNumber(row.qty);
-    const price = cleanNumber(row.unitPrice);
-    const discount = cleanNumber(row.discount);
-    return sum + qty * price * (1 - discount / 100);
-  }, 0);
-
-  const gstRate = 18;
-
-  const gstAmount = subtotal * (gstRate / 100);
-
-  const grandTotal = subtotal + gstAmount;
 
   return (
     <Document>
@@ -1605,7 +1842,7 @@ export function ProposalPDF({ quotation, totals }) {
             borderColor: "#DBEAFE",
             borderRadius: 6,
             overflow: "hidden",
-            marginBottom: 10,
+            marginBottom: 4,
           }}
         >
           <View
@@ -1812,7 +2049,7 @@ export function ProposalPDF({ quotation, totals }) {
             fontSize: 15,
             fontWeight: "bold",
             color: "#111827",
-            marginBottom: 10,
+            marginBottom: 5,
           }}
         >
           Revision History
@@ -2038,7 +2275,7 @@ export function ProposalPDF({ quotation, totals }) {
         </Text>
 
         <View style={styles.categoryBox}>
-          <Text style={styles.categoryText}>Category: {categories || "-"}</Text>
+          <Text style={styles.categoryText}>Category: {categories}</Text>
         </View>
 
         <Text style={styles.centeredIntro}>
@@ -2058,8 +2295,8 @@ export function ProposalPDF({ quotation, totals }) {
           <View
             style={{
               backgroundColor: "#1E40AF",
-              paddingVertical: 6,
-              paddingHorizontal: 10,
+              paddingVertical: 4,
+              paddingHorizontal: 8,
               flexDirection: "row",
               alignItems: "center",
             }}
@@ -2090,8 +2327,8 @@ export function ProposalPDF({ quotation, totals }) {
             style={{
               flexDirection: "row",
               backgroundColor: "#F8FAFC",
-              paddingVertical: 7,
-              paddingHorizontal: 10,
+              paddingVertical: 5,
+              paddingHorizontal: 8,
               alignItems: "center",
             }}
           >
@@ -2111,32 +2348,6 @@ export function ProposalPDF({ quotation, totals }) {
 
         <>
           <TableBlock columns={pricingColumns} data={pricingRows} />
-
-          <View style={styles.gstSummaryWrap} wrap={false}>
-            <View style={styles.gstBox}>
-              <View style={styles.gstRow}>
-                <Text style={styles.gstLabel}>Subtotal</Text>
-                <Text style={styles.gstValue}>{formatCurrency(subtotal)}</Text>
-              </View>
-
-              {/* <View style={styles.gstRow}>
-                <Text style={styles.gstLabel}>Taxable Value</Text>
-                <Text style={styles.gstValue}>{formatCurrency(subtotal)}</Text>
-              </View> */}
-
-              {/* <View style={styles.gstRowLast}>
-                <Text style={styles.gstLabel}>GST (18%)</Text>
-                <Text style={styles.gstValue}>{formatCurrency(gstAmount)}</Text>
-              </View> */}
-
-              <View style={styles.gstGrandRow}>
-                <Text style={styles.gstGrandLabel}>Grand Total</Text>
-                <Text style={styles.gstGrandValue}>
-                  {formatCurrency(grandTotal)}
-                </Text>
-              </View>
-            </View>
-          </View>
         </>
 
         <PdfFooter />

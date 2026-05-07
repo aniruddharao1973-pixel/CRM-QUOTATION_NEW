@@ -4523,35 +4523,29 @@ import API from "../../api/axios";
 
 function Metric({ label, value, accent }) {
   const accents = {
-    default: "from-slate-50 to-white border-slate-200/60 shadow-slate-100/80",
-    indigo:
-      "from-indigo-50/90 to-white border-indigo-200/50 shadow-indigo-100/60",
-    emerald:
-      "from-emerald-50/90 to-white border-emerald-200/50 shadow-emerald-100/60",
+    default: "from-slate-50/50 to-white border-slate-200/60",
+    indigo: "from-[#37306B]/5 to-white border-[#37306B]/20",
+    emerald: "from-emerald-50/30 to-white border-emerald-100/40",
   };
 
   const valueColors = {
     default: "text-slate-800",
-    indigo: "text-indigo-700",
-    emerald: "text-emerald-700",
+    indigo: "text-[#37306B]",
+    emerald: "text-emerald-600",
   };
 
   return (
     <div
-      className={`flex min-w-[112px] flex-col gap-0.5 rounded-2xl border bg-gradient-to-br px-3 py-2.5 shadow-sm backdrop-blur-sm ${
-        accents[accent] || accents.default
-      }`}
+      className={`flex items-center gap-2.5 rounded-xl border bg-gradient-to-br px-4 py-2 backdrop-blur-sm ${accents[accent] || accents.default}`}
     >
-      <div className="text-[9px] font-bold uppercase tracking-[0.24em] text-slate-400">
+      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500/80">
         {label}
-      </div>
-      <div
-        className={`text-sm font-black tabular-nums ${
-          valueColors[accent] || valueColors.default
-        }`}
+      </span>
+      <span
+        className={`text-sm font-black tabular-nums ${valueColors[accent] || valueColors.default}`}
       >
         {typeof value === "string" ? value.replace(".00", "") : value}
-      </div>
+      </span>
     </div>
   );
 }
@@ -4584,10 +4578,10 @@ function RowBadge({ children, tone = "slate" }) {
 }
 
 const inputBase =
-  "w-full rounded-xl border border-slate-200/70 bg-white text-[12px] text-slate-800 shadow-[0_1px_4px_rgba(15,23,42,0.05)] outline-none transition-all duration-200 placeholder:text-slate-300 hover:border-indigo-200 hover:shadow-[0_2px_10px_rgba(99,102,241,0.08)] focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10";
+  "w-full rounded-lg border-0 bg-transparent text-[15px] font-bold text-slate-800 outline-none transition-all duration-200 placeholder:text-slate-300 hover:bg-slate-50 focus:bg-white focus:ring-2 focus:ring-[#37306B]/10";
 
 const subInputEnabled =
-  "border-slate-200/70 bg-white text-slate-700 shadow-[0_1px_4px_rgba(15,23,42,0.05)] outline-none hover:border-indigo-200 hover:shadow-[0_2px_10px_rgba(99,102,241,0.08)] focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10";
+  "border-0 bg-transparent text-slate-700 outline-none hover:bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500/10";
 
 const disabledInput =
   "cursor-not-allowed border-transparent bg-transparent text-slate-300 shadow-none";
@@ -4621,288 +4615,126 @@ export default function QuotationItemsTable({
   };
 
   return (
-    <div className="overflow-visible rounded-[28px] border border-slate-200/70 bg-gradient-to-b from-white via-slate-50/20 to-white shadow-[0_24px_70px_rgba(15,23,42,0.08),0_6px_18px_rgba(15,23,42,0.04)]">
+    <div className="flex min-h-0 flex-1 flex-col overflow-visible rounded-[28px] border border-slate-200/70 bg-white shadow-[0_20px_50px_rgba(55,48,107,0.08)]">
       {/* HEADER */}
-      <div className="relative overflow-hidden border-b border-slate-100/80 px-3 py-3 sm:px-5 sm:py-4 lg:px-6">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_70%_at_80%_-10%,rgba(199,210,254,0.35),transparent_70%),radial-gradient(ellipse_50%_50%_at_5%_110%,rgba(224,231,255,0.25),transparent)]" />
-        <div className="relative flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <div className="flex h-5 w-5 items-center justify-center rounded-md bg-indigo-100 ring-1 ring-indigo-200/60">
-                <Sparkles className="h-3 w-3 text-indigo-500" />
-              </div>
-              <span className="text-[9px] font-bold uppercase tracking-[0.26em] text-indigo-400">
-                Line Items
-              </span>
+      <div className="relative z-[50] overflow-visible border-b border-slate-100/80 px-4 py-3 lg:px-6">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_70%_at_80%_-10%,rgba(199,210,254,0.15),transparent_70%)]" />
+        <div className="relative flex flex-row items-center gap-4">
+          <div className="flex shrink-0 items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 ring-1 ring-indigo-100">
+              <Sparkles className="h-4 w-4 text-indigo-500" />
             </div>
-
-            <h2 className="mt-2 text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
-              Item Breakdown
-            </h2>
-
-            <p className="mt-0.5 max-w-2xl text-[12px] leading-5 text-slate-400">
-              Select products from master data and fine-tune quantity, pricing,
-              and discount per row.
-            </p>
+            <div className="hidden lg:block">
+              <h2 className="text-base font-black tracking-tight text-[#37306B]">
+                Item Breakdown
+              </h2>
+              <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400 font-bold">
+                Master Data Library
+              </p>
+            </div>
           </div>
 
-          <div className="flex flex-wrap gap-2.5">
-            <Metric label="Rows" value={`${rowCount} total`} accent="default" />
-            <Metric
-              label="Filled"
-              value={`${filledCount} active`}
-              accent="indigo"
-            />
-            <Metric
-              label="Subtotal"
-              value={formatAmount(totals?.subtotal || 0)}
-              accent="emerald"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* TOOLBAR */}
-      <div className="relative z-[400] flex flex-col gap-2.5 overflow-visible border-b border-slate-100/80 bg-gradient-to-r from-slate-50/70 via-white to-slate-50/40 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:px-5 lg:px-6">
-        <div className="flex items-center gap-2">
-          <RowBadge tone="indigo">{totals?.rows?.length || 0} rows</RowBadge>
-          <RowBadge tone="emerald">
-            {formItems?.filter((item) => item.selectedSubItems?.length > 0)
-              ?.length || 0}{" "}
-            grouped
-          </RowBadge>
-        </div>
-
-        <div className="relative z-[500] flex flex-1 justify-center overflow-visible">
-          <div className="relative z-[600] flex w-full max-w-[760px] items-center gap-2.5 overflow-visible rounded-3xl border border-slate-200/70 bg-white/95 p-1 shadow-[0_10px_35px_rgba(15,23,42,0.08)] backdrop-blur-xl">
+          <div className="relative flex min-w-0 flex-1 items-center gap-2">
             <div className="relative flex-1">
-              <div className="flex items-center gap-2.5 rounded-2xl border border-slate-200/80 bg-gradient-to-r from-slate-50 to-white px-3 py-2 shadow-inner">
-                <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-indigo-50 ring-1 ring-indigo-100">
-                  <PackageSearch className="h-4 w-4 text-indigo-600" />
-                </div>
-
-                <div className="flex min-w-0 flex-1 flex-col">
-                  <span className="text-[9px] font-black uppercase tracking-[0.24em] text-slate-400">
-                    Global Item Search
-                  </span>
-
-                  <input
-                    type="text"
-                    value={skuQuery}
-                    placeholder="Search SKU, item name, make, category..."
-                    onChange={async (e) => {
-                      const value = e.target.value;
-                      setSkuQuery(value);
-
-                      if (!value.trim()) {
-                        setSkuResults([]);
-                        setShowSkuDropdown(false);
-                        return;
-                      }
-
-                      try {
-                        const res = await API.get("/items/search", {
-                          params: { q: value },
-                        });
-
-                        const normalized = (res.data || []).filter(
-                          (item) => !item.parentId,
-                        );
-
-                        setSkuResults(normalized);
-                        setShowSkuDropdown(true);
-                      } catch (err) {
-                        console.error("❌ SKU search failed:", err);
-                      }
-                    }}
-                    className="mt-0.5 w-full border-0 bg-transparent p-0 text-[13px] font-semibold text-slate-700 outline-none placeholder:text-slate-400 focus:ring-0"
-                  />
-                </div>
+              <div className="flex items-center gap-2.5 rounded-2xl border border-slate-200/80 bg-slate-50/80 px-4 py-2 transition-all focus-within:border-[#37306B]/40 focus-within:bg-white focus-within:shadow-md">
+                <PackageSearch className="h-4.5 w-4.5 text-slate-400" />
+                <input
+                  type="text"
+                  value={skuQuery}
+                  placeholder="Search SKU, name, make..."
+                  onChange={async (e) => {
+                    const value = e.target.value;
+                    setSkuQuery(value);
+                    if (!value.trim()) {
+                      setSkuResults([]);
+                      setShowSkuDropdown(false);
+                      return;
+                    }
+                    try {
+                      const res = await API.get("/items/search", {
+                        params: { q: value },
+                      });
+                      const normalized = (res.data || []).filter(
+                        (item) => !item.parentId,
+                      );
+                      setSkuResults(normalized);
+                      setShowSkuDropdown(true);
+                    } catch (err) {
+                      console.error("SKU search failed:", err);
+                    }
+                  }}
+                  className="w-full border-0 bg-transparent p-0 text-[14px] font-bold text-slate-700 outline-none placeholder:text-slate-400 focus:ring-0"
+                />
               </div>
 
               {showSkuDropdown && skuResults.length > 0 && (
                 <div
-                  className="absolute left-0 top-[calc(100%+12px)] z-[9999] w-full min-w-0 overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-[0_25px_60px_rgba(15,23,42,0.18)] backdrop-blur-xl"
-                  style={{ maxHeight: "70vh" }}
+                  className="absolute left-0 top-[calc(100%+8px)] z-[9999] flex w-[450px] flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xl backdrop-blur-xl"
+                  style={{ maxHeight: "min(400px, 60vh)" }}
                 >
-                  <div className="flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white px-3 py-2.5">
-                    <div>
-                      <div className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">
-                        Search Results
-                      </div>
-                      <div className="mt-1 text-[11px] text-slate-500">
-                        Select item to auto-fill quotation row
-                      </div>
-                    </div>
+                  <div className="flex-1 overflow-y-auto p-1 scrollbar-thin">
+                    {skuResults.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => {
+                          const children = item.children || [];
+                          const hasParentPrice =
+                            Number(item.basePrice || item.price || 0) > 0;
+                          const hasBillableChildren = children.some(
+                            (c) => Number(c.basePrice || c.price || 0) > 0,
+                          );
+                          const pricingMode = hasBillableChildren
+                            ? hasParentPrice
+                              ? "parent_with_children"
+                              : "children_only"
+                            : "spec_rows";
 
-                    <div className="rounded-full bg-indigo-50 px-3 py-1 text-[10px] font-bold text-indigo-600 ring-1 ring-indigo-100">
-                      {skuResults.length} items
-                    </div>
-                  </div>
-
-                  <div
-                    className="overflow-y-auto overflow-x-hidden p-2 scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent"
-                    style={{ maxHeight: "calc(70vh - 72px)" }}
-                  >
-                    {skuResults.map((item) => {
-                      const children = item.children || [];
-                      const hasParentPrice =
-                        Number(item.basePrice || item.price || 0) > 0;
-                      const hasBillableChildren = children.some(
-                        (child) =>
-                          Number(child.basePrice || child.price || 0) > 0,
-                      );
-
-                      const pricingMode = hasBillableChildren
-                        ? hasParentPrice
-                          ? "parent_with_children"
-                          : "children_only"
-                        : "spec_rows";
-
-                      return (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={() => {
-                            const selectableChildren =
+                          addItem({
+                            itemId: item.id,
+                            sku: item.sku || "",
+                            category: item.category || "",
+                            description: item.description || "",
+                            make: item.make || "",
+                            mfgPartNo: item.mfgPartNo || "",
+                            uom: item.uom || "",
+                            qty: 1,
+                            price: hasParentPrice
+                              ? Number(item.basePrice || item.price || 0)
+                              : 0,
+                            discount: Number(item.discount || 0),
+                            pricingMode,
+                            subItems: children,
+                            selectedSubItems:
                               pricingMode === "children_only" ||
-                              pricingMode === "parent_with_children";
-
-                            const newRow = {
-                              itemId: item.id,
-                              sku: item.sku || "",
-                              category: item.category || "",
-                              description: item.description || "",
-                              make: item.make || "",
-                              mfgPartNo: item.mfgPartNo || "",
-                              uom: item.uom || "",
-                              remarks: "",
-                              qty: 1,
-
-                              // parent price only if available
-                              price: hasParentPrice
-                                ? Number(item.basePrice || item.price || 0)
-                                : 0,
-
-                              discount: Number(item.discount || 0),
-                              pricingMode,
-                              subItems: children,
-
-                              // auto-select only for children-only pricing
-                              selectedSubItems: selectableChildren
-                                ? children.map((child) => ({
-                                    id: child.id,
-                                    itemId: child.id,
-
-                                    name: child.name || "",
-                                    sku: child.sku || "",
-                                    category: child.category || "",
-
-                                    description: child.description || "",
-
-                                    make: child.make || "",
-                                    mfgPartNo: child.mfgPartNo || "",
-                                    uom: child.uom || "",
-
-                                    remarks: child.defaultRemarks || "",
-
-                                    qty: Number(
-                                      child.baseQty || child.qty || 1,
-                                    ),
-
-                                    price: Number(
-                                      child.basePrice || child.price || 0,
-                                    ),
-
-                                    discount: Number(child.discount || 0),
+                              pricingMode === "parent_with_children"
+                                ? children.map((c) => ({
+                                    ...c,
+                                    itemId: c.id,
+                                    qty: Number(c.baseQty || c.qty || 1),
+                                    price: Number(c.basePrice || c.price || 0),
                                   }))
                                 : [],
-                            };
-
-                            const emptyRowIndex = formItems.findIndex(
-                              (r) =>
-                                !r.itemId &&
-                                !r.description &&
-                                (!r.qty || Number(r.qty) === 1) &&
-                                (!r.price || Number(r.price) === 0),
-                            );
-
-                            if (emptyRowIndex !== -1) {
-                              Object.entries(newRow).forEach(([key, value]) => {
-                                updateItem(emptyRowIndex, key, value);
-                              });
-                            } else {
-                              addItem(newRow);
-                            }
-
-                            setSkuQuery("");
-                            setSkuResults([]);
-                            setShowSkuDropdown(false);
-                          }}
-                          className="group flex w-full items-start gap-2.5 rounded-2xl border border-transparent px-3 py-2.5 text-left transition-all duration-200 hover:border-indigo-100 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-slate-50"
-                        >
-                          <div className="flex min-w-0 flex-1 flex-col">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className="font-mono text-[12px] font-black tracking-wide text-indigo-700">
-                                {item.sku || "NO-SKU"}
-                              </span>
-
-                              {children.length > 0 && (
-                                <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-600 ring-1 ring-emerald-100">
-                                  Grouped
-                                </span>
-                              )}
-
-                              {pricingMode === "children_only" && (
-                                <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-600 ring-1 ring-amber-100">
-                                  Child Pricing
-                                </span>
-                              )}
-
-                              {pricingMode === "spec_rows" && (
-                                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-slate-600 ring-1 ring-slate-200">
-                                  Fixed Rows
-                                </span>
-                              )}
-                            </div>
-
-                            <div className="mt-1 line-clamp-2 text-[12px] leading-5 text-slate-700 group-hover:text-slate-900">
-                              {item.name}
-                            </div>
-
-                            {(item.make || item.mfgPartNo) && (
-                              <div className="mt-2 flex flex-wrap items-center gap-2">
-                                {item.make && (
-                                  <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] text-slate-500">
-                                    {item.make}
-                                  </span>
-                                )}
-
-                                {item.mfgPartNo && (
-                                  <span className="rounded-full bg-slate-100 px-2 py-1 font-mono text-[10px] text-slate-500">
-                                    {item.mfgPartNo}
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="flex shrink-0 flex-col items-end gap-2">
-                            <div className="max-w-[160px] truncate rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-slate-600 ring-1 ring-slate-200">
-                              {item.category || "Item"}
-                            </div>
-
-                            <div className="text-[11px] font-black text-emerald-600">
-                              {hasParentPrice
-                                ? formatAmount(
-                                    Math.round(Number(item.basePrice || 0)),
-                                  )
-                                : `${children.length} items`}
-                            </div>
-                          </div>
-                        </button>
-                      );
-                    })}
+                          });
+                          setSkuQuery("");
+                          setSkuResults([]);
+                          setShowSkuDropdown(false);
+                        }}
+                        className="group flex w-full flex-col rounded-xl px-3 py-2 text-left hover:bg-indigo-50/50"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-mono text-[11px] font-black text-indigo-600">
+                            {item.sku}
+                          </span>
+                          <span className="text-[10px] font-bold text-emerald-600">
+                            {formatAmount(item.basePrice)}
+                          </span>
+                        </div>
+                        <div className="truncate text-[12px] font-medium text-slate-700">
+                          {item.name}
+                        </div>
+                      </button>
+                    ))}
                   </div>
                 </div>
               )}
@@ -4910,23 +4742,35 @@ export default function QuotationItemsTable({
 
             <button
               onClick={resetItems}
-              className="group inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-white px-4.5 text-[11px] font-black uppercase tracking-[0.14em] text-rose-600 shadow-sm transition-all duration-200 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700 hover:shadow-[0_8px_20px_rgba(244,63,94,0.15)]"
+              className="inline-flex h-8 items-center gap-1.5 rounded-xl border border-rose-100 bg-rose-50 px-3 text-[10px] font-black uppercase tracking-wider text-rose-600 transition-colors hover:bg-rose-100"
             >
-              <Trash2 className="h-3.5 w-3.5 transition-transform duration-200 group-hover:rotate-12" />
+              <Trash2 className="h-3 w-3" />
               Reset
             </button>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-2">
+            <Metric
+              label="Subtotal"
+              value={formatAmount(totals?.subtotal || 0)}
+              accent="default"
+            />
+            <Metric
+              label="Total"
+              value={formatAmount(totals?.grandTotal || 0)}
+              accent="emerald"
+            />
           </div>
         </div>
       </div>
 
       {/* TABLE */}
-      <div className="relative z-[1] rounded-b-[28px] border-t border-slate-100/70 bg-white">
+      <div className="relative z-[1] flex min-h-0 flex-1 flex-col overflow-hidden rounded-b-[28px] border-t border-slate-100/70 bg-white">
         <div
           className="
+            flex-1
             overflow-x-auto
             overflow-y-auto
-            max-h-[460px]
-            lg:max-h-[590px]
             scrollbar-thin
             scrollbar-thumb-slate-300
             scrollbar-track-slate-100
@@ -4946,15 +4790,18 @@ export default function QuotationItemsTable({
             }}
           >
             <colgroup>
-              <col style={{ width: "130px" }} />
-              <col style={{ width: "130px" }} />
-              <col style={{ width: "470px" }} />
-              <col style={{ width: "90px" }} />
-              <col style={{ width: "110px" }} />
-              <col style={{ width: "100px" }} />
-              <col style={{ width: "130px" }} />
-              <col style={{ width: "200px" }} />
-              <col style={{ width: "60px" }} />
+              <col style={{ width: "140px" }} /> {/* CATEGORY */}
+              <col style={{ width: "120px" }} /> {/* SKU */}
+              <col style={{ width: "280px" }} /> {/* DESCRIPTION */}
+              <col style={{ width: "120px" }} /> {/* MAKE */}
+              <col style={{ width: "130px" }} /> {/* MFG PN */}
+              <col style={{ width: "70px" }} /> {/* QTY */}
+              <col style={{ width: "70px" }} /> {/* UOM */}
+              <col style={{ width: "120px" }} /> {/* PRICE */}
+              <col style={{ width: "90px" }} /> {/* DISCOUNT */}
+              <col style={{ width: "130px" }} /> {/* TOTAL */}
+              <col style={{ width: "170px" }} /> {/* REMARKS */}
+              <col style={{ width: "60px" }} /> {/* DELETE */}
             </colgroup>
 
             <thead className="sticky top-0 z-[20] bg-slate-50/95 backdrop-blur-xl">
@@ -4963,16 +4810,23 @@ export default function QuotationItemsTable({
                   { label: "Category" },
                   { label: "SKU" },
                   { label: "Description" },
-                  { label: "Quantity", cls: "text-right" },
-                  { label: "Price", cls: "text-right" },
-                  { label: "Discount", cls: "text-right" },
-                  { label: "Line Total", cls: "text-right" },
+
+                  { label: "Make" },
+                  { label: "Mfg PN" },
+
+                  { label: "Qty", cls: "text-center" },
+                  { label: "UOM", cls: "text-center" },
+
+                  { label: "Unit Price", cls: "text-right" },
+                  { label: "Disc %", cls: "text-right" },
+                  { label: "Final Price", cls: "text-right" },
+
                   { label: "Remarks" },
-                  { label: "Delete", cls: "text-center" },
+                  { label: "Del", cls: "text-center" },
                 ].map(({ label, cls = "" }) => (
                   <th
                     key={label}
-                    className={`border-b border-r border-slate-200/70 bg-slate-50/95 px-2 py-1.5 text-left text-[9px] font-black uppercase tracking-[0.22em] text-slate-500 backdrop-blur-md whitespace-nowrap last:border-r-0 ${cls}`}
+                    className={`border-b border-r border-slate-200/60 bg-white px-3 py-3 text-left text-[11px] font-black uppercase tracking-[0.2em] text-[#37306B]/60 backdrop-blur-md whitespace-nowrap last:border-r-0 ${cls}`}
                   >
                     {label}
                   </th>
@@ -5013,47 +4867,57 @@ export default function QuotationItemsTable({
                       }`}
                     >
                       {/* CATEGORY */}
-                      <td className="align-top whitespace-normal break-words border-b border-r border-slate-100/70 px-2 py-1.5">
-                        <CellLabel>Category</CellLabel>
-                        <div className="flex min-h-[26px] items-center text-[12px] font-medium text-slate-600">
-                          {selectedItem?.category || (
+                      <td className="align-top border-b border-r border-slate-100/70 px-2 py-1.5">
+                        <div className="flex min-h-[40px] flex-col justify-center text-[11px] font-bold text-slate-700">
+                          {selectedItem?.category ? (
+                            <span className="inline-block rounded-md bg-slate-100 px-2 py-1 leading-tight ring-1 ring-slate-200/80 whitespace-normal break-words">
+                              {selectedItem.category}
+                            </span>
+                          ) : (
                             <span className="text-slate-300">—</span>
                           )}
                         </div>
                       </td>
 
                       {/* SKU */}
-                      <td className="align-top whitespace-normal break-words border-b border-r border-slate-100/70 px-2 py-1.5">
-                        <CellLabel>SKU</CellLabel>
-                        <div className="flex min-h-[26px] items-center gap-2">
-                          <div className="h-5 w-[2px] rounded-full bg-gradient-to-b from-indigo-200 to-slate-100" />
-                          <span className="whitespace-nowrap font-mono text-[12px] font-semibold text-slate-500">
-                            {selectedItem?.sku || (
-                              <span className="font-sans font-normal text-slate-300">
-                                —
-                              </span>
-                            )}
+                      <td className="align-top border-b border-r border-slate-100/70 px-3 py-3">
+                        <div className="flex min-h-[44px] items-center gap-1.5 px-1">
+                          <div className="h-6 w-[2px] rounded-full bg-[#37306B]/20" />
+                          <span className="truncate font-mono text-[14px] font-bold tracking-tight text-slate-700">
+                            {selectedItem?.sku || "—"}
                           </span>
                         </div>
                       </td>
 
                       {/* DESCRIPTION */}
-                      <td className="align-top whitespace-normal break-words border-b border-r border-slate-100/70 px-2 py-1.5">
-                        <CellLabel>Description</CellLabel>
-                        <textarea
-                          value={row.description ?? ""}
-                          rows={2}
-                          onChange={(e) =>
-                            updateItem(index, "description", e.target.value)
-                          }
-                          onBlur={() => autoSave(formItems)}
-                          className={`${inputBase} min-h-[68px] resize-y px-3 py-2 leading-5`}
-                          placeholder="Add description…"
-                        />
+                      <td className="align-top border-b border-r border-slate-100/70 px-3 py-3">
+                        <div className="min-h-[44px] max-w-[270px] p-1 text-[14px] font-bold leading-relaxed text-slate-900 whitespace-pre-wrap break-words">
+                          {row.description || (
+                            <span className="text-slate-300 italic font-normal">
+                              No description provided
+                            </span>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* MAKE */}
+                      <td className="align-top border-b border-r border-slate-100/70 px-2 py-2">
+                        <div className="flex min-h-[44px] items-center text-[13px] font-semibold text-slate-700">
+                          {selectedItem?.make || "—"}
+                        </div>
+                      </td>
+
+                      {/* MFG PN */}
+                      <td className="align-top border-b border-r border-slate-100/70 px-2 py-2">
+                        <div className="flex min-h-[44px] items-center">
+                          <span className="rounded-md bg-slate-100 px-2 py-1 font-mono text-[11px] text-slate-600">
+                            {selectedItem?.mfgPartNo || "—"}
+                          </span>
+                        </div>
                       </td>
 
                       {/* QTY */}
-                      <td className="align-top whitespace-normal break-words border-b border-r border-slate-100/70 px-2 py-1.5">
+                      <td className="align-top whitespace-normal break-words border-b border-r border-slate-100/70 px-3 py-3">
                         <CellLabel>Quantity</CellLabel>
                         <input
                           type="number"
@@ -5065,27 +4929,25 @@ export default function QuotationItemsTable({
                             updateItem(index, "qty", e.target.value)
                           }
                           onBlur={() => autoSave(formItems)}
-                          className={`${inputBase} h-9 px-2 text-right tabular-nums`}
+                          className={`${inputBase} h-10 px-3 text-right tabular-nums`}
                         />
                       </td>
 
-                      {/* PRICE */}
-                      <td className="align-top whitespace-normal break-words border-b border-r border-slate-100/70 px-2 py-1.5">
-                        <CellLabel>Price</CellLabel>
-                        <input
-                          type="number"
-                          min="0"
-                          value={
-                            Number.isFinite(Number(row.price)) ? row.price : ""
-                          }
-                          readOnly
-                          tabIndex={-1}
-                          className="h-9 w-full cursor-not-allowed rounded-xl border border-slate-200/70 bg-slate-100/80 px-2 text-right text-[12px] font-medium tabular-nums text-slate-500 shadow-inner outline-none"
-                        />
+                      {/* UOM */}
+                      <td className="align-top border-b border-r border-slate-100/70 px-2 py-2">
+                        <div className="flex h-10 items-center justify-center text-[13px] font-medium text-slate-600">
+                          {selectedItem?.uom || "—"}
+                        </div>
                       </td>
 
-                      {/* DISCOUNT */}
-                      <td className="align-top whitespace-normal break-words border-b border-r border-slate-100/70 px-2 py-1.5">
+                      <td className="align-top whitespace-normal break-words border-b border-r border-slate-100/70 px-3 py-3">
+                        <CellLabel>Unit Price</CellLabel>
+                        <div className="flex h-10 w-full items-center justify-end px-2 text-[14px] font-black tabular-nums text-slate-800">
+                          {formatAmount(Math.round(Number(row.price || 0)))}
+                        </div>
+                      </td>
+
+                      <td className="align-top whitespace-normal break-words border-b border-r border-slate-100/70 px-3 py-3">
                         <CellLabel>Discount</CellLabel>
                         <div className="relative">
                           <input
@@ -5101,18 +4963,17 @@ export default function QuotationItemsTable({
                               updateItem(index, "discount", e.target.value)
                             }
                             onBlur={() => autoSave(formItems)}
-                            className={`${inputBase} h-9 py-2 pl-2 pr-6 text-right tabular-nums`}
+                            className={`${inputBase} h-10 py-2 pl-3 pr-7 text-right tabular-nums text-amber-600`}
                           />
-                          <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-slate-400">
+                          <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[11px] font-black text-amber-400/70">
                             %
                           </span>
                         </div>
                       </td>
 
-                      {/* LINE TOTAL */}
-                      <td className="align-top whitespace-normal break-words border-b border-r border-slate-100/70 px-2 py-1.5">
-                        <CellLabel>Line Total</CellLabel>
-                        <div className="flex h-9 items-center justify-end rounded-xl bg-gradient-to-br from-emerald-50 via-emerald-50/80 to-teal-50/40 px-3 text-[12px] font-bold tabular-nums text-emerald-700 ring-1 ring-emerald-200/70 shadow-[0_2px_8px_rgba(16,185,129,0.1),inset_0_1px_0_rgba(255,255,255,0.8)]">
+                      <td className="align-top whitespace-normal break-words border-b border-r border-slate-100/70 px-2 py-3">
+                        <CellLabel>Final Price</CellLabel>
+                        <div className="flex h-10 items-center justify-end rounded-xl bg-[#37306B]/5 px-3 py-1 font-black tabular-nums text-[14px] text-[#37306B] ring-1 ring-[#37306B]/10 shadow-sm">
                           {formatAmount(
                             Math.round(
                               Number(row.qty || 1) *
@@ -5124,17 +4985,24 @@ export default function QuotationItemsTable({
                       </td>
 
                       {/* REMARKS */}
-                      <td className="align-top whitespace-normal break-words border-b border-r border-slate-100/70 px-2 py-1.5">
-                        <CellLabel>Remarks</CellLabel>
+                      <td className="align-top whitespace-normal break-words border-b border-r border-slate-100/70 px-1.5 py-1">
                         <textarea
-                          rows={2}
+                          rows={1}
                           value={row.remarks ?? ""}
-                          onChange={(e) =>
-                            updateItem(index, "remarks", e.target.value)
-                          }
+                          onChange={(e) => {
+                            updateItem(index, "remarks", e.target.value);
+                            e.target.style.height = "auto";
+                            e.target.style.height =
+                              e.target.scrollHeight + "px";
+                          }}
                           onBlur={() => autoSave(formItems)}
-                          className={`${inputBase} min-h-[50px] resize-y px-2 py-1.5 text-[12px] leading-5`}
-                          placeholder="Add notes…"
+                          onFocus={(e) => {
+                            e.target.style.height = "auto";
+                            e.target.style.height =
+                              e.target.scrollHeight + "px";
+                          }}
+                          className="w-full resize-none border-0 bg-transparent p-2 text-[13px] leading-relaxed text-slate-700 outline-none placeholder:text-slate-400 focus:ring-0 overflow-hidden font-medium"
+                          placeholder="Add internal notes…"
                         />
                         {Number(row.discount || 0) > 0 &&
                           !row.remarks?.trim() && (
@@ -5197,18 +5065,18 @@ export default function QuotationItemsTable({
 
                                 <div className="min-w-0 pt-0.5">
                                   <div
-                                    className={`text-[11px] font-semibold uppercase tracking-wide ${
+                                    className={`text-[13px] font-bold uppercase tracking-tight ${
                                       checked || !isSelectableGroup
-                                        ? "text-slate-600"
+                                        ? "text-slate-800"
                                         : "text-slate-300"
                                     }`}
                                   >
                                     {sub.category || "—"}
                                   </div>
                                   <div
-                                    className={`mt-0.5 text-[10px] ${
+                                    className={`mt-0.5 text-[11px] font-semibold ${
                                       checked || !isSelectableGroup
-                                        ? "text-indigo-400"
+                                        ? "text-indigo-500/80"
                                         : "text-slate-300"
                                     }`}
                                   >
@@ -5219,19 +5087,19 @@ export default function QuotationItemsTable({
                             </td>
 
                             {/* SKU */}
-                            <td className="align-top whitespace-normal break-words border-b border-r border-slate-100/70 px-2 py-1.5">
-                              <div className="flex min-h-[26px] items-center gap-2">
+                            <td className="align-top whitespace-normal break-words border-b border-r border-slate-100/70 px-3 py-2.5">
+                              <div className="flex min-h-[30px] items-center gap-2">
                                 <div
-                                  className={`h-5 w-[2px] rounded-full ${
+                                  className={`h-6 w-[2.5px] rounded-full ${
                                     checked || !isSelectableGroup
-                                      ? "bg-indigo-200"
+                                      ? "bg-[#37306B]/30"
                                       : "bg-slate-150"
                                   }`}
                                 />
                                 <span
-                                  className={`whitespace-nowrap font-mono text-[11px] ${
+                                  className={`whitespace-nowrap font-mono text-[13px] font-bold ${
                                     checked || !isSelectableGroup
-                                      ? "text-slate-400"
+                                      ? "text-slate-600"
                                       : "text-slate-300"
                                   }`}
                                 >
@@ -5268,10 +5136,38 @@ export default function QuotationItemsTable({
                                   placeholder="Description…"
                                 />
                               ) : (
-                                <div className="min-h-[68px] whitespace-pre-wrap rounded-xl border border-transparent px-2 py-1.5 text-[12px] leading-5 text-slate-800">
+                                <div className="min-h-[68px] whitespace-pre-wrap rounded-xl border border-transparent px-2 py-1.5 text-[14px] leading-relaxed font-medium text-slate-800">
                                   {sub.description || "—"}
                                 </div>
                               )}
+                            </td>
+
+                            {/* MAKE */}
+                            <td className="align-top border-b border-r border-slate-100/70 px-2 py-1.5">
+                              <div
+                                className={`flex min-h-[68px] items-center px-2 text-[13px] font-medium ${
+                                  checked || !isSelectableGroup
+                                    ? "text-slate-600"
+                                    : "text-slate-300"
+                                }`}
+                              >
+                                {sub.make || "—"}
+                              </div>
+                            </td>
+
+                            {/* MFG PN */}
+                            <td className="align-top border-b border-r border-slate-100/70 px-2 py-1.5">
+                              <div className="flex min-h-[68px] items-center px-2">
+                                <span
+                                  className={`rounded-md px-2 py-1 font-mono text-[11px] ${
+                                    checked || !isSelectableGroup
+                                      ? "bg-slate-100 text-slate-600"
+                                      : "bg-transparent text-slate-300"
+                                  }`}
+                                >
+                                  {sub.mfgPartNo || "—"}
+                                </span>
+                              </div>
                             </td>
 
                             {/* QTY */}
@@ -5297,15 +5193,28 @@ export default function QuotationItemsTable({
                                     )
                                   }
                                   onBlur={() => autoSave(formItems)}
-                                  className={`h-9 w-full rounded-xl border px-2 text-right text-[12px] tabular-nums outline-none transition-all duration-200 ${
+                                  className={`h-9 w-full rounded-xl border px-2 text-right text-[14px] font-bold tabular-nums outline-none transition-all duration-200 ${
                                     checked ? subInputEnabled : disabledInput
                                   }`}
                                 />
                               ) : (
-                                <div className="flex h-9 items-center justify-center rounded-xl px-2 text-[12px] font-medium text-slate-300">
+                                <div className="flex h-9 items-center justify-center rounded-xl px-2 text-[14px] font-bold text-slate-300">
                                   —
                                 </div>
                               )}
+                            </td>
+
+                            {/* UOM */}
+                            <td className="align-top border-b border-r border-slate-100/70 px-2 py-1.5">
+                              <div
+                                className={`flex h-9 items-center justify-center text-[13px] font-medium ${
+                                  checked || !isSelectableGroup
+                                    ? "text-slate-600"
+                                    : "text-slate-300"
+                                }`}
+                              >
+                                {sub.uom || "—"}
+                              </div>
                             </td>
 
                             {/* PRICE */}
@@ -5323,7 +5232,7 @@ export default function QuotationItemsTable({
                                   }
                                   readOnly
                                   tabIndex={-1}
-                                  className={`h-9 w-full rounded-xl border px-2 text-right text-[12px] font-medium tabular-nums outline-none ${
+                                  className={`h-9 w-full rounded-xl border px-2 text-right text-[14px] font-black tabular-nums outline-none ${
                                     checked
                                       ? "cursor-not-allowed border-slate-200/70 bg-slate-100/80 text-slate-500 shadow-inner"
                                       : disabledInput
@@ -5361,7 +5270,7 @@ export default function QuotationItemsTable({
                                       )
                                     }
                                     onBlur={() => autoSave(formItems)}
-                                    className={`h-9 w-full rounded-xl border py-2 pl-2 pr-6 text-right text-[12px] tabular-nums outline-none transition-all duration-200 ${
+                                    className={`h-9 w-full rounded-xl border py-2 pl-2 pr-6 text-right text-[14px] font-bold tabular-nums outline-none transition-all duration-200 ${
                                       checked ? subInputEnabled : disabledInput
                                     }`}
                                   />
@@ -5382,7 +5291,7 @@ export default function QuotationItemsTable({
                             <td className="align-top whitespace-normal break-words border-b border-r border-slate-100/70 px-2 py-1.5">
                               {isSelectableGroup ? (
                                 <div
-                                  className={`flex h-9 items-center justify-end rounded-xl px-3 text-[12px] font-bold tabular-nums transition-all duration-200 ${
+                                  className={`flex h-9 items-center justify-end rounded-xl px-3 text-[14px] font-black tabular-nums transition-all duration-200 ${
                                     checked
                                       ? "bg-gradient-to-br from-emerald-50 to-teal-50/50 text-emerald-700 ring-1 ring-emerald-200/60 shadow-[0_2px_6px_rgba(16,185,129,0.08)]"
                                       : "bg-transparent text-slate-200"
@@ -5393,7 +5302,7 @@ export default function QuotationItemsTable({
                                     : formatAmount(0)}
                                 </div>
                               ) : (
-                                <div className="flex h-9 items-center justify-center rounded-xl px-3 text-[12px] font-bold tabular-nums text-slate-300">
+                                <div className="flex h-9 items-center justify-center rounded-xl px-3 text-[14px] font-black tabular-nums text-slate-300">
                                   —
                                 </div>
                               )}
@@ -5419,7 +5328,7 @@ export default function QuotationItemsTable({
                                     )
                                   }
                                   onBlur={() => autoSave(formItems)}
-                                  className={`min-h-[50px] w-full resize-y rounded-xl border px-2 py-1.5 text-[12px] outline-none transition-all duration-200 ${
+                                  className={`min-h-[50px] w-full resize-none rounded-xl border px-2 py-1.5 text-[13px] font-medium leading-relaxed outline-none transition-all duration-200 overflow-hidden ${
                                     checked ? subInputEnabled : disabledInput
                                   }`}
                                   placeholder="Notes…"

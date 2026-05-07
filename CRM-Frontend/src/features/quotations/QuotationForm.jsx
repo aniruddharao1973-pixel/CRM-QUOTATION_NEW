@@ -2109,6 +2109,7 @@ export default function QuotationForm() {
   const isEdit = Boolean(id);
 
   const [isSaving, setIsSaving] = useState(false);
+  const [isSearchingLog, setIsSearchingLog] = useState(false);
 
   const [logContacts, setLogContacts] = useState([]);
 
@@ -2130,7 +2131,7 @@ export default function QuotationForm() {
     notes: "",
     // terms: "Quotation valid for 15 days from the issue date.",
     headerDiscount: 0,
-    items: [newLineItem()],
+    items: [],
   });
 
   /* ================= FETCH ================= */
@@ -2161,11 +2162,16 @@ export default function QuotationForm() {
         quotationNumber: quotation.quotationNo,
 
         // ADD THIS
-        logId: quotation.logId || quotation.dealLogId || quotation.logID || "",
+        logId:
+          quotation.logId ||
+          quotation.dealLogId ||
+          quotation.logID ||
+          quotation.deal?.dealLogId ||
+          "",
         accountId: quotation.accountId,
         accountName: quotation.accountName,
         dealId: quotation.dealId || "",
-        contactIds: quotation.contactIds || [],
+        contactIds: (quotation.contactIds || []).map((id) => String(id)),
         date: quotation.issueDate?.slice(0, 10),
         validUntil: quotation.validUntil?.slice(0, 10) || "",
         notes: quotation.notes || "",
@@ -2215,6 +2221,8 @@ export default function QuotationForm() {
       dispatch(fetchContactsDropdown({ accountId: quotation.accountId }));
     }
   }, [quotation, id, itemsList, dispatch]);
+
+
 
   const handleCreateQuotation = async () => {
     try {
@@ -2516,8 +2524,10 @@ export default function QuotationForm() {
     }
   };
 
-  const handleLogIdSearch = async (logId) => {
+  const handleLogIdSearch = async (logId, silent = false) => {
+    if (isSearchingLog) return;
     try {
+      setIsSearchingLog(true);
       if (!logId?.trim()) {
         toast.error("Enter Log ID");
         return;
@@ -2555,12 +2565,24 @@ export default function QuotationForm() {
         contactIds: linkedContacts.map((c) => c.id),
       }));
 
-      toast.success("Log ID loaded");
+      if (!silent) toast.success("Log ID loaded");
     } catch (err) {
       console.error(err);
-      toast.error("Failed to fetch Log ID");
+      if (!silent) toast.error("Failed to fetch Log ID");
+    } finally {
+      setIsSearchingLog(false);
     }
   };
+
+  // 🔥 NEW: Auto-fetch log contacts if logId exists on load
+  useEffect(() => {
+    const selectedDeal = deals.find((d) => String(d.id) === String(form.dealId));
+    const activeLogId = form.logId || selectedDeal?.dealLogId;
+
+    if (activeLogId && isEdit && !logContacts.length && !isSearchingLog) {
+      handleLogIdSearch(activeLogId, true);
+    }
+  }, [form.logId, form.dealId, deals, isEdit, logContacts.length, isSearchingLog]);
 
   const handleClearLogLookup = () => {
     setLogContacts([]);
@@ -2714,69 +2736,43 @@ export default function QuotationForm() {
   /* ================= UI ================= */
 
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,0.10),_transparent_25%),radial-gradient(circle_at_top_right,_rgba(14,165,233,0.10),_transparent_22%),linear-gradient(to_bottom,_#f8fafc,_#f8fafc,_#eef2ff_120%)] px-3 py-3 sm:px-4 sm:py-4">
-      <div className="mx-auto w-full max-w-[1700px] space-y-2">
+    <div className="h-[calc(100vh-64px)] overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,0.10),_transparent_25%),radial-gradient(circle_at_top_right,_rgba(14,165,233,0.10),_transparent_22%),linear-gradient(to_bottom,_#f8fafc,_#f8fafc,_#eef2ff_120%)] px-3 py-2 sm:px-4">
+      <div className="mx-auto flex h-full w-full max-w-[1700px] flex-col space-y-2">
         {/* HERO / TOP BAR */}
-        <div className="overflow-hidden rounded-[28px] border border-white/70 bg-white/85 shadow-[0_12px_40px_rgba(15,23,42,0.06)] backdrop-blur-xl">
-          <div className="relative px-3 py-2 sm:px-4 lg:px-5">
-            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(99,102,241,0.06),transparent_35%,rgba(16,185,129,0.05)_72%,transparent)]" />
-
+        <div className="flex-none overflow-hidden rounded-[24px] border border-white/70 bg-white/85 shadow-[0_8px_30px_rgba(15,23,42,0.04)] backdrop-blur-xl">
+          <div className="relative px-4 py-2">
             <div className="relative flex flex-col gap-2 xl:flex-row xl:items-center xl:justify-between">
               {/* LEFT */}
               <div className="flex min-w-0 items-center gap-2">
-                {/* BACK */}
                 <button
                   onClick={() => navigate(-1)}
-                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50 hover:text-slate-900"
-                  aria-label="Back"
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50"
                 >
-                  <ChevronLeft className="h-4.5 w-4.5" />
+                  <ChevronLeft className="h-4 w-4" />
                 </button>
-
-                {/* TITLE ROW */}
                 <div className="flex min-w-0 flex-wrap items-center gap-2">
-                  {/* ICON */}
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700">
-                    <FileText className="h-4.5 w-4.5" />
-                  </div>
-
-                  {/* TITLE */}
-                  <h1 className="truncate text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+                  <h1 className="truncate text-lg font-bold text-slate-900">
                     {isEdit ? "Edit Quotation" : "Create Quotation"}
                   </h1>
-
-                  {/* BUILDER */}
-                  <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-600">
-                    <Sparkles className="h-3 w-3" />
-                    Builder
-                  </span>
-
-                  {/* MODE */}
-                  <span className="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-indigo-700">
-                    {isEdit ? "Edit" : "Create"}
-                  </span>
-
-                  {/* QUOTATION NUMBER */}
                   <span className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-100 bg-indigo-50 px-2.5 py-1 text-[11px] font-semibold text-indigo-700">
                     <Package className="h-3.5 w-3.5" />
                     {form.quotationNumber || "—"}
                   </span>
                 </div>
               </div>
-
               {/* RIGHT */}
-              <div className="flex flex-col gap-2 sm:flex-row">
+              <div className="flex gap-2">
                 {!isEdit ? (
                   <button
                     onClick={handleCreateQuotation}
-                    className="inline-flex h-10 items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 text-sm font-semibold text-white shadow-[0_10px_25px_rgba(79,70,229,0.25)] transition hover:opacity-95"
+                    className="inline-flex h-9 items-center gap-2 rounded-xl bg-slate-900 px-4 text-xs font-bold text-white shadow-sm transition hover:bg-slate-800"
                   >
-                    <FileText className="h-4 w-4" />
+                    <FileText className="h-3.5 w-3.5" />
                     Create Quotation
                   </button>
                 ) : (
-                  <span className="inline-flex items-center gap-2 rounded-2xl bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-700 border border-emerald-100">
-                    <ShieldCheck className="h-4 w-4" />
+                  <span className="inline-flex h-9 items-center gap-2 rounded-xl bg-emerald-50 px-3 text-[11px] font-bold text-emerald-700 border border-emerald-100">
+                    <ShieldCheck className="h-3.5 w-3.5" />
                     Auto-saved
                   </span>
                 )}
@@ -2785,64 +2781,41 @@ export default function QuotationForm() {
           </div>
         </div>
 
-        {/* MAIN GRID */}
-        <div className="grid grid-cols-1 gap-4">
-          {/* LEFT CONTENT */}
-          <div className="space-y-2">
-            <QuotationDetailsSection
-              form={form}
-              updateField={updateField}
-              accounts={accounts}
-              deals={deals}
-              contacts={logContacts.length ? logContacts : contacts}
-              onLogIdSearch={handleLogIdSearch}
-              onClearLogLookup={handleClearLogLookup}
-            />
-
-            <QuotationItemsTable
-              totals={totals}
-              itemsList={itemsList}
-              updateItem={updateItem}
-              addItem={addItem}
-              removeItem={removeItem}
-              formItems={form.items}
-              toggleSubItem={toggleSubItem}
-              updateSubItem={updateSubItem}
-              autoSave={autoSave}
-              onSkuSearch={handleSkuSearch}
-              resetItems={() =>
-                setForm((prev) => ({
-                  ...prev,
-                  items: [newLineItem()],
-                }))
-              }
-            />
-
-            <div className="mt-2 flex justify-end">
-              <div className="w-full max-w-[320px]">
-                <div className="overflow-hidden rounded-2xl border border-indigo-200/70 bg-gradient-to-r from-indigo-600 via-indigo-600 to-violet-600 shadow-[0_10px_30px_rgba(79,70,229,0.18)]">
-                  <div className="flex items-center justify-between px-4 py-3">
-                    <div>
-                      <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-indigo-200">
-                        Grand Total
-                      </p>
-
-                      <p className="mt-1 text-[11px] text-indigo-100/80">
-                        Inclusive of all taxes
-                      </p>
-                    </div>
-
-                    <div className="text-right">
-                      <div className="text-3xl font-black tracking-tight text-white tabular-nums">
-                        {formatAmount(totals?.grandTotal || 0)}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+        {/* DETAILS SECTION */}
+        <div className="flex-none">
+          <QuotationDetailsSection
+            form={form}
+            updateField={updateField}
+            accounts={accounts}
+            deals={deals}
+            contacts={logContacts.length ? logContacts : contacts}
+            onLogIdSearch={handleLogIdSearch}
+            onClearLogLookup={handleClearLogLookup}
+          />
         </div>
+
+        {/* ITEMS TABLE - SCROLLABLE */}
+        <div className="flex min-h-0 flex-1 flex-col overflow-visible">
+          <QuotationItemsTable
+            totals={totals}
+            itemsList={itemsList}
+            updateItem={updateItem}
+            addItem={addItem}
+            removeItem={removeItem}
+            formItems={form.items}
+            toggleSubItem={toggleSubItem}
+            updateSubItem={updateSubItem}
+            autoSave={autoSave}
+            onSkuSearch={handleSkuSearch}
+            resetItems={() =>
+              setForm((prev) => ({
+                ...prev,
+                items: [],
+              }))
+            }
+          />
+        </div>
+
       </div>
     </div>
   );

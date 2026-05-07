@@ -1200,37 +1200,37 @@ export default function QuotationList() {
           </div>
 
           <div className="max-h-[500px] overflow-auto">
-            <table className="min-w-[1300px] text-sm">
+            <table className="w-full text-sm">
               <thead
-                className="sticky top-0 z-10 backdrop-blur"
+                className="sticky top-0 z-10"
                 style={{
-                  background:
-                    "linear-gradient(135deg, #eef2ff 0%, #f8fafc 100%)",
+                  background: "white",
+                  borderBottom: "1px solid #e2e8f0"
                 }}
               >
-                <tr className="border-b border-indigo-100">
-                  <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.22em] text-indigo-400">
+                <tr className="bg-slate-50/50">
+                  <th className="px-5 py-4 text-left text-[10px] font-black uppercase tracking-[0.15em] text-[#37306B]/50 w-[220px]">
                     Quotation Details
                   </th>
-                  <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.22em] text-indigo-400">
+                  <th className="px-5 py-4 text-left text-[10px] font-black uppercase tracking-[0.15em] text-[#37306B]/50 w-[160px]">
                     Account
                   </th>
-                  <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.22em] text-indigo-400">
+                  <th className="px-5 py-4 text-left text-[10px] font-black uppercase tracking-[0.15em] text-[#37306B]/50 w-[160px]">
                     Deal
                   </th>
-                  <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.22em] text-indigo-400">
+                  <th className="px-5 py-4 text-left text-[10px] font-black uppercase tracking-[0.15em] text-[#37306B]/50 w-[130px]">
                     Issue Date
                   </th>
-                  <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.22em] text-indigo-400">
-                    Taxable Value
+                  <th className="px-5 py-4 text-right text-[10px] font-black uppercase tracking-[0.15em] text-[#37306B]/50 w-[120px]">
+                    Taxable
                   </th>
-                  <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.22em] text-indigo-400">
-                    Grand Total
+                  <th className="px-5 py-4 text-right text-[10px] font-black uppercase tracking-[0.15em] text-[#37306B]/50 w-[130px]">
+                    Total Value
                   </th>
-                  <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.22em] text-indigo-400">
+                  <th className="px-5 py-4 text-left text-[10px] font-black uppercase tracking-[0.15em] text-[#37306B]/50 w-[120px]">
                     Status
                   </th>
-                  <th className="px-6 py-4 text-center text-[10px] font-black uppercase tracking-[0.22em] text-indigo-400">
+                  <th className="px-5 py-4 text-center text-[10px] font-black uppercase tracking-[0.15em] text-[#37306B]/50 w-[140px]">
                     Actions
                   </th>
                 </tr>
@@ -1267,14 +1267,14 @@ export default function QuotationList() {
                           e.currentTarget.style.boxShadow = "none";
                         }}
                       >
-                        <td className="px-6 py-5 min-w-[260px]">
+                        <td className="px-5 py-4 w-[220px]">
                           <div className="flex items-start gap-3">
                             <button
                               onClick={(e) => handleExpand(q.quotationNo, e)}
-                              className={`group flex h-7 w-7 items-center justify-center rounded-full border transition-all duration-200 active:scale-90 ${
+                              className={`group flex h-7 w-7 items-center justify-center rounded-lg border transition-all duration-200 active:scale-90 ${
                                 expandedRow === q.quotationNo
-                                  ? "border-indigo-200 bg-indigo-50 text-indigo-600 shadow-sm shadow-indigo-100"
-                                  : "border-slate-200 bg-white text-slate-400 hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-500"
+                                  ? "border-[#37306B]/20 bg-[#37306B]/10 text-[#37306B]"
+                                  : "border-slate-200 bg-white text-slate-400 hover:border-[#37306B]/20 hover:bg-[#37306B]/5 hover:text-[#37306B]"
                               }`}
                             >
                               <svg
@@ -1287,6 +1287,7 @@ export default function QuotationList() {
                                 viewBox="0 0 24 24"
                                 strokeWidth={2.5}
                                 stroke="currentColor"
+                                aria-hidden="true"
                               >
                                 <path
                                   strokeLinecap="round"
@@ -1296,169 +1297,117 @@ export default function QuotationList() {
                               </svg>
                             </button>
 
-                            <div className="rounded-2xl bg-indigo-50 p-2.5 text-indigo-600 ring-1 ring-inset ring-indigo-100 transition group-hover:bg-indigo-100">
+                            <div className="rounded-xl bg-[#37306B]/5 p-2 text-[#37306B] ring-1 ring-inset ring-[#37306B]/10 transition group-hover:bg-[#37306B]/10">
                               <FileText className="h-4 w-4" />
                             </div>
 
-                            <div className="min-w-[180px]">
+                            <div className="min-w-0">
                               <div className="flex items-center gap-2">
-                                <span className="font-bold text-indigo-700 whitespace-nowrap">
+                                <span className="text-[13px] font-black tracking-tight text-[#37306B] whitespace-nowrap">
                                   {q.quotationNo}
                                 </span>
-
-                                {/* 🔥 VERSION BADGE */}
-                                <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold text-indigo-700">
+                                <span className="rounded-full bg-[#37306B]/10 px-2 py-0.5 text-[9px] font-black text-[#37306B] uppercase tracking-wider">
                                   Rev {q.version}
                                 </span>
                               </div>
-
-                              <div className="mt-1 text-xs text-slate-500">
-                                {q.items?.length || 0}{" "}
-                                {q.items?.length === 1 ? "item" : "items"}
+                              <div className="mt-0.5 text-[11px] font-bold text-slate-400">
+                                {q.items?.length || 0} {q.items?.length === 1 ? "item" : "items"}
                               </div>
                             </div>
                           </div>
                         </td>
 
-                        <td className="px-6 py-5 min-w-[260px]">
+                        <td className="px-5 py-4 w-[160px]">
                           {q.account?.accountName ? (
                             <div className="flex items-center gap-2">
-                              <Building2 className="h-4 w-4 text-slate-400" />
-                              <span className="font-medium text-slate-900">
+                              <Building2 className="h-4 w-4 text-rose-500/60" />
+                              <span className="truncate text-[13px] font-bold text-slate-800">
                                 {q.account.accountName}
                               </span>
                             </div>
                           ) : (
-                            <span className="text-xs text-slate-400">-</span>
+                            <span className="text-[11px] text-slate-300 font-medium">—</span>
                           )}
                         </td>
 
-                        <td className="px-6 py-5 min-w-[260px]">
+                        <td className="px-5 py-4 w-[160px]">
                           {q.deal?.dealName ? (
                             <div className="flex items-center gap-2">
-                              <TrendingUp className="h-4 w-4 text-slate-400" />
-                              <span className="font-medium text-slate-900">
+                              <TrendingUp className="h-4 w-4 text-indigo-500/60" />
+                              <span className="truncate text-[13px] font-bold text-slate-800">
                                 {q.deal.dealName}
                               </span>
                             </div>
                           ) : (
-                            <span className="text-xs text-slate-400">-</span>
+                            <span className="text-[11px] text-slate-300 font-medium">—</span>
                           )}
                         </td>
 
-                        <td className="px-6 py-5 min-w-[260px]">
+                        <td className="px-5 py-4 w-[130px]">
                           {q.issueDate ? (
                             <div className="flex items-center gap-2">
                               <Calendar className="h-4 w-4 text-slate-400" />
-                              <span className="text-slate-700">
-                                {new Date(q.issueDate).toLocaleDateString(
-                                  "en-IN",
-                                  {
-                                    dateStyle: "medium",
-                                  },
-                                )}
+                              <span className="text-[12px] font-semibold text-slate-600">
+                                {new Date(q.issueDate).toLocaleDateString("en-IN", {
+                                  day: "numeric",
+                                  month: "short",
+                                  year: "numeric"
+                                })}
                               </span>
                             </div>
                           ) : (
-                            <span className="text-xs text-slate-400">-</span>
+                            <span className="text-[11px] text-slate-300 font-medium">—</span>
                           )}
                         </td>
 
-                        <td className="px-5 py-5 text-right">
-                          <div className="font-semibold text-slate-700">
+                        <td className="px-5 py-4 text-right w-[120px]">
+                          <div className="text-[13px] font-semibold text-slate-700 tabular-nums">
                             {formatAmount(q.subtotal || 0)}
                           </div>
                         </td>
 
-                        <td className="px-5 py-5 text-right">
-                          <div className="text-base font-bold text-slate-900">
+                        <td className="px-5 py-4 text-right w-[130px]">
+                          <div className="text-[14px] font-black text-[#37306B] tabular-nums">
                             {formatAmount(q.grandTotal || 0)}
                           </div>
                         </td>
 
-                        <td className="px-6 py-5 min-w-[260px]">
+                        <td className="px-5 py-4 w-[120px]">
                           <StatusBadge status={q.status?.toUpperCase()} />
                         </td>
 
-                        <td className="px-6 py-5 min-w-[260px]">
+                        <td className="px-5 py-4 w-[140px]">
                           <div className="flex items-center justify-center gap-1.5">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 navigate(`/quotations/${q.id}`);
                               }}
-                              className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold text-indigo-600 hover:bg-indigo-50"
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 transition-colors hover:bg-indigo-600 hover:text-white"
+                              title="View details"
                             >
-                              <Eye className="h-3.5 w-3.5" />
-                              View
+                              <Eye className="h-4 w-4" />
                             </button>
-
-                            {user?.role?.toLowerCase() === "sales_rep" &&
-                              (q.status?.toUpperCase() === "DRAFT" ||
-                                q.status?.toUpperCase() === "REJECTED") && (
-                                <button
-                                  onClick={async (e) => {
-                                    e.stopPropagation();
-                                    try {
-                                      setSubmittingId(q.id);
-                                      await dispatch(
-                                        submitQuotation(q.id),
-                                      ).unwrap();
-                                      dispatch(fetchQuotations());
-                                    } catch (err) {
-                                      console.error(err);
-                                      alert("Failed to submit quotation");
-                                    } finally {
-                                      setSubmittingId(null);
-                                    }
-                                  }}
-                                  disabled={submittingId === q.id}
-                                  className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition ${
-                                    submittingId === q.id
-                                      ? "text-slate-300 cursor-not-allowed"
-                                      : "text-blue-600 hover:bg-blue-50"
-                                  }`}
-                                >
-                                  <Send className="h-3.5 w-3.5" />
-                                  {submittingId === q.id
-                                    ? "Submitting..."
-                                    : "Submit"}
-                                </button>
-                              )}
 
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 navigate(`/quotations/${q.id}/edit`);
                               }}
-                              disabled={["SUBMITTED", "APPROVED"].includes(
-                                q.status?.toUpperCase(),
-                              )}
-                              className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold ${
-                                ["SUBMITTED", "APPROVED"].includes(
-                                  q.status?.toUpperCase(),
-                                )
-                                  ? "text-slate-300 cursor-not-allowed"
-                                  : "text-emerald-600 hover:bg-emerald-50"
-                              }`}
+                              disabled={["SUBMITTED", "APPROVED"].includes(q.status?.toUpperCase())}
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 transition-colors hover:bg-emerald-600 hover:text-white disabled:opacity-30 disabled:hover:bg-emerald-50 disabled:hover:text-emerald-600"
+                              title="Edit quotation"
                             >
-                              <Edit className="h-3.5 w-3.5" />
-                              Edit
+                              <Edit className="h-4 w-4" />
                             </button>
+
                             <button
                               onClick={(e) => isAdmin && handleDelete(q.id, e)}
                               disabled={!isAdmin}
-                              className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition ${
-                                isAdmin
-                                  ? "text-rose-600 hover:bg-rose-50"
-                                  : "text-slate-300 cursor-not-allowed"
-                              }`}
-                              title={
-                                isAdmin ? "Delete" : "Only admin can delete"
-                              }
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-rose-50 text-rose-600 transition-colors hover:bg-rose-600 hover:text-white disabled:opacity-30 disabled:hover:bg-rose-50 disabled:hover:text-rose-600"
+                              title={isAdmin ? "Delete" : "Only admin can delete"}
                             >
-                              <Trash2 className="h-3.5 w-3.5" />
-                              Delete
+                              <Trash2 className="h-4 w-4" />
                             </button>
                           </div>
                         </td>

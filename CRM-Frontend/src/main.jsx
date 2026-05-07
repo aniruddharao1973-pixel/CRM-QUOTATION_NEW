@@ -1,5 +1,5 @@
-import { Buffer } from "buffer";   // ✅ ADD THIS
-window.Buffer = Buffer;            // ✅ ADD THIS
+import { Buffer } from "buffer"; // ✅ ADD THIS
+window.Buffer = Buffer; // ✅ ADD THIS
 
 import React from "react";
 import ReactDOM from "react-dom/client";
@@ -16,7 +16,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       <BrowserRouter>
         <App />
         <Toaster
-          position="top-right"
+          position="top-center"
           toastOptions={{
             duration: 3000,
             style: {
@@ -36,5 +36,5 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         />
       </BrowserRouter>
     </Provider>
-  </React.StrictMode>
+  </React.StrictMode>,
 );
