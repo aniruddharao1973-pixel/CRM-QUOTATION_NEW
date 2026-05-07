@@ -148,7 +148,12 @@ const itemSlice = createSlice({
         state.loading = false;
 
         // ✅ backend already returns TREE → use directly
-        state.list = Array.isArray(action.payload) ? action.payload : [];
+        state.list = Array.isArray(action.payload)
+          ? action.payload.map((item) => ({
+              pricingMode: "parent_only",
+              ...item,
+            }))
+          : [];
       })
       .addCase(fetchItems.rejected, (state, action) => {
         state.loading = false;

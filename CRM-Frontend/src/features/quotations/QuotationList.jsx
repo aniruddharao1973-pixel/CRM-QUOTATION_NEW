@@ -1110,7 +1110,7 @@ export default function QuotationList() {
         </div>
 
         {/* ================= STATS ================= */}
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-5 mt-1">
+        {/* <div className="grid grid-cols-2 gap-4 lg:grid-cols-5 mt-1">
           <StatCard
             label="Total Quotations"
             value={stats.total}
@@ -1146,7 +1146,7 @@ export default function QuotationList() {
             color="amber"
             subtext={`Avg: ${formatAmount(stats.avgValue)}`}
           />
-        </div>
+        </div> */}
 
         {/* ================= TABLE ================= */}
         <div className="overflow-hidden rounded-[24px] border border-slate-200/80 bg-white shadow-[0_8px_32px_rgba(99,102,241,0.08)]">

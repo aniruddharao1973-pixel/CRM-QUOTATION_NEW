@@ -918,9 +918,10 @@ model Item {
   sku         String?
   name        String?
   description String?
-  basePrice   Float?
-    discount    Float? @default(0)   // ✅ ADD THIS
 
+  basePrice    Float?
+  pricingMode  String? @default("parent_only")
+  discount     Float? @default(0)
 
   make           String?
   mfgPartNo      String?

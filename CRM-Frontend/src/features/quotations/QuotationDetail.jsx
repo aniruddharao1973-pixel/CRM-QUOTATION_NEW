@@ -3426,36 +3426,33 @@ export default function QuotationDetail() {
               >
                 <table
                   className="w-max min-w-full border-separate border-spacing-0 text-[12px] leading-relaxed"
-                  style={{ minWidth: "1400px" }}
+                  style={{ minWidth: "1062px" }}
                 >
                   {/* THEAD */}
                   <thead className="sticky top-0 z-20">
                     <tr className="bg-slate-50/95 backdrop-blur shadow-sm">
                       {[
-                        { label: "SKU", w: "150px", align: "text-left" },
+                        { label: "SKU", w: "110px", align: "text-left" },
                         {
                           label: "Description",
-                          w: "420px",
+                          w: "300px",
                           align: "text-left",
                         },
-                        { label: "Category", w: "220px", align: "text-left" },
-                        { label: "Make", w: "160px", align: "text-left" },
-                        { label: "Mfg PN", w: "220px", align: "text-left" },
-                        { label: "UOM", w: "110px", align: "text-left" },
-                        { label: "Qty", w: "90px", align: "text-right" },
-                        { label: "Price", w: "160px", align: "text-right" },
-                        { label: "Discount", w: "140px", align: "text-right" },
-                        { label: "Total", w: "180px", align: "text-right" },
-                        { label: "Remarks", w: "200px", align: "text-left" },
+                        { label: "Category", w: "150px", align: "text-left" },
+                        { label: "Make", w: "110px", align: "text-left" },
+                        { label: "Mfg PN", w: "150px", align: "text-left" },
+                        { label: "UOM", w: "72px", align: "text-left" },
+                        { label: "Qty", w: "60px", align: "text-right" },
+                        { label: "Price", w: "120px", align: "text-right" },
+                        { label: "Discount", w: "100px", align: "text-right" },
+                        { label: "Total", w: "130px", align: "text-right" },
+                        { label: "Remarks", w: "160px", align: "text-left" },
                       ].map(({ label, w, align }, i) => (
                         <th
                           key={label}
-                          style={{
-                            minWidth: w,
-                            width: w,
-                          }}
-                          className={`border-b border-r border-slate-200/70 px-5 py-3 ${align} text-[9px] font-black uppercase tracking-[0.22em] text-slate-500 ${
-                            i === 0 ? "pl-6" : ""
+                          style={{ minWidth: w, width: w }}
+                          className={`border-b border-r border-slate-200/70 px-3 py-2 ${align} text-[9px] font-black uppercase tracking-[0.22em] text-slate-500 ${
+                            i === 0 ? "pl-4" : ""
                           } last:border-r-0`}
                         >
                           {label}
@@ -3466,209 +3463,305 @@ export default function QuotationDetail() {
 
                   {/* TBODY */}
                   <tbody>
-                    {(data.items || []).map((item) => (
-                      <Fragment key={item.id}>
-                        {/* PARENT ROW */}
-                        <tr className="group relative bg-white transition-all duration-200 hover:bg-slate-50/70">
-                          {/* SKU */}
-                          <td className="border-b border-r border-slate-100 px-5 py-4 pl-6 align-top last:border-r-0">
-                            <div className="inline-flex max-w-full items-center gap-2 rounded-xl border border-emerald-300 bg-gradient-to-br from-emerald-50 to-emerald-100 px-3 py-1.5 font-mono text-[11px] font-extrabold tracking-wide text-emerald-800 shadow-[0_2px_8px_rgba(16,185,129,0.18)]">
-                              <span className="truncate max-w-[70px]">
-                                {item.sku || "—"}
-                              </span>
+                    {Object.entries(
+                      (data.items || []).reduce((acc, item) => {
+                        const category = item.category || "Others";
+
+                        if (!acc[category]) {
+                          acc[category] = [];
+                        }
+
+                        acc[category].push(item);
+
+                        return acc;
+                      }, {}),
+                    ).map(([categoryName, categoryItems]) => (
+                      <Fragment key={categoryName}>
+                        {/* CATEGORY HEADER */}
+                        <tr className="sticky top-[41px] z-10">
+                          <td
+                            colSpan={11}
+                            className="border-b border-t border-slate-200 bg-gradient-to-r from-slate-100 via-slate-50 to-white px-6 py-3"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="h-8 w-1 rounded-full bg-emerald-500" />
+
+                              <div>
+                                <div className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">
+                                  Category
+                                </div>
+
+                                <div className="mt-0.5 flex items-center gap-2 text-sm font-black text-slate-900">
+                                  <Layers className="h-4 w-4 text-emerald-600" />
+                                  {categoryName}
+                                </div>
+                              </div>
+
+                              <div className="ml-auto rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-bold text-emerald-700">
+                                {categoryItems.length} Item
+                                {categoryItems.length > 1 ? "s" : ""}
+                              </div>
                             </div>
-                          </td>
-
-                          {/* DESCRIPTION */}
-                          <td className="border-b border-r border-slate-100 px-5 py-4 align-top last:border-r-0">
-                            <div className="pr-2 text-[12px] font-semibold leading-snug text-slate-900">
-                              {item.description || "—"}
-                            </div>
-                          </td>
-
-                          {/* CATEGORY */}
-                          <td className="border-b border-r border-slate-100 px-5 py-4 align-top last:border-r-0">
-                            {item.category ? (
-                              <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700 ring-1 ring-emerald-200">
-                                <Layers className="h-3 w-3 flex-shrink-0" />
-                                {item.category}
-                              </span>
-                            ) : (
-                              <span className="text-sm text-slate-300">—</span>
-                            )}
-                          </td>
-
-                          {/* MAKE */}
-                          <td className="border-b border-r border-slate-100 px-5 py-4 align-top last:border-r-0">
-                            <span className="text-[12px] font-semibold text-slate-700">
-                              {item.make || (
-                                <span className="text-slate-300">—</span>
-                              )}
-                            </span>
-                          </td>
-
-                          {/* MFG PN */}
-                          <td className="border-b border-r border-slate-100 px-5 py-4 align-top last:border-r-0">
-                            <span className="inline-flex max-w-full whitespace-nowrap rounded-md bg-slate-100 px-2.5 py-1 font-mono text-[11px] font-bold text-slate-700">
-                              {item.mfgPartNo || (
-                                <span className="bg-transparent text-slate-400">
-                                  —
-                                </span>
-                              )}
-                            </span>
-                          </td>
-
-                          {/* UOM */}
-                          <td className="border-b border-r border-slate-100 px-5 py-4 align-top text-[12px] font-medium text-slate-500 last:border-r-0">
-                            {item.uom || "—"}
-                          </td>
-
-                          {/* QTY */}
-                          <td className="border-b border-r border-slate-100 px-5 py-4 align-top text-right last:border-r-0">
-                            <span className="ml-auto inline-flex h-7 w-7 items-center justify-center rounded-xl bg-slate-100 text-xs font-black text-slate-800">
-                              {item.quantity ?? "—"}
-                            </span>
-                          </td>
-
-                          {/* PRICE */}
-                          <td className="border-b border-r border-slate-100 px-5 py-4 align-top text-right text-[12px] font-semibold text-slate-700 last:border-r-0">
-                            {item.price ? formatAmount(item.price) : "—"}
-                          </td>
-
-                          {/* DISCOUNT */}
-                          <td className="border-b border-r border-slate-100 px-5 py-4 align-top text-right last:border-r-0">
-                            {item.discount > 0 ? (
-                              <span className="inline-flex items-center gap-0.5 rounded-full bg-rose-50 px-2.5 py-1 text-[10px] font-black text-rose-600 ring-1 ring-rose-200">
-                                −{item.discount}%
-                              </span>
-                            ) : (
-                              <span className="text-slate-300">—</span>
-                            )}
-                          </td>
-
-                          {/* TOTAL */}
-                          <td className="border-b border-r border-slate-100 px-5 py-4 align-top text-right last:border-r-0">
-                            <div className="inline-flex items-center rounded-xl bg-emerald-600 px-3 py-1.5 text-[12px] font-black text-white shadow-sm">
-                              {formatINR(
-                                Number(item.quantity || 1) *
-                                  Number(item.price || 0) *
-                                  (1 - Number(item.discount || 0) / 100),
-                              )}
-                            </div>
-                          </td>
-
-                          {/* REMARKS */}
-                          <td className="border-b border-r border-slate-100 px-5 py-4 align-top last:border-r-0">
-                            <span className="block max-w-[100px] truncate text-xs font-medium text-slate-500">
-                              {item.remarks || (
-                                <span className="text-slate-300">—</span>
-                              )}
-                            </span>
                           </td>
                         </tr>
 
-                        {/* SUB ITEMS */}
-                        {(item.selectedSubItems?.length
-                          ? item.selectedSubItems
-                          : item.subItems
-                        )?.map((sub) => (
-                          <tr
-                            key={sub.id}
-                            className="bg-slate-50/60 transition-all duration-200 hover:bg-slate-100/60"
-                          >
-                            {/* SKU */}
-                            <td className="border-b border-r border-slate-100 px-5 py-3 pl-6 align-top last:border-r-0">
-                              <div className="flex items-center gap-2">
-                                <div className="flex flex-col items-center">
-                                  <div className="h-2 w-px bg-slate-300" />
-                                  <div className="h-px w-3 bg-slate-300" />
+                        {categoryItems.map((item) => (
+                          <Fragment key={item.id}>
+                            {/* PARENT ROW */}
+                            <tr className="group relative bg-white transition-all duration-200 hover:bg-slate-50/70">
+                              {/* SKU */}
+                              <td className="border-b border-r border-slate-100 px-5 py-4 pl-6 align-top last:border-r-0">
+                                <div className="inline-flex max-w-full items-center gap-2 rounded-xl border border-emerald-300 bg-gradient-to-br from-emerald-50 to-emerald-100 px-3 py-1.5 font-mono text-[11px] font-extrabold tracking-wide text-emerald-800 shadow-[0_2px_8px_rgba(16,185,129,0.18)]">
+                                  <span className="truncate max-w-[70px]">
+                                    {item.sku || "—"}
+                                  </span>
                                 </div>
+                              </td>
 
-                                <div className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-1 font-mono text-[10px] font-bold text-emerald-700">
-                                  <Tag className="h-3 w-3 text-emerald-500" />
-                                  {sub.sku || "—"}
+                              {/* DESCRIPTION */}
+                              <td className="border-b border-r border-slate-100 px-5 py-4 align-top last:border-r-0">
+                                <div className="pr-2 text-[12px] font-semibold leading-snug text-slate-900">
+                                  {item.description || "—"}
                                 </div>
-                              </div>
-                            </td>
+                              </td>
 
-                            {/* DESCRIPTION */}
-                            <td className="border-b border-r border-slate-100 px-5 py-3 align-top last:border-r-0">
-                              <div className="pr-2 text-[11px] leading-snug text-slate-700">
-                                {sub.name || "—"}
-                              </div>
-                            </td>
+                              {/* CATEGORY */}
+                              <td className="border-b border-r border-slate-100 px-5 py-4 align-top last:border-r-0">
+                                {item.category ? (
+                                  <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700 ring-1 ring-emerald-200">
+                                    <Layers className="h-3 w-3 flex-shrink-0" />
+                                    {item.category}
+                                  </span>
+                                ) : (
+                                  <span className="text-sm text-slate-300">
+                                    —
+                                  </span>
+                                )}
+                              </td>
 
-                            {/* CATEGORY */}
-                            <td className="border-b border-r border-slate-100 px-5 py-3 align-top last:border-r-0">
-                              {sub.category ? (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700 ring-1 ring-emerald-200">
-                                  {sub.category}
+                              {/* MAKE */}
+                              <td className="border-b border-r border-slate-100 px-5 py-4 align-top last:border-r-0">
+                                <span className="text-[12px] font-semibold text-slate-700">
+                                  {item.make || (
+                                    <span className="text-slate-300">—</span>
+                                  )}
                                 </span>
-                              ) : (
-                                <span className="text-slate-300">—</span>
-                              )}
-                            </td>
+                              </td>
 
-                            {/* MAKE */}
-                            <td className="border-b border-r border-slate-100 px-5 py-3 align-top text-[11px] text-slate-600 last:border-r-0">
-                              {sub.make || (
-                                <span className="text-slate-300">—</span>
-                              )}
-                            </td>
+                              {/* MFG PN */}
+                              <td className="border-b border-r border-slate-100 px-5 py-4 align-top last:border-r-0">
+                                <span className="inline-flex max-w-full whitespace-nowrap rounded-md bg-slate-100 px-2.5 py-1 font-mono text-[11px] font-bold text-slate-700">
+                                  {item.mfgPartNo || (
+                                    <span className="bg-transparent text-slate-400">
+                                      —
+                                    </span>
+                                  )}
+                                </span>
+                              </td>
 
-                            {/* MFG PN */}
-                            <td className="border-b border-r border-slate-100 px-5 py-3 align-top last:border-r-0">
-                              <span className="rounded-md bg-slate-100 px-2 py-1 font-mono text-[10px] text-slate-500">
-                                {sub.mfgPartNo || (
+                              {/* UOM */}
+                              <td className="border-b border-r border-slate-100 px-5 py-4 align-top text-[12px] font-medium text-slate-500 last:border-r-0">
+                                {item.uom || "—"}
+                              </td>
+
+                              {/* QTY */}
+                              <td className="border-b border-r border-slate-100 px-5 py-4 align-top text-right last:border-r-0">
+                                <span className="ml-auto inline-flex h-7 w-7 items-center justify-center rounded-xl bg-slate-100 text-xs font-black text-slate-800">
+                                  {item.quantity ?? "—"}
+                                </span>
+                              </td>
+
+                              {/* PRICE */}
+                              <td className="border-b border-r border-slate-100 px-5 py-4 align-top text-right text-[12px] font-semibold text-slate-700 last:border-r-0">
+                                {item.price ? formatAmount(item.price) : "—"}
+                              </td>
+
+                              {/* DISCOUNT */}
+                              <td className="border-b border-r border-slate-100 px-5 py-4 align-top text-right last:border-r-0">
+                                {item.discount > 0 ? (
+                                  <span className="inline-flex items-center gap-0.5 rounded-full bg-rose-50 px-2.5 py-1 text-[10px] font-black text-rose-600 ring-1 ring-rose-200">
+                                    −{item.discount}%
+                                  </span>
+                                ) : (
                                   <span className="text-slate-300">—</span>
                                 )}
-                              </span>
-                            </td>
+                              </td>
 
-                            {/* UOM */}
-                            <td className="border-b border-r border-slate-100 px-5 py-3 align-top text-[11px] text-slate-400 last:border-r-0">
-                              {sub.uom || "—"}
-                            </td>
+                              {/* TOTAL */}
+                              <td className="border-b border-r border-slate-100 px-5 py-4 align-top text-right last:border-r-0">
+                                <div className="inline-flex items-center rounded-xl bg-emerald-600 px-3 py-1.5 text-[12px] font-black text-white shadow-sm">
+                                  {formatINR(
+                                    Number(item.quantity || 1) *
+                                      Number(item.price || 0) *
+                                      (1 - Number(item.discount || 0) / 100),
+                                  )}
+                                </div>
+                              </td>
 
-                            {/* QTY */}
-                            <td className="border-b border-r border-slate-100 px-5 py-3 align-top text-right last:border-r-0">
-                              <span className="ml-auto inline-flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100 text-xs font-bold text-slate-700">
-                                {sub.quantity}
-                              </span>
-                            </td>
-
-                            {/* PRICE */}
-                            <td className="border-b border-r border-slate-100 px-5 py-3 align-top text-right text-[11px] font-semibold text-slate-600 last:border-r-0">
-                              {formatAmount(sub.price)}
-                            </td>
-
-                            {/* DISCOUNT */}
-                            <td className="border-b border-r border-slate-100 px-5 py-3 align-top text-right last:border-r-0">
-                              {sub.discount > 0 ? (
-                                <span className="inline-flex rounded-full border border-rose-200 bg-rose-50 px-2 py-1 text-[10px] font-semibold text-rose-600">
-                                  −{sub.discount}%
+                              {/* REMARKS */}
+                              <td className="border-b border-r border-slate-100 px-5 py-4 align-top last:border-r-0">
+                                <span className="block max-w-[100px] truncate text-xs font-medium text-slate-500">
+                                  {item.remarks || (
+                                    <span className="text-slate-300">—</span>
+                                  )}
                                 </span>
-                              ) : (
-                                <span className="text-slate-300">—</span>
-                              )}
-                            </td>
+                              </td>
+                            </tr>
 
-                            {/* TOTAL */}
-                            <td className="border-b border-r border-slate-100 px-5 py-3 align-top text-right last:border-r-0">
-                              <div className="inline-flex items-center rounded-lg bg-emerald-500 px-2.5 py-1.5 text-[11px] font-bold text-white shadow-sm">
-                                {formatAmount(sub.lineTotal)}
-                              </div>
-                            </td>
+                            {/* SUB ITEMS */}
+                            {(() => {
+                              const subItems =
+                                item.selectedSubItems?.length > 0
+                                  ? item.selectedSubItems
+                                  : item.subItems || [];
 
-                            {/* REMARKS */}
-                            <td className="border-b border-r border-slate-100 px-5 py-3 align-top text-xs text-slate-500 last:border-r-0">
-                              {sub.remarks?.trim() ? (
-                                sub.remarks
-                              ) : (
-                                <span className="text-slate-300">—</span>
-                              )}
-                            </td>
-                          </tr>
+                              const isTestPlatform =
+                                item.category === "Test Platform";
+
+                              return subItems.map((sub) => {
+                                const qty = Number(
+                                  sub.quantity ?? sub.qty ?? 1,
+                                );
+                                const price = Number(sub.price || 0);
+                                const discount = Number(sub.discount || 0);
+                                const lineTotal =
+                                  Number(sub.lineTotal || 0) ||
+                                  qty * price * (1 - discount / 100);
+
+                                return (
+                                  <tr
+                                    key={sub.id || sub.itemId}
+                                    className="bg-slate-50/60 transition-all duration-200 hover:bg-slate-100/60"
+                                  >
+                                    {/* SKU */}
+                                    <td className="border-b border-r border-slate-100 px-5 py-3 pl-6 align-top last:border-r-0">
+                                      <div className="flex items-center gap-2">
+                                        {/* <div className="flex flex-col items-center">
+                                          <div className="h-2 w-px bg-slate-300" />
+                                          <div className="h-px w-3 bg-slate-300" />
+                                        </div> */}
+
+                                        <div className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-1 font-mono text-[10px] font-bold text-emerald-700">
+                                          {/* <Tag className="h-3 w-3 text-emerald-500" /> */}
+                                          {sub.sku || "—"}
+                                        </div>
+                                      </div>
+                                    </td>
+
+                                    {/* DESCRIPTION */}
+                                    <td className="border-b border-r border-slate-100 px-5 py-3 align-top last:border-r-0">
+                                      <div className="pr-2 whitespace-pre-line text-[11px] leading-snug text-slate-700">
+                                        {sub.description || sub.name || "—"}
+                                      </div>
+                                    </td>
+
+                                    {/* CATEGORY */}
+                                    <td className="border-b border-r border-slate-100 px-5 py-3 align-top last:border-r-0">
+                                      {sub.category ? (
+                                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700 ring-1 ring-emerald-200">
+                                          {sub.category}
+                                        </span>
+                                      ) : (
+                                        <span className="text-slate-300">
+                                          —
+                                        </span>
+                                      )}
+                                    </td>
+
+                                    {/* MAKE */}
+                                    <td className="border-b border-r border-slate-100 px-5 py-3 align-top text-[11px] text-slate-600 last:border-r-0">
+                                      {isTestPlatform
+                                        ? ""
+                                        : sub.make || (
+                                            <span className="text-slate-300">
+                                              —
+                                            </span>
+                                          )}
+                                    </td>
+
+                                    {/* MFG PN */}
+                                    <td className="border-b border-r border-slate-100 px-5 py-3 align-top last:border-r-0">
+                                      {isTestPlatform ? (
+                                        ""
+                                      ) : (
+                                        <span className="rounded-md bg-slate-100 px-2 py-1 font-mono text-[10px] text-slate-500">
+                                          {sub.mfgPartNo || (
+                                            <span className="text-slate-300">
+                                              —
+                                            </span>
+                                          )}
+                                        </span>
+                                      )}
+                                    </td>
+
+                                    {/* UOM */}
+                                    <td className="border-b border-r border-slate-100 px-5 py-3 align-top text-[11px] text-slate-400 last:border-r-0">
+                                      {isTestPlatform ? "" : sub.uom || "—"}
+                                    </td>
+
+                                    {/* QTY */}
+                                    <td className="border-b border-r border-slate-100 px-5 py-3 align-top text-right last:border-r-0">
+                                      {isTestPlatform ? (
+                                        ""
+                                      ) : (
+                                        <span className="ml-auto inline-flex h-7 min-w-[28px] items-center justify-center rounded-lg bg-slate-100 px-2 text-xs font-bold text-slate-700">
+                                          {qty}
+                                        </span>
+                                      )}
+                                    </td>
+
+                                    {/* PRICE */}
+                                    <td className="border-b border-r border-slate-100 px-5 py-3 align-top text-right text-[11px] font-semibold text-slate-600 last:border-r-0">
+                                      {isTestPlatform
+                                        ? ""
+                                        : price > 0
+                                          ? formatAmount(price)
+                                          : "—"}
+                                    </td>
+
+                                    {/* DISCOUNT */}
+                                    <td className="border-b border-r border-slate-100 px-5 py-3 align-top text-right last:border-r-0">
+                                      {isTestPlatform ? (
+                                        ""
+                                      ) : discount > 0 ? (
+                                        <span className="inline-flex rounded-full border border-rose-200 bg-rose-50 px-2 py-1 text-[10px] font-semibold text-rose-600">
+                                          −{discount}%
+                                        </span>
+                                      ) : (
+                                        <span className="text-slate-300">
+                                          —
+                                        </span>
+                                      )}
+                                    </td>
+
+                                    {/* TOTAL */}
+                                    <td className="border-b border-r border-slate-100 px-5 py-3 align-top text-right last:border-r-0">
+                                      {isTestPlatform ? (
+                                        ""
+                                      ) : (
+                                        <div className="inline-flex items-center rounded-lg bg-emerald-500 px-2.5 py-1.5 text-[11px] font-bold text-white shadow-sm">
+                                          {formatAmount(lineTotal)}
+                                        </div>
+                                      )}
+                                    </td>
+
+                                    {/* REMARKS */}
+                                    <td className="border-b border-r border-slate-100 px-5 py-3 align-top text-xs text-slate-500 last:border-r-0">
+                                      {isTestPlatform ? (
+                                        ""
+                                      ) : sub.remarks?.trim() ? (
+                                        sub.remarks
+                                      ) : (
+                                        <span className="text-slate-300">
+                                          —
+                                        </span>
+                                      )}
+                                    </td>
+                                  </tr>
+                                );
+                              });
+                            })()}
+                          </Fragment>
                         ))}
                       </Fragment>
                     ))}

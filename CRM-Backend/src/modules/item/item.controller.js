@@ -20,6 +20,7 @@ export const createItem = async (req, res) => {
       name,
       description,
       basePrice,
+      pricingMode,
       make,
       mfgPartNo,
       uom,
@@ -34,20 +35,22 @@ export const createItem = async (req, res) => {
       });
     }
 
-    const item = await createItemService({
-      category: category || null,
+const item = await createItemService({
+  category: category || null,
 
-      parentId: parentId || null, // ✅ NEW
+  parentId: parentId || null,
 
-      sku,
-      name,
-      description,
-      basePrice,
-      make,
-      mfgPartNo,
-      uom,
-      defaultRemarks,
-    });
+  pricingMode: pricingMode || "parent_only",
+
+  sku,
+  name,
+  description,
+  basePrice,
+  make,
+  mfgPartNo,
+  uom,
+  defaultRemarks,
+});
 
     res.status(201).json(item);
   } catch (err) {
@@ -99,6 +102,7 @@ export const updateItem = async (req, res) => {
       name,
       description,
       basePrice,
+      pricingMode,
       make,
       mfgPartNo,
       uom,
@@ -106,21 +110,22 @@ export const updateItem = async (req, res) => {
       parentId,
     } = req.body;
 
-    const item = await updateItemService(req.params.id, {
-      category: category || null,
+const item = await updateItemService(req.params.id, {
+  category: category || null,
 
-      parentId: parentId !== undefined ? parentId : undefined,
+  parentId: parentId !== undefined ? parentId : undefined,
 
-      sku,
-      name,
-      description,
-      basePrice,
-      make,
-      mfgPartNo,
-      uom,
-      defaultRemarks,
-    });
+  pricingMode: pricingMode || "parent_only",
 
+  sku,
+  name,
+  description,
+  basePrice,
+  make,
+  mfgPartNo,
+  uom,
+  defaultRemarks,
+});
     res.json(item);
   } catch (err) {
     res.status(500).json({ message: err.message });

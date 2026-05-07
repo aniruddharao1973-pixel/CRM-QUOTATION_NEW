@@ -12,7 +12,9 @@ export const createItemService = async (data) => {
       description: data.description,
       basePrice: data.basePrice ? Number(data.basePrice) : null,
 
-      parentId: data.parentId || null, // ✅ NEW
+      pricingMode: data.pricingMode || "parent_only",
+
+      parentId: data.parentId || null,
 
       // ✅ NEW FIELD (ADDED)
       category: data.category || null,
@@ -72,6 +74,9 @@ export const updateItemService = async (id, data) => {
       name: data.name || null,
       description: data.description,
       basePrice: data.basePrice ? Number(data.basePrice) : null,
+
+      pricingMode:
+        data.pricingMode !== undefined ? data.pricingMode : undefined,
 
       parentId: data.parentId !== undefined ? data.parentId : undefined,
 
@@ -251,6 +256,10 @@ export const importItemsService = async ({ file, category, importType }) => {
           description,
           basePrice: unitPrice !== null ? Number(unitPrice) : null,
           discount: Number(discount) || 0,
+
+          // ✅ NORMAL ITEMS
+          pricingMode: "parent_only",
+
           category,
           make: make || null,
           mfgPartNo: mfgPartNo || null,
@@ -266,6 +275,7 @@ export const importItemsService = async ({ file, category, importType }) => {
     }
 
     // 🔹 GROUPED IMPORT
+    // 🔹 GROUPED IMPORT
     if (importType === "grouped") {
       let currentParent = null;
 
@@ -273,77 +283,188 @@ export const importItemsService = async ({ file, category, importType }) => {
         console.log("➡️ ROW:", row);
 
         const serial = String(row[0] ?? "").trim();
+
+        // 🔥 IMPORTANT
+        const rowType = String(row[1] ?? "")
+          .trim()
+          .toUpperCase();
+
         const sku = String(row[2] ?? "").trim();
+
         const description = String(row[3] ?? "").trim();
+
         const make = String(row[4] ?? "").trim();
+
         const mfgPartNo = String(row[5] ?? "").trim();
+
         const uom = String(row[7] ?? "").trim();
+
         const unitPrice = row[8] ?? null;
+
         const discount = row[10] ?? 0;
 
-        // 👉 parent
-        if (serial && !isNaN(serial)) {
+        // =========================================
+        // 1. MAIN PARENT ITEM (TEST PLATFORM + TC...)
+        // =========================================
+        if (serial && !isNaN(serial) && sku.startsWith("TC")) {
+          const exists = await tx.item.findFirst({
+            where: {
+              sku: {
+                equals: sku.trim(),
+                mode: "insensitive",
+              },
+            },
+          });
+
+          if (exists) {
+            console.log("⏭️ SKIPPED DUPLICATE PARENT:", sku);
+
+            currentParent = exists;
+
+            skipped++;
+
+            continue;
+          }
+
           currentParent = await tx.item.create({
             data: {
               name: description || "Unnamed Item",
+
               sku: sku || null,
+
               description: description || null,
-              basePrice: unitPrice !== null ? Number(unitPrice) : null,
+
+              basePrice:
+                unitPrice !== null && unitPrice !== ""
+                  ? Number(unitPrice)
+                  : null,
+
               discount: Number(discount) || 0,
-              category,
+
+              pricingMode: "parent_with_children",
+
+              // ✅ ROOT CATEGORY
+              category: category,
+
               make: make || null,
+
               mfgPartNo: mfgPartNo || null,
+
               uom: uom || null,
+
               parentId: null,
             },
           });
 
           console.log("🟦 PARENT CREATED:", currentParent.id);
+
           created++;
+
           continue;
         }
 
-        // 👉 child
-        if (currentParent && description) {
-          if (sku) {
-            const exists = await tx.item.findFirst({
-              where: {
-                sku: {
-                  equals: sku.trim(),
-                  mode: "insensitive",
-                },
-                category,
+        // =========================================
+        // 2. FC CHILD ROW
+        // =========================================
+        if (currentParent && rowType === "FC") {
+          const exists = await tx.item.findFirst({
+            where: {
+              sku: {
+                equals: sku.trim(),
+                mode: "insensitive",
               },
-            });
+            },
+          });
 
-            if (exists) {
-              console.log("⏭️ SKIPPED DUPLICATE CHILD:", sku);
-              skipped++;
-              continue;
-            }
+          if (exists) {
+            console.log("⏭️ SKIPPED DUPLICATE FC:", sku);
+
+            skipped++;
+
+            continue;
           }
 
-          const data = {
-            name: description,
-            sku: sku || null,
-            description,
-            basePrice: unitPrice !== null ? Number(unitPrice) : null,
-            discount: Number(discount) || 0,
-            category,
-            make: make || null,
-            mfgPartNo: mfgPartNo || null,
-            uom: uom || null,
-            parentId: currentParent.id,
-          };
+          const child = await tx.item.create({
+            data: {
+              name: description || "Unnamed FC Item",
 
-          console.log("🟩 CHILD CREATED:", data);
+              sku: sku || null,
 
-          await tx.item.create({ data });
+              description: description || null,
+
+              basePrice:
+                unitPrice !== null && unitPrice !== ""
+                  ? Number(unitPrice)
+                  : null,
+
+              discount: Number(discount) || 0,
+
+              pricingMode: "parent_only",
+
+              // ✅ IMPORTANT
+              category: "FC",
+
+              make: make || null,
+
+              mfgPartNo: mfgPartNo || null,
+
+              uom: uom || null,
+
+              parentId: currentParent.id,
+            },
+          });
+
+          console.log("🟩 FC CHILD CREATED:", child.id);
+
           created++;
-        } else {
-          console.log("⏭️ SKIPPED (NO PARENT OR DESCRIPTION)");
-          skipped++;
+
+          continue;
         }
+
+        // =========================================
+        // 3. INT CHILD ROW
+        // =========================================
+        // =========================================
+        // 3. INT CHILD ROW
+        // =========================================
+        if (currentParent && rowType === "INT") {
+          const intItem = await tx.item.create({
+            data: {
+              name: description || "INT Specification",
+
+              // ✅ IMPORTANT FIX
+              sku: null,
+
+              description: description || null,
+
+              basePrice:
+                unitPrice !== null && unitPrice !== "" ? Number(unitPrice) : 0,
+
+              discount: Number(discount) || 0,
+
+              pricingMode: "parent_only",
+
+              category: "INT",
+
+              make: make || null,
+
+              mfgPartNo: mfgPartNo || null,
+
+              uom: uom || null,
+
+              parentId: currentParent.id,
+            },
+          });
+
+          console.log("🟨 INT CHILD CREATED:", intItem.id);
+
+          created++;
+
+          continue;
+        }
+
+        console.log("⏭️ SKIPPED UNKNOWN ROW");
+        skipped++;
       }
     }
 
