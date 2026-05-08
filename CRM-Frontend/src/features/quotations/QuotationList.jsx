@@ -898,6 +898,7 @@
 // src/features/quotations/QuotationList.jsx
 
 import { useEffect, useMemo, useState, Fragment } from "react";
+import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -919,6 +920,8 @@ import {
   Send,
   Layers,
   ChevronLeft,
+  Calculator,
+  Settings2,
 } from "lucide-react";
 import {
   fetchQuotations,
@@ -926,6 +929,8 @@ import {
   fetchQuotationHistory,
   submitQuotation,
   clearQuotationHistory,
+  fetchDiscountPolicy,
+  updateDiscountPolicy,
 } from "./quotationSlice";
 import { formatINR } from "./quotationUtils";
 
@@ -933,7 +938,9 @@ export default function QuotationList() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const { list, loading, history } = useSelector((state) => state.quotation);
+  const { list, loading, history, discountPolicy } = useSelector(
+    (state) => state.quotation,
+  );
   const { user } = useSelector((state) => state.auth); // ⚠️ adjust if needed
   const isAdmin = user?.role?.toLowerCase() === "admin";
 
@@ -946,12 +953,34 @@ export default function QuotationList() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [expandedRow, setExpandedRow] = useState(null);
-  const [submittingId, setSubmittingId] = useState(null);
+  const [showQuotationModal, setShowQuotationModal] = useState(false);
+
+  const [showDiscountModal, setShowDiscountModal] = useState(false);
+
+  const [discountForm, setDiscountForm] = useState({
+    salesRepMax: 5,
+    managerMax: 20,
+    adminMax: 100,
+  });
 
   /* ================= FETCH ================= */
   useEffect(() => {
     dispatch(fetchQuotations());
-  }, [dispatch]);
+
+    if (isAdmin) {
+      dispatch(fetchDiscountPolicy());
+    }
+  }, [dispatch, isAdmin]);
+
+  useEffect(() => {
+    if (discountPolicy) {
+      setDiscountForm({
+        salesRepMax: discountPolicy.salesRepMax ?? 5,
+        managerMax: discountPolicy.managerMax ?? 20,
+        adminMax: discountPolicy.adminMax ?? 100,
+      });
+    }
+  }, [discountPolicy]);
 
   const handleDelete = async (id, e) => {
     e.stopPropagation();
@@ -971,6 +1000,36 @@ export default function QuotationList() {
 
   const handleRefresh = () => {
     dispatch(fetchQuotations());
+  };
+
+  const handleSaveDiscountPolicy = async () => {
+    try {
+      await dispatch(
+        updateDiscountPolicy({
+          salesRepMax: Number(discountForm.salesRepMax),
+          managerMax: Number(discountForm.managerMax),
+          adminMax: Number(discountForm.adminMax),
+        }),
+      ).unwrap();
+
+      toast.success("Discount policy updated successfully");
+
+      setShowDiscountModal(false);
+    } catch (err) {
+      console.error(err);
+
+      toast.error(err?.message || "Failed to update discount policy");
+    }
+  };
+
+  const handleQuotationTypeSelect = (type) => {
+    setShowQuotationModal(false);
+
+    navigate("/quotations/new", {
+      state: {
+        quotationType: type,
+      },
+    });
   };
 
   const handleExpand = (quotationNo, e) => {
@@ -1096,8 +1155,18 @@ export default function QuotationList() {
                     <span className="hidden sm:inline">Refresh</span>
                   </button>
 
+                  {isAdmin && (
+                    <button
+                      onClick={() => setShowDiscountModal(true)}
+                      className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-indigo-200 bg-indigo-50 px-4 text-sm font-bold text-indigo-700 shadow-sm transition hover:bg-indigo-100"
+                    >
+                      <Settings2 className="h-4 w-4" />
+                      <span className="hidden sm:inline">Discount Policy</span>
+                    </button>
+                  )}
+
                   <button
-                    onClick={() => navigate("/quotations/new")}
+                    onClick={() => setShowQuotationModal(true)}
                     className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-600 to-violet-600 px-5 text-sm font-bold text-white shadow-[0_12px_30px_rgba(79,70,229,0.28)] transition hover:from-indigo-700 hover:via-indigo-700 hover:to-violet-700 hover:shadow-[0_16px_34px_rgba(79,70,229,0.34)]"
                   >
                     <Plus className="h-4 w-4" />
@@ -1205,7 +1274,7 @@ export default function QuotationList() {
                 className="sticky top-0 z-10"
                 style={{
                   background: "white",
-                  borderBottom: "1px solid #e2e8f0"
+                  borderBottom: "1px solid #e2e8f0",
                 }}
               >
                 <tr className="bg-slate-50/50">
@@ -1311,7 +1380,8 @@ export default function QuotationList() {
                                 </span>
                               </div>
                               <div className="mt-0.5 text-[11px] font-bold text-slate-400">
-                                {q.items?.length || 0} {q.items?.length === 1 ? "item" : "items"}
+                                {q.items?.length || 0}{" "}
+                                {q.items?.length === 1 ? "item" : "items"}
                               </div>
                             </div>
                           </div>
@@ -1326,7 +1396,9 @@ export default function QuotationList() {
                               </span>
                             </div>
                           ) : (
-                            <span className="text-[11px] text-slate-300 font-medium">—</span>
+                            <span className="text-[11px] text-slate-300 font-medium">
+                              —
+                            </span>
                           )}
                         </td>
 
@@ -1339,7 +1411,9 @@ export default function QuotationList() {
                               </span>
                             </div>
                           ) : (
-                            <span className="text-[11px] text-slate-300 font-medium">—</span>
+                            <span className="text-[11px] text-slate-300 font-medium">
+                              —
+                            </span>
                           )}
                         </td>
 
@@ -1348,15 +1422,20 @@ export default function QuotationList() {
                             <div className="flex items-center gap-2">
                               <Calendar className="h-4 w-4 text-slate-400" />
                               <span className="text-[12px] font-semibold text-slate-600">
-                                {new Date(q.issueDate).toLocaleDateString("en-IN", {
-                                  day: "numeric",
-                                  month: "short",
-                                  year: "numeric"
-                                })}
+                                {new Date(q.issueDate).toLocaleDateString(
+                                  "en-IN",
+                                  {
+                                    day: "numeric",
+                                    month: "short",
+                                    year: "numeric",
+                                  },
+                                )}
                               </span>
                             </div>
                           ) : (
-                            <span className="text-[11px] text-slate-300 font-medium">—</span>
+                            <span className="text-[11px] text-slate-300 font-medium">
+                              —
+                            </span>
                           )}
                         </td>
 
@@ -1394,7 +1473,9 @@ export default function QuotationList() {
                                 e.stopPropagation();
                                 navigate(`/quotations/${q.id}/edit`);
                               }}
-                              disabled={["SUBMITTED", "APPROVED"].includes(q.status?.toUpperCase())}
+                              disabled={["SUBMITTED", "APPROVED"].includes(
+                                q.status?.toUpperCase(),
+                              )}
                               className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 transition-colors hover:bg-emerald-600 hover:text-white disabled:opacity-30 disabled:hover:bg-emerald-50 disabled:hover:text-emerald-600"
                               title="Edit quotation"
                             >
@@ -1405,7 +1486,9 @@ export default function QuotationList() {
                               onClick={(e) => isAdmin && handleDelete(q.id, e)}
                               disabled={!isAdmin}
                               className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-rose-50 text-rose-600 transition-colors hover:bg-rose-600 hover:text-white disabled:opacity-30 disabled:hover:bg-rose-50 disabled:hover:text-rose-600"
-                              title={isAdmin ? "Delete" : "Only admin can delete"}
+                              title={
+                                isAdmin ? "Delete" : "Only admin can delete"
+                              }
                             >
                               <Trash2 className="h-4 w-4" />
                             </button>
@@ -1632,7 +1715,7 @@ export default function QuotationList() {
 
                           {!search && statusFilter === "ALL" && (
                             <button
-                              onClick={() => navigate("/quotations/new")}
+                              onClick={() => setShowQuotationModal(true)}
                               className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(79,70,229,0.24)] transition hover:bg-indigo-700"
                             >
                               <Plus className="h-4 w-4" />
@@ -1659,6 +1742,198 @@ export default function QuotationList() {
                 )}
               </tbody>
             </table>
+
+            {showDiscountModal && (
+              <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+                <div className="w-full max-w-md overflow-hidden rounded-[28px] border border-indigo-100 bg-white shadow-[0_25px_80px_rgba(15,23,42,0.25)]">
+                  {/* HEADER */}
+                  <div className="border-b border-slate-100 bg-gradient-to-r from-indigo-50 to-violet-50 px-6 py-5">
+                    <h2 className="text-2xl font-black tracking-tight text-slate-900">
+                      Discount Policy
+                    </h2>
+
+                    <p className="mt-1 text-sm text-slate-500">
+                      Configure maximum role-based discounts
+                    </p>
+                  </div>
+
+                  {/* BODY */}
+                  <div className="space-y-5 p-6">
+                    {/* SALES REP */}
+                    <div>
+                      <label className="mb-2 block text-sm font-bold text-slate-700">
+                        Sales Rep Max %
+                      </label>
+
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={discountForm.salesRepMax}
+                        onChange={(e) =>
+                          setDiscountForm((prev) => ({
+                            ...prev,
+                            salesRepMax: e.target.value,
+                          }))
+                        }
+                        className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm font-semibold outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10"
+                      />
+                    </div>
+
+                    {/* MANAGER */}
+                    <div>
+                      <label className="mb-2 block text-sm font-bold text-slate-700">
+                        Manager Max %
+                      </label>
+
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={discountForm.managerMax}
+                        onChange={(e) =>
+                          setDiscountForm((prev) => ({
+                            ...prev,
+                            managerMax: e.target.value,
+                          }))
+                        }
+                        className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm font-semibold outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10"
+                      />
+                    </div>
+
+                    {/* ADMIN */}
+                    <div>
+                      <label className="mb-2 block text-sm font-bold text-slate-700">
+                        Admin Max %
+                      </label>
+
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={discountForm.adminMax}
+                        onChange={(e) =>
+                          setDiscountForm((prev) => ({
+                            ...prev,
+                            adminMax: e.target.value,
+                          }))
+                        }
+                        className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm font-semibold outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10"
+                      />
+                    </div>
+                  </div>
+
+                  {/* FOOTER */}
+                  <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4">
+                    <button
+                      onClick={() => setShowDiscountModal(false)}
+                      className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+                    >
+                      Cancel
+                    </button>
+
+                    <button
+                      onClick={handleSaveDiscountPolicy}
+                      className="rounded-xl bg-indigo-600 px-5 py-2 text-sm font-bold text-white transition hover:bg-indigo-700"
+                    >
+                      Save Policy
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+            {showQuotationModal && (
+              <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+                <div className="w-full max-w-md overflow-hidden rounded-[28px] border border-indigo-100 bg-white shadow-[0_25px_80px_rgba(15,23,42,0.25)]">
+                  {/* HEADER */}
+                  <div className="border-b border-slate-100 bg-gradient-to-r from-indigo-50 to-violet-50 px-6 py-5">
+                    <h2 className="text-2xl font-black tracking-tight text-slate-900">
+                      New Quotation
+                    </h2>
+
+                    <p className="mt-1 text-sm text-slate-500">
+                      Select quotation type
+                    </p>
+                  </div>
+
+                  {/* BODY */}
+                  <div className="space-y-3 p-5">
+                    <button
+                      onClick={() => handleQuotationTypeSelect("BUDGETARY")}
+                      className="group w-full rounded-2xl border border-amber-200 bg-amber-50/60 p-5 text-left transition hover:scale-[1.01] hover:border-amber-300"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="text-sm font-black uppercase tracking-[0.2em] text-amber-700">
+                            Budgetary
+                          </div>
+
+                          <div className="mt-1 text-sm text-slate-600">
+                            Preliminary pricing estimation quotation
+                          </div>
+                        </div>
+
+                        <div className="rounded-xl bg-amber-100 p-2 text-amber-700">
+                          <Calculator className="h-4 w-4" />
+                        </div>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => handleQuotationTypeSelect("QUOTATION")}
+                      className="group w-full rounded-2xl border border-indigo-200 bg-indigo-50/60 p-5 text-left transition hover:scale-[1.01] hover:border-indigo-300"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="text-sm font-black uppercase tracking-[0.2em] text-indigo-700">
+                            Quotation
+                          </div>
+
+                          <div className="mt-1 text-sm text-slate-600">
+                            Standard commercial quotation
+                          </div>
+                        </div>
+
+                        <div className="rounded-xl bg-indigo-100 p-2 text-indigo-700">
+                          <FileText className="h-4 w-4" />
+                        </div>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => handleQuotationTypeSelect("FIRM")}
+                      className="group w-full rounded-2xl border border-emerald-200 bg-emerald-50/60 p-5 text-left transition hover:scale-[1.01] hover:border-emerald-300"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="text-sm font-black uppercase tracking-[0.2em] text-emerald-700">
+                            Firm Quotation
+                          </div>
+
+                          <div className="mt-1 text-sm text-slate-600">
+                            Finalized confirmed commercial quotation
+                          </div>
+                        </div>
+
+                        <div className="rounded-xl bg-emerald-100 p-2 text-emerald-700">
+                          <BadgeCheck className="h-4 w-4" />
+                        </div>
+                      </div>
+                    </button>
+                  </div>
+
+                  {/* FOOTER */}
+                  <div className="flex justify-end border-t border-slate-100 px-5 py-4">
+                    <button
+                      onClick={() => setShowQuotationModal(false)}
+                      className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {!loading && quotations.length > 0 && (

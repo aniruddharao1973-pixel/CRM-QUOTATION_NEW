@@ -2837,8 +2837,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import QuotationPdfDocument from "./pdf/QuotationPdfDocument";
-import QuotationPdfV2 from "./pdf/QuotationPdfDocumentV2";
-import QuotationPdfV3 from "./pdf/QuotationPdfDocumentV3";
 import { formatINR } from "./quotationUtils";
 import {
   Download,
@@ -2875,7 +2873,8 @@ export default function QuotationDetail() {
 
   const { selected: data, loading } = useSelector((state) => state.quotation);
 
-  const formatAmount = (value) => formatINR(value).replace(".00", "");
+  const formatAmount = (value) =>
+    String(formatINR(value)).replace(/₹\s?/g, "").replace(".00", "").trim();
 
   const user = useSelector((state) => state.auth.user);
 
@@ -2963,13 +2962,26 @@ export default function QuotationDetail() {
 
     return {
       subtotal: Number(data.subtotal || 0),
+
       discount: Number(data.discountTotal || 0),
+
       taxable: Math.max(
         Number(data.subtotal || 0) - Number(data.discountTotal || 0),
         0,
       ),
+
       cgst: Number(data.taxTotal || 0) / 2,
+
       sgst: Number(data.taxTotal || 0) / 2,
+
+      // 🔥 NEW
+      packingForwardingCharges: Number(data.packingForwardingCharges || 0),
+
+      installationCharges:
+        Number(data.installationQty || 0) *
+        Number(data.installationUnitPrice || 0) *
+        (1 - Number(data.installationDiscount || 0) / 100),
+
       grandTotal: Number(data.grandTotal || 0),
     };
   }, [data]);
@@ -3076,7 +3088,14 @@ export default function QuotationDetail() {
 
                   <div className="flex items-center gap-3 min-w-0">
                     <h2 className="truncate text-lg font-black tracking-tight text-white drop-shadow-sm lg:text-[20px]">
-                      {data.deal?.dealName || "—"}
+                      {data.quotationType === "BUDGETARY"
+                        ? "Budgetary Quotation"
+                        : data.quotationType === "FIRM"
+                          ? "Firm Quotation"
+                          : "Quotation"}{" "}
+                      <span className="font-extrabold text-white">
+                        for {data.deal?.dealName || "—"}
+                      </span>
                     </h2>
 
                     <div className="flex items-center gap-2">
@@ -3116,152 +3135,29 @@ export default function QuotationDetail() {
                 {/* RIGHT SIDE — ACTION BUTTONS */}
                 <div className="flex flex-wrap items-center gap-2.5">
                   {isAdmin && (
-                    <div
-                      className="relative group"
-                      onMouseEnter={() => setPdfRendered(true)}
+                    <PDFDownloadLink
+                      document={
+                        <QuotationPdfDocument
+                          quotation={{
+                            ...data,
+                            items: sanitizedItems,
+                          }}
+                          totals={totals || {}}
+                        />
+                      }
+                      fileName={`${data?.quotationNo || "quotation"}-COMMERCIAL.pdf`}
+                      className="inline-flex h-9 items-center gap-2 rounded-xl border border-white/10 bg-white/10 px-4 text-xs font-black text-white backdrop-blur-sm transition-all duration-200 hover:bg-white/20"
                     >
-                      <button className="inline-flex h-9 items-center gap-2 rounded-xl border border-white/10 bg-white/10 px-4 text-xs font-black text-white backdrop-blur-sm transition-all duration-200 hover:bg-white/20">
-                        <Download className="h-3.5 w-3.5 text-indigo-300" />
-                        Proposal PDF
-                      </button>
+                      {({ loading }) => (
+                        <>
+                          <Download className="h-3.5 w-3.5 text-indigo-300" />
 
-                      <div className="absolute right-0 top-full z-[9999] mt-3 w-80 overflow-hidden rounded-3xl border border-slate-200 bg-white opacity-0 invisible shadow-[0_20px_60px_rgba(15,23,42,0.18)] transition-all duration-200 group-hover:visible group-hover:opacity-100">
-                        <div className="border-b border-slate-100 bg-gradient-to-r from-indigo-50 via-white to-indigo-50 px-5 py-4">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
-                            Export Options
-                          </p>
-
-                          <p className="mt-1 text-sm font-semibold text-slate-800">
-                            Choose proposal format
-                          </p>
-                        </div>
-
-                        {pdfRendered && (
-                          <>
-                            {/* PDF V1 */}
-                            <PDFDownloadLink
-                              document={
-                                <QuotationPdfDocument
-                                  quotation={{
-                                    ...data,
-                                    items: sanitizedItems,
-                                  }}
-                                  totals={totals || {}}
-                                />
-                              }
-                              fileName={`${data?.quotationNo || "quotation"}-COMMERCIAL_V1.pdf`}
-                              className="flex items-start gap-3 px-5 py-4 transition-all hover:bg-indigo-50/70"
-                            >
-                              {({ loading }) => (
-                                <>
-                                  <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600 shadow-sm">
-                                    📄
-                                  </div>
-
-                                  <div className="flex-1">
-                                    <div className="flex items-center justify-between gap-3">
-                                      <span className="text-sm font-semibold text-slate-900">
-                                        Commercial Proposal — V1
-                                      </span>
-
-                                      <span className="text-[11px] font-medium text-indigo-500">
-                                        {loading ? "Generating..." : "Download"}
-                                      </span>
-                                    </div>
-
-                                    <p className="mt-1 text-xs text-slate-500">
-                                      Clean, minimal layout
-                                    </p>
-                                  </div>
-                                </>
-                              )}
-                            </PDFDownloadLink>
-
-                            <div className="mx-4 h-px bg-slate-100" />
-
-                            {/* PDF V2 */}
-                            <PDFDownloadLink
-                              document={
-                                <QuotationPdfV2
-                                  quotation={{
-                                    ...data,
-                                    items: sanitizedItems,
-                                  }}
-                                  totals={totals || {}}
-                                />
-                              }
-                              fileName={`${data?.quotationNo || "quotation"}-COMMERCIAL_V2.pdf`}
-                              className="flex items-start gap-3 px-5 py-4 transition-all hover:bg-indigo-50/70"
-                            >
-                              {({ loading }) => (
-                                <>
-                                  <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600 shadow-sm">
-                                    📊
-                                  </div>
-
-                                  <div className="flex-1">
-                                    <div className="flex items-center justify-between gap-3">
-                                      <span className="text-sm font-semibold text-slate-900">
-                                        Commercial Proposal — V2
-                                      </span>
-
-                                      <span className="text-[11px] font-medium text-emerald-500">
-                                        {loading ? "Generating..." : "Download"}
-                                      </span>
-                                    </div>
-
-                                    <p className="mt-1 text-xs text-slate-500">
-                                      Detailed breakdown
-                                    </p>
-                                  </div>
-                                </>
-                              )}
-                            </PDFDownloadLink>
-
-                            <div className="mx-4 h-px bg-slate-100" />
-
-                            {/* PDF V3 */}
-                            <PDFDownloadLink
-                              document={
-                                <QuotationPdfV3
-                                  quotation={{
-                                    ...data,
-                                    items: sanitizedItems,
-                                  }}
-                                  totals={totals || {}}
-                                />
-                              }
-                              fileName={`${data?.quotationNo || "quotation"}-COMMERCIAL_V3.pdf`}
-                              className="flex items-start gap-3 px-5 py-4 transition-all hover:bg-indigo-50/70"
-                            >
-                              {({ loading }) => (
-                                <>
-                                  <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl bg-violet-100 text-violet-600 shadow-sm">
-                                    🚀
-                                  </div>
-
-                                  <div className="flex-1">
-                                    <div className="flex items-center justify-between gap-3">
-                                      <span className="text-sm font-semibold text-slate-900">
-                                        Commercial Proposal — V3
-                                      </span>
-
-                                      <span className="text-[11px] font-medium text-violet-500">
-                                        {loading ? "Generating..." : "Download"}
-                                      </span>
-                                    </div>
-
-                                    <p className="mt-1 text-xs text-slate-500">
-                                      Advanced layout (latest version)
-                                    </p>
-                                  </div>
-                                </>
-                              )}
-                            </PDFDownloadLink>
-                          </>
-                        )}
-                      </div>
-                    </div>
+                          <span>
+                            {loading ? "Generating PDF..." : "Proposal PDF"}
+                          </span>
+                        </>
+                      )}
+                    </PDFDownloadLink>
                   )}
                   {isSalesRep && statusUpper === "DRAFT" && (
                     <button
@@ -3399,21 +3295,6 @@ export default function QuotationDetail() {
 
               {/* RIGHT SIDE */}
               <div className="ml-auto flex items-center gap-2">
-                {/* TOTAL VALUE */}
-                <div className="flex items-center gap-2 rounded-lg border border-[#37306B]/10 bg-white px-2.5 py-1.5 shadow-sm">
-                  <div className="flex h-7 w-7 items-center justify-center rounded bg-[#37306B] text-white">
-                    <IndianRupee className="h-3.5 w-3.5" />
-                  </div>
-                  <div>
-                    <div className="text-[8px] font-black uppercase tracking-[0.1em] text-[#37306B]/60">
-                      Total <span className="opacity-60">(GST Incl)</span>
-                    </div>
-                    <div className="text-[13px] font-black leading-none text-[#37306B]">
-                      {formatAmount(data.grandTotal)}
-                    </div>
-                  </div>
-                </div>
-
                 {/* ACCOUNT */}
                 <div className="flex max-w-[280px] items-center gap-2.5 rounded-xl border border-rose-100 bg-white px-3 py-2 shadow-sm">
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-500 text-white shadow-sm">
@@ -3452,15 +3333,23 @@ export default function QuotationDetail() {
                         { label: "Mfg PN", w: "150px", align: "left" },
                         { label: "Qty", w: "70px", align: "center" },
                         { label: "UOM", w: "70px", align: "center" },
-                        { label: "Unit Price", w: "120px", align: "right" },
+                        {
+                          label: "Unit Price (INR)",
+                          w: "150px",
+                          align: "right",
+                        },
                         { label: "Discount", w: "110px", align: "right" },
-                        { label: "Final Price", w: "140px", align: "right" },
+                        {
+                          label: "Final Price (INR)",
+                          w: "140px",
+                          align: "right",
+                        },
                         { label: "Remarks", w: "170px", align: "left" },
                       ].map(({ label, w, align }, i) => (
                         <th
                           key={label}
                           style={{ minWidth: w, width: w }}
-                          className={`sticky top-0 z-40 border-b border-r border-slate-200 bg-white px-4 py-3 text-${align} text-[10px] font-black uppercase tracking-[0.15em] text-[#37306B]/50 ${
+                          className={`sticky top-0 z-40 whitespace-nowrap border-b border-r border-slate-200 bg-white px-4 py-3 text-${align} text-[10px] font-black uppercase tracking-[0.15em] text-[#37306B]/50 ${
                             i === 0 ? "pl-6" : ""
                           } last:border-r-0`}
                         >
@@ -3508,8 +3397,8 @@ export default function QuotationDetail() {
                                 {/* CATEGORY */}
                                 <td className="border-b border-r border-slate-100 px-4 py-3 align-middle text-left last:border-r-0">
                                   {item.category ? (
-                                    <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-700 ring-1 ring-emerald-200">
-                                      <Layers className="h-3 w-3 flex-shrink-0" />
+                                    <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-semibold text-slate-700">
+                                      <Layers className="h-3 w-3 flex-shrink-0 text-slate-500" />
                                       {item.category}
                                     </span>
                                   ) : (
@@ -3521,7 +3410,7 @@ export default function QuotationDetail() {
 
                                 {/* SKU */}
                                 <td className="border-b border-r border-slate-100/50 px-4 py-3 align-middle last:border-r-0">
-                                  <div className="inline-flex max-w-full items-center gap-2 rounded-lg border border-[#37306B]/15 bg-[#37306B]/5 px-2.5 py-1 font-mono text-[12px] font-bold tracking-tight text-[#37306B]">
+                                  <div className="inline-flex max-w-full items-center rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-[11px] font-semibold tracking-tight text-slate-700">
                                     <span className="truncate max-w-[90px]">
                                       {item.sku?.trim() ? item.sku : "-"}
                                     </span>
@@ -3569,7 +3458,9 @@ export default function QuotationDetail() {
 
                                 {/* PRICE */}
                                 <td className="border-b border-r border-slate-100 px-4 py-3 align-middle text-right text-[12px] font-semibold text-slate-600 last:border-r-0">
-                                  {item.price ? formatAmount(item.price) : "—"}
+                                  {item.price
+                                    ? Number(item.price).toLocaleString("en-IN")
+                                    : "—"}
                                 </td>
 
                                 {/* DISCOUNT */}
@@ -3586,11 +3477,11 @@ export default function QuotationDetail() {
                                 {/* TOTAL */}
                                 <td className="border-b border-r border-slate-100 px-4 py-3 align-middle text-right last:border-r-0">
                                   <span className="text-[14px] font-black text-[#37306B]">
-                                    {formatAmount(
+                                    {Number(
                                       Number(item.quantity || 1) *
                                         Number(item.price || 0) *
                                         (1 - Number(item.discount || 0) / 100),
-                                    )}
+                                    ).toLocaleString("en-IN")}
                                   </span>
                                 </td>
 
@@ -3635,7 +3526,7 @@ export default function QuotationDetail() {
                                       {/* CATEGORY */}
                                       <td className="border-b border-r border-slate-100 px-4 py-3 align-top last:border-r-0">
                                         {sub.category ? (
-                                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-700 ring-1 ring-emerald-200">
+                                          <span className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-medium text-slate-700">
                                             {sub.category}
                                           </span>
                                         ) : (
@@ -3649,8 +3540,8 @@ export default function QuotationDetail() {
                                       <td className="border-b border-r border-slate-100 px-4 py-3 align-middle text-left last:border-r-0">
                                         <div className="flex items-center gap-2">
                                           {sub.sku?.trim() ? (
-                                            <div className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-1 font-mono text-[10px] font-bold text-emerald-700">
-                                              <Tag className="h-3 w-3 text-emerald-500" />
+                                            <div className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 font-mono text-[10px] font-medium text-slate-700">
+                                              <Tag className="h-3 w-3 text-slate-400" />
                                               {sub.sku}
                                             </div>
                                           ) : (
@@ -3717,7 +3608,9 @@ export default function QuotationDetail() {
                                         {isTestPlatform
                                           ? ""
                                           : price > 0
-                                            ? formatAmount(price)
+                                            ? Number(price).toLocaleString(
+                                                "en-IN",
+                                              )
                                             : "—"}
                                       </td>
 
@@ -3742,7 +3635,9 @@ export default function QuotationDetail() {
                                           ""
                                         ) : (
                                           <span className="text-[14px] font-black text-[#37306B]">
-                                            {formatAmount(lineTotal)}
+                                            {Number(
+                                              lineTotal || 0,
+                                            ).toLocaleString("en-IN")}
                                           </span>
                                         )}
                                       </td>
@@ -3772,71 +3667,108 @@ export default function QuotationDetail() {
                 </table>
               </div>
             </div>
-
-            {/* ENHANCED TOTAL SUMMARY */}
-            <div className="border-t border-slate-200 bg-gradient-to-b from-slate-50 via-white to-slate-100/80 px-5 py-5 sm:px-6 lg:px-7">
-              <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-                {/* RIGHT SIDE */}
-                <div className="ml-auto flex w-full max-w-[430px] flex-col justify-start self-start">
-                  <div className="sticky top-5 space-y-3">
-                    {/* DISCOUNT */}
-                    {totals.discount > 0 && (
-                      <div className="group relative overflow-hidden rounded-2xl border border-rose-200/80 bg-gradient-to-r from-rose-50 via-white to-rose-50/40 px-5 py-4 shadow-[0_4px_14px_rgba(244,63,94,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_28px_rgba(244,63,94,0.12)]">
-                        <div className="absolute inset-y-0 left-0 w-1 rounded-full bg-gradient-to-b from-rose-400 to-rose-200" />
-
-                        <div className="flex items-center justify-between gap-4">
-                          <div>
-                            <div className="text-[11px] font-black uppercase tracking-[0.24em] text-rose-500">
-                              Discount
-                            </div>
-
-                            <div className="mt-1 text-xs font-medium text-rose-400">
-                              Applied reduction
-                            </div>
-                          </div>
-
-                          <div className="text-right">
-                            <div className="text-lg font-black tracking-tight text-rose-600">
-                              −{formatAmount(totals.discount)}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* TAX CARDS */}
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
+        </div>
+
+
+        {/* COMMERCIAL SUMMARY TABLE */}
+        <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+          <div className="border-b border-slate-200 bg-slate-50 px-6 py-4">
+            <h3 className="text-[12px] font-black uppercase tracking-[0.24em] text-slate-500">
+              Commercial Summary
+            </h3>
+          </div>
+
+          <table className="w-full border-separate border-spacing-0">
+            <tbody>
+              <tr className="bg-white">
+                <td className="border-b border-r border-slate-200 px-6 py-5">
+                  <div className="text-sm font-bold text-slate-800">
+                    Total Quotation Value
+                  </div>
+                  <div className="mt-1 text-[11px] text-slate-400">
+                    Includes all line items & sub items
+                  </div>
+                </td>
+                <td className="w-[260px] border-b border-slate-200 px-6 py-5 text-right">
+                  <div className="text-[26px] font-black tracking-tight text-[#37306B]">
+                    {formatAmount(totals.subtotal || 0)}
+                  </div>
+                </td>
+              </tr>
+
+              <tr className="bg-white">
+                <td className="border-b border-r border-slate-200 px-6 py-5 text-sm font-semibold text-slate-700">
+                  Packing, Forwarding, Freight and Transit Insurance
+                </td>
+                <td className="border-b border-slate-200 px-6 py-5 text-right">
+                  <div className="text-[20px] font-bold text-slate-800">
+                    {formatAmount(totals.packingForwardingCharges || 0)}
+                  </div>
+                </td>
+              </tr>
+
+              <tr className="bg-white">
+                <td className="border-b border-r border-slate-200 px-6 py-5 text-sm font-semibold text-slate-700">
+                  Installation & Commissioning
+                </td>
+                <td className="border-b border-slate-200 px-6 py-5 text-right">
+                  <div className="text-[20px] font-bold text-slate-800">
+                    {formatAmount(totals.installationCharges || 0)}
+                  </div>
+                </td>
+              </tr>
+
+              <tr className="bg-slate-50">
+                <td className="border-r border-slate-200 px-6 py-6">
+                  <div className="text-[13px] font-black uppercase tracking-[0.22em] text-slate-700">
+                    Grand Total
+                  </div>
+                  <div className="mt-1 text-[11px] text-slate-500">
+                    Inclusive of commercial charges
+                  </div>
+                </td>
+                <td className="px-6 py-6 text-right">
+                  <div className="text-[36px] font-black leading-none tracking-tight text-[#37306B]">
+                    {formatAmount(totals.grandTotal || 0)}
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
       {showRejectModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-bold text-slate-900">
-              Reject Quotation
-            </h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white shadow-xl">
+            {/* Header */}
+            <div className="border-b border-slate-100 px-6 py-5">
+              <h3 className="text-lg font-semibold text-slate-900">
+                Reject Quotation
+              </h3>
 
-            <p className="mt-1 text-sm text-slate-500">
-              Please provide a reason for rejection
-            </p>
+              <p className="mt-1 text-sm text-slate-500">
+                Please provide a reason for rejection.
+              </p>
+            </div>
 
-            <textarea
-              value={rejectComment}
-              onChange={(e) => setRejectComment(e.target.value)}
-              placeholder="Enter rejection reason..."
-              className="mt-4 w-full rounded-xl border border-slate-200 p-3 text-sm outline-none focus:ring-2 focus:ring-rose-500"
-              rows={4}
-            />
+            {/* Body */}
+            <div className="px-6 py-5">
+              <textarea
+                value={rejectComment}
+                onChange={(e) => setRejectComment(e.target.value)}
+                placeholder="Enter rejection reason..."
+                rows={4}
+                className="w-full resize-none rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+              />
+            </div>
 
-            <div className="mt-5 flex justify-end gap-2">
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4">
               <button
                 onClick={() => setShowRejectModal(false)}
-                className="rounded-xl border px-4 py-2 text-sm"
+                className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
               >
                 Cancel
               </button>
@@ -3844,9 +3776,9 @@ export default function QuotationDetail() {
               <button
                 onClick={handleReject}
                 disabled={actionLoading}
-                className="rounded-xl bg-rose-600 px-5 py-2 text-sm font-bold text-white hover:bg-rose-700 disabled:opacity-50"
+                className="rounded-xl bg-slate-900 px-5 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:opacity-50"
               >
-                {actionLoading ? "Processing..." : "Confirm Reject"}
+                {actionLoading ? "Rejecting..." : "Reject"}
               </button>
             </div>
           </div>

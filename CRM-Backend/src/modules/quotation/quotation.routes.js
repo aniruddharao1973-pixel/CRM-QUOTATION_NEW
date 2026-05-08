@@ -11,6 +11,10 @@ import {
   submitQuotationController,
   approveQuotationController,
   rejectQuotationController,
+
+  // 🔥 NEW
+  getDiscountPolicyController,
+  updateDiscountPolicyController,
 } from "./quotation.controller.js";
 
 import { protect, authorize } from "../../middlewares/auth.middleware.js";
@@ -22,6 +26,19 @@ router.post("/", protect, createQuotationController);
 
 /* ================= GET ALL ================= */
 router.get("/", protect, getQuotationsController);
+
+/* ================= DISCOUNT POLICY ================= */
+
+// ✅ everyone can read
+router.get("/discount-policy", protect, getDiscountPolicyController);
+
+// ✅ only admin can update
+router.put(
+  "/discount-policy",
+  protect,
+  authorize("ADMIN"),
+  updateDiscountPolicyController,
+);
 
 /* ================= GET HISTORY ================= */
 // 🔥 IMPORTANT: place BEFORE "/:id"

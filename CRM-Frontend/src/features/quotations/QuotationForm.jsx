@@ -1969,7 +1969,7 @@
 // src/features/quotations/QuotationForm.jsx
 
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -2003,6 +2003,7 @@ import {
   createQuotation,
   fetchQuotationById,
   updateQuotation,
+  fetchDiscountPolicy,
 } from "./quotationSlice";
 
 import toast from "react-hot-toast";
@@ -2016,6 +2017,20 @@ import QuotationItemsTable from "./QuotationItemsTable";
 const GST_RATE = 18;
 const CGST_RATE = 9;
 const SGST_RATE = 9;
+
+// const getDiscountLimit = (role) => {
+//   switch (role) {
+//     case "ADMIN":
+//       return 100;
+
+//     case "MANAGER":
+//       return 20;
+
+//     case "SALES_REP":
+//     default:
+//       return 5;
+//   }
+// };
 
 /* ================= HELPER ================= */
 function newLineItem() {
@@ -2099,14 +2114,27 @@ export default function QuotationForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const location = useLocation();
 
   const { dropdown: accounts } = useSelector((state) => state.accounts);
   const { dropdown: contacts } = useSelector((state) => state.contacts);
   const { list: itemsList } = useSelector((state) => state.items);
   const deals = useSelector((state) => state.deals.deals || []);
   const quotation = useSelector((state) => state.quotation?.selected);
+  const currentUser = useSelector((state) => state.auth?.user);
+
+  const discountPolicy = useSelector(
+    (state) => state.quotation?.discountPolicy,
+  );
 
   const isEdit = Boolean(id);
+
+  const maxDiscount =
+    currentUser?.role === "ADMIN"
+      ? Number(discountPolicy?.adminMax || 100)
+      : currentUser?.role === "MANAGER"
+        ? Number(discountPolicy?.managerMax || 20)
+        : Number(discountPolicy?.salesRepMax || 5);
 
   const [isSaving, setIsSaving] = useState(false);
   const [isSearchingLog, setIsSearchingLog] = useState(false);
@@ -2120,6 +2148,7 @@ export default function QuotationForm() {
   };
 
   const [form, setForm] = useState({
+    quotationType: location.state?.quotationType || "QUOTATION",
     quotationNumber: createQuotationNumber(),
     logId: "",
     accountId: "",
@@ -2131,6 +2160,18 @@ export default function QuotationForm() {
     notes: "",
     // terms: "Quotation valid for 15 days from the issue date.",
     headerDiscount: 0,
+
+    // 🔥 NEW COMMERCIAL SUMMARY
+    // 🔥 COMMERCIAL ROWS
+    packingForwardingCharges: 0,
+
+    installationDescription: "",
+    installationQty: 1,
+    installationUom: "Nos",
+    installationUnitPrice: 0,
+    installationDiscount: 0,
+    installationRemarks: "",
+
     items: [],
   });
 
@@ -2139,6 +2180,9 @@ export default function QuotationForm() {
   useEffect(() => {
     dispatch(fetchItems());
     dispatch(fetchAccountsDropdown());
+
+    // 🔥 ADD THIS
+    dispatch(fetchDiscountPolicy());
   }, [dispatch]);
 
   useEffect(() => {
@@ -2177,6 +2221,23 @@ export default function QuotationForm() {
         notes: quotation.notes || "",
         terms: quotation.terms || "",
         headerDiscount: quotation.headerDiscount || 0,
+
+        // 🔥 COMMERCIAL VALUES
+        packingForwardingCharges: Number(
+          quotation.packingForwardingCharges || 0,
+        ),
+
+        installationDescription: quotation.installationDescription || "",
+
+        installationQty: Number(quotation.installationQty || 1),
+
+        installationUom: quotation.installationUom || "Nos",
+
+        installationUnitPrice: Number(quotation.installationUnitPrice || 0),
+
+        installationDiscount: Number(quotation.installationDiscount || 0),
+
+        installationRemarks: quotation.installationRemarks || "",
 
         items: quotation.items.map((item) => ({
           itemId: item.itemId,
@@ -2222,8 +2283,6 @@ export default function QuotationForm() {
     }
   }, [quotation, id, itemsList, dispatch]);
 
-
-
   const handleCreateQuotation = async () => {
     try {
       if (!form.accountId) return toast.error("Select account");
@@ -2237,6 +2296,7 @@ export default function QuotationForm() {
 
       const payload = {
         quotationNumber: form.quotationNumber,
+        quotationType: form.quotationType,
         accountId: form.accountId,
         dealId: form.dealId,
         contactIds: form.contactIds,
@@ -2244,6 +2304,21 @@ export default function QuotationForm() {
         validUntil: form.validUntil || null,
         notes: form.notes,
         terms: form.terms,
+
+        // 🔥 COMMERCIAL VALUES
+        packingForwardingCharges: Number(form.packingForwardingCharges || 0),
+
+        installationDescription: form.installationDescription || "",
+
+        installationQty: Number(form.installationQty || 1),
+
+        installationUom: form.installationUom || "Nos",
+
+        installationUnitPrice: Number(form.installationUnitPrice || 0),
+
+        installationDiscount: Number(form.installationDiscount || 0),
+
+        installationRemarks: form.installationRemarks || "",
 
         items: validItems.map((item) => ({
           itemId: item.itemId,
@@ -2305,6 +2380,16 @@ export default function QuotationForm() {
   /* ================= TOTALS ================= */
 
   const totals = useMemo(() => calcQuotationTotals(form), [form]);
+
+  const installationTotal =
+    Number(form.installationQty || 0) *
+    Number(form.installationUnitPrice || 0) *
+    (1 - Number(form.installationDiscount || 0) / 100);
+
+  const commercialGrandTotal =
+    Number(totals?.grandTotal || 0) +
+    Number(form.packingForwardingCharges || 0) +
+    installationTotal;
 
   const selectedAccountName = useMemo(() => {
     return (
@@ -2378,7 +2463,24 @@ export default function QuotationForm() {
         }
 
         if (["qty", "price", "discount"].includes(key)) {
-          next[key] = value === "" ? "" : Number(value);
+          let numericValue = value === "" ? "" : Number(value);
+
+          if (key === "discount") {
+            numericValue = Math.min(
+              maxDiscount,
+              Math.max(0, Number(numericValue || 0)),
+            );
+
+            if (Number(value) > maxDiscount) {
+              toast.error(
+                `Maximum allowed discount is ${maxDiscount}% for ${currentUser?.role}`,
+                {
+                  id: "discount-limit-error",
+                },
+              );
+            }
+          }
+          next[key] = numericValue;
         }
 
         return next;
@@ -2440,9 +2542,27 @@ export default function QuotationForm() {
                 // ✅ FIX: handle text vs number
                 [key]: ["remarks", "description", "name"].includes(key)
                   ? value
-                  : value === ""
-                    ? ""
-                    : Number(value),
+                  : key === "discount"
+                    ? (() => {
+                        const discountValue = value === "" ? 0 : Number(value);
+
+                        if (discountValue > maxDiscount) {
+                          toast.error(
+                            `Maximum allowed discount is ${maxDiscount}% for ${currentUser?.role}`,
+                            {
+                              id: "discount-limit-error",
+                            },
+                          );
+                        }
+
+                        return Math.min(
+                          maxDiscount,
+                          Math.max(0, discountValue),
+                        );
+                      })()
+                    : value === ""
+                      ? ""
+                      : Number(value),
               }
             : sub,
         );
@@ -2576,13 +2696,22 @@ export default function QuotationForm() {
 
   // 🔥 NEW: Auto-fetch log contacts if logId exists on load
   useEffect(() => {
-    const selectedDeal = deals.find((d) => String(d.id) === String(form.dealId));
+    const selectedDeal = deals.find(
+      (d) => String(d.id) === String(form.dealId),
+    );
     const activeLogId = form.logId || selectedDeal?.dealLogId;
 
     if (activeLogId && isEdit && !logContacts.length && !isSearchingLog) {
       handleLogIdSearch(activeLogId, true);
     }
-  }, [form.logId, form.dealId, deals, isEdit, logContacts.length, isSearchingLog]);
+  }, [
+    form.logId,
+    form.dealId,
+    deals,
+    isEdit,
+    logContacts.length,
+    isSearchingLog,
+  ]);
 
   const handleClearLogLookup = () => {
     setLogContacts([]);
@@ -2617,6 +2746,24 @@ export default function QuotationForm() {
             validUntil: form.validUntil || null,
             notes: form.notes,
             terms: form.terms,
+
+            // 🔥 COMMERCIAL VALUES
+            packingForwardingCharges: Number(
+              form.packingForwardingCharges || 0,
+            ),
+
+            installationDescription: form.installationDescription || "",
+
+            installationQty: Number(form.installationQty || 1),
+
+            installationUom: form.installationUom || "Nos",
+
+            installationUnitPrice: Number(form.installationUnitPrice || 0),
+
+            installationDiscount: Number(form.installationDiscount || 0),
+
+            installationRemarks: form.installationRemarks || "",
+
             items: form.items.map((item) => ({
               itemId: item.itemId,
               // ✅ ADD THESE (THIS IS YOUR BUG FIX)
@@ -2752,9 +2899,21 @@ export default function QuotationForm() {
                 </button>
                 <div className="flex min-w-0 flex-wrap items-center gap-2">
                   <h1 className="truncate text-lg font-bold text-slate-900">
-                    {isEdit ? "Edit Quotation" : "Create Quotation"}
+                    {form.quotationType === "BUDGETARY"
+                      ? "Budgetary Quotation"
+                      : form.quotationType === "FIRM"
+                        ? "Firm Quotation"
+                        : "Quotation"}
                   </h1>
-                  <span className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-100 bg-indigo-50 px-2.5 py-1 text-[11px] font-semibold text-indigo-700">
+                  <span
+                    className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-semibold border ${
+                      form.quotationType === "BUDGETARY"
+                        ? "border-amber-200 bg-amber-50 text-amber-700"
+                        : form.quotationType === "FIRM"
+                          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                          : "border-indigo-100 bg-indigo-50 text-indigo-700"
+                    }`}
+                  >
                     <Package className="h-3.5 w-3.5" />
                     {form.quotationNumber || "—"}
                   </span>
@@ -2805,8 +2964,11 @@ export default function QuotationForm() {
             formItems={form.items}
             toggleSubItem={toggleSubItem}
             updateSubItem={updateSubItem}
+            skuSearchLocked={!form.logId && !form.dealId}
             autoSave={autoSave}
             onSkuSearch={handleSkuSearch}
+            form={form}
+            updateField={updateField}
             resetItems={() =>
               setForm((prev) => ({
                 ...prev,
@@ -2815,7 +2977,6 @@ export default function QuotationForm() {
             }
           />
         </div>
-
       </div>
     </div>
   );

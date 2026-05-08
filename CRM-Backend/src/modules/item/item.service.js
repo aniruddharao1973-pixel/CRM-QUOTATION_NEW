@@ -200,7 +200,46 @@ export const importItemsService = async ({ file, category, importType }) => {
   });
 
   // ✅ skip first row if it is the report title/header row
-  const dataRows = rows.slice(1);
+  // const dataRows = rows.slice(2);
+
+  // ✅ dynamically skip title/header rows
+  // keep title/header filtering, but DO NOT drop blank continuation rows
+  const dataRows = rows.filter((row) => {
+    const c0 = String(row[0] ?? "")
+      .trim()
+      .toLowerCase();
+    const c1 = String(row[1] ?? "")
+      .trim()
+      .toLowerCase();
+    const c2 = String(row[2] ?? "")
+      .trim()
+      .toLowerCase();
+    const c3 = String(row[3] ?? "")
+      .trim()
+      .toLowerCase();
+    const c4 = String(row[4] ?? "")
+      .trim()
+      .toLowerCase();
+
+    const isTitleRow =
+      c0.includes("price configurator") ||
+      c0.includes("items catalog") ||
+      c0.includes("item breakdown");
+
+    const isHeaderRow =
+      c0 === "category" ||
+      c1 === "sku #" ||
+      c2 === "item description" ||
+      c3 === "make" ||
+      c4 === "mfg pn" ||
+      c4 === "qty" ||
+      c4 === "uom" ||
+      c4 === "unit price" ||
+      c4 === "total price" ||
+      c4 === "discount";
+
+    return !(isTitleRow || isHeaderRow);
+  });
 
   console.log("📦 IMPORT START");
   console.log("👉 CATEGORY:", category);
@@ -208,6 +247,7 @@ export const importItemsService = async ({ file, category, importType }) => {
   console.log("👉 TOTAL ROWS:", dataRows.length);
 
   let created = 0;
+  let updated = 0;
   let skipped = 0;
 
   return prisma.$transaction(async (tx) => {
@@ -232,8 +272,10 @@ export const importItemsService = async ({ file, category, importType }) => {
           continue;
         }
 
+        let existingItem = null;
+
         if (sku) {
-          const exists = await tx.item.findFirst({
+          existingItem = await tx.item.findFirst({
             where: {
               sku: {
                 equals: sku.trim(),
@@ -242,12 +284,43 @@ export const importItemsService = async ({ file, category, importType }) => {
               category,
             },
           });
+        }
 
-          if (exists) {
-            console.log("⏭️ SKIPPED DUPLICATE:", sku);
+        const newBasePrice =
+          unitPrice !== null && unitPrice !== "" ? Number(unitPrice) : null;
+
+        if (existingItem) {
+          const hasChanges =
+            existingItem.name !== description ||
+            existingItem.description !== description ||
+            Number(existingItem.basePrice || 0) !== Number(newBasePrice || 0) ||
+            existingItem.make !== (make || null) ||
+            existingItem.mfgPartNo !== (mfgPartNo || null) ||
+            existingItem.uom !== (uom || null);
+
+          if (hasChanges) {
+            await tx.item.update({
+              where: {
+                id: existingItem.id,
+              },
+              data: {
+                name: description,
+                description,
+                basePrice: newBasePrice,
+                make: make || null,
+                mfgPartNo: mfgPartNo || null,
+                uom: uom || null,
+              },
+            });
+
+            console.log("🟨 UPDATED:", sku);
+            updated++;
+          } else {
+            console.log("⏭️ NO CHANGES:", sku);
             skipped++;
-            continue;
           }
+
+          continue;
         }
 
         const data = {
@@ -283,30 +356,33 @@ export const importItemsService = async ({ file, category, importType }) => {
         console.log("➡️ ROW:", row);
 
         const serial = String(row[0] ?? "").trim();
-
-        // 🔥 IMPORTANT
-        const rowType = String(row[1] ?? "")
-          .trim()
-          .toUpperCase();
-
+        const categoryCell = String(row[1] ?? "").trim();
         const sku = String(row[2] ?? "").trim();
-
         const description = String(row[3] ?? "").trim();
-
         const make = String(row[4] ?? "").trim();
-
         const mfgPartNo = String(row[5] ?? "").trim();
-
         const uom = String(row[7] ?? "").trim();
 
         const unitPrice = row[8] ?? null;
+        const totalPrice = row[9] ?? null;
 
         const discount = row[10] ?? 0;
 
-        // =========================================
-        // 1. MAIN PARENT ITEM (TEST PLATFORM + TC...)
-        // =========================================
-        if (serial && !isNaN(serial) && sku.startsWith("TC")) {
+        const upperSku = sku.toUpperCase();
+
+        const isParent =
+          upperSku.startsWith("TC") || // Test Platform parent
+          upperSku.startsWith("FX"); // Fixture & Adapter parent
+
+        const isChild =
+          upperSku.startsWith("FC") || // Test Platform child
+          upperSku.startsWith("INT") || // Test Platform multiline/spec child
+          categoryCell.toUpperCase() === "ACCESSORY"; // Fixture child
+
+        // =========================
+        // 1. PARENT ROW
+        // =========================
+        if (isParent) {
           const exists = await tx.item.findFirst({
             where: {
               sku: {
@@ -317,11 +393,39 @@ export const importItemsService = async ({ file, category, importType }) => {
           });
 
           if (exists) {
-            console.log("⏭️ SKIPPED DUPLICATE PARENT:", sku);
+            const newBasePrice =
+              unitPrice !== null && unitPrice !== "" ? Number(unitPrice) : null;
 
-            currentParent = exists;
+            const hasChanges =
+              exists.name !== description ||
+              exists.description !== description ||
+              Number(exists.basePrice || 0) !== Number(newBasePrice || 0) ||
+              exists.make !== (make || null) ||
+              exists.mfgPartNo !== (mfgPartNo || null) ||
+              exists.uom !== (uom || null);
 
-            skipped++;
+            if (hasChanges) {
+              currentParent = await tx.item.update({
+                where: {
+                  id: exists.id,
+                },
+                data: {
+                  name: description || "Unnamed Item",
+                  description: description || null,
+                  basePrice: newBasePrice,
+                  make: make || null,
+                  mfgPartNo: mfgPartNo || null,
+                  uom: uom || null,
+                },
+              });
+
+              console.log("🟨 UPDATED PARENT:", sku);
+              updated++;
+            } else {
+              console.log("⏭️ NO CHANGES PARENT:", sku);
+              skipped++;
+              currentParent = exists;
+            }
 
             continue;
           }
@@ -329,44 +433,31 @@ export const importItemsService = async ({ file, category, importType }) => {
           currentParent = await tx.item.create({
             data: {
               name: description || "Unnamed Item",
-
               sku: sku || null,
-
               description: description || null,
-
               basePrice:
                 unitPrice !== null && unitPrice !== ""
                   ? Number(unitPrice)
                   : null,
-
               discount: Number(discount) || 0,
-
               pricingMode: "parent_with_children",
-
-              // ✅ ROOT CATEGORY
-              category: category,
-
+              category: categoryCell || category,
               make: make || null,
-
               mfgPartNo: mfgPartNo || null,
-
               uom: uom || null,
-
               parentId: null,
             },
           });
 
           console.log("🟦 PARENT CREATED:", currentParent.id);
-
           created++;
-
           continue;
         }
 
-        // =========================================
-        // 2. FC CHILD ROW
-        // =========================================
-        if (currentParent && rowType === "FC") {
+        // =========================
+        // 2. CHILD ROW
+        // =========================
+        if (currentParent && isChild) {
           const exists = await tx.item.findFirst({
             where: {
               sku: {
@@ -376,33 +467,71 @@ export const importItemsService = async ({ file, category, importType }) => {
             },
           });
 
-          if (exists) {
-            console.log("⏭️ SKIPPED DUPLICATE FC:", sku);
+          // const finalBasePrice =
+          //   categoryCell.toUpperCase() === "ACCESSORY"
+          //     ? totalPrice !== null && totalPrice !== ""
+          //       ? Number(totalPrice)
+          //       : null
+          //     : unitPrice !== null && unitPrice !== ""
+          //       ? Number(unitPrice)
+          //       : null;
 
-            skipped++;
+          if (exists) {
+            const hasChanges =
+              exists.name !== description ||
+              Number(exists.basePrice || 0) !== Number(finalBasePrice || 0) ||
+              exists.make !== (make || null) ||
+              exists.mfgPartNo !== (mfgPartNo || null) ||
+              exists.uom !== (uom || null);
+
+            if (hasChanges) {
+              await tx.item.update({
+                where: {
+                  id: exists.id,
+                },
+                data: {
+                  name: description || "Unnamed Child Item",
+                  basePrice: finalBasePrice,
+                  make: make || null,
+                  mfgPartNo: mfgPartNo || null,
+                  uom: uom || null,
+                },
+              });
+
+              console.log("🟨 UPDATED CHILD:", sku);
+              updated++;
+            } else {
+              console.log("⏭️ NO CHANGES CHILD:", sku);
+              skipped++;
+            }
 
             continue;
           }
 
+          const finalBasePrice =
+            categoryCell.toUpperCase() === "ACCESSORY"
+              ? totalPrice !== null && totalPrice !== ""
+                ? Number(totalPrice)
+                : null
+              : unitPrice !== null && unitPrice !== ""
+                ? Number(unitPrice)
+                : null;
+
           const child = await tx.item.create({
             data: {
-              name: description || "Unnamed FC Item",
+              name: description || "Unnamed Child Item",
 
               sku: sku || null,
 
-              description: description || null,
+              description: null,
 
-              basePrice:
-                unitPrice !== null && unitPrice !== ""
-                  ? Number(unitPrice)
-                  : null,
+              basePrice: finalBasePrice,
 
               discount: Number(discount) || 0,
 
               pricingMode: "parent_only",
 
-              // ✅ IMPORTANT
-              category: "FC",
+              category: currentParent.category || categoryCell || category,
 
               make: make || null,
 
@@ -414,53 +543,55 @@ export const importItemsService = async ({ file, category, importType }) => {
             },
           });
 
-          console.log("🟩 FC CHILD CREATED:", child.id);
-
+          console.log("🟩 CHILD CREATED:", child.id);
           created++;
-
           continue;
         }
 
         // =========================================
-        // 3. INT CHILD ROW
+        // 3. DESCRIPTION CONTINUATION ROW
         // =========================================
         // =========================================
-        // 3. INT CHILD ROW
+        // 3. DESCRIPTION CONTINUATION ROW
         // =========================================
-        if (currentParent && rowType === "INT") {
-          const intItem = await tx.item.create({
-            data: {
-              name: description || "INT Specification",
-
-              // ✅ IMPORTANT FIX
-              sku: null,
-
-              description: description || null,
-
-              basePrice:
-                unitPrice !== null && unitPrice !== "" ? Number(unitPrice) : 0,
-
-              discount: Number(discount) || 0,
-
-              pricingMode: "parent_only",
-
-              category: "INT",
-
-              make: make || null,
-
-              mfgPartNo: mfgPartNo || null,
-
-              uom: uom || null,
-
+        if (currentParent && !sku && description) {
+          const latestChild = await tx.item.findFirst({
+            where: {
               parentId: currentParent.id,
+            },
+            orderBy: {
+              createdAt: "desc",
             },
           });
 
-          console.log("🟨 INT CHILD CREATED:", intItem.id);
+          if (latestChild) {
+            // ✅ avoid duplicate text append
+            const existingDescription = latestChild.description || "";
 
-          created++;
+            // ✅ skip if already exists
+            if (existingDescription.includes(description.trim())) {
+              console.log("⏭️ DUPLICATE DESCRIPTION SKIPPED");
+              continue;
+            }
 
-          continue;
+            // ✅ proper multiline append
+            const updatedDescription = existingDescription
+              ? `${existingDescription}\n${description.trim()}`
+              : description.trim();
+
+            await tx.item.update({
+              where: {
+                id: latestChild.id,
+              },
+              data: {
+                description: updatedDescription,
+              },
+            });
+
+            console.log("📝 DESCRIPTION APPENDED");
+
+            continue;
+          }
         }
 
         console.log("⏭️ SKIPPED UNKNOWN ROW");
@@ -472,6 +603,7 @@ export const importItemsService = async ({ file, category, importType }) => {
 
     return {
       created,
+      updated,
       skipped,
     };
   });

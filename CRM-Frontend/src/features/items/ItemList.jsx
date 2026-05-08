@@ -2048,6 +2048,12 @@ export default function ItemList() {
                   <p className="text-[13px] font-medium text-slate-800 leading-snug">
                     {item.name}
                   </p>
+
+                  {item.description && item.description !== item.name && (
+                    <pre className="mt-1 whitespace-pre-wrap break-words text-[11px] leading-5 text-slate-800 font-normal max-w-full overflow-hidden">
+                      {item.description}
+                    </pre>
+                  )}
                 </div>
               </div>
             </td>

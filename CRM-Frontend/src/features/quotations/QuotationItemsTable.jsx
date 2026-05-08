@@ -4517,6 +4517,7 @@
 // src/features/quotations/QuotationItemsTable.jsx
 
 import { Fragment, useState } from "react";
+import { useSelector } from "react-redux";
 import { Trash2, PackageSearch, Sparkles } from "lucide-react";
 import { formatINR } from "./quotationUtils";
 import API from "../../api/axios";
@@ -4586,10 +4587,43 @@ const subInputEnabled =
 const disabledInput =
   "cursor-not-allowed border-transparent bg-transparent text-slate-300 shadow-none";
 
+const getDiscountLimit = (role, policy) => {
+  if (!policy) {
+    switch (role) {
+      case "ADMIN":
+        return 100;
+
+      case "MANAGER":
+        return 20;
+
+      case "SALES_REP":
+      default:
+        return 5;
+    }
+  }
+
+  switch (role) {
+    case "ADMIN":
+      return Number(policy.adminMax || 100);
+
+    case "MANAGER":
+      return Number(policy.managerMax || 20);
+
+    case "SALES_REP":
+    default:
+      return Number(policy.salesRepMax || 5);
+  }
+};
+
 export default function QuotationItemsTable({
   totals,
   itemsList,
   updateItem,
+
+  // 🔥 NEW
+  form,
+  updateField,
+
   addItem,
   removeItem,
   formItems,
@@ -4598,6 +4632,7 @@ export default function QuotationItemsTable({
   autoSave,
   onSkuSearch,
   resetItems,
+  skuSearchLocked,
 }) {
   const rowCount = totals?.rows?.length || 0;
   const filledCount =
@@ -4605,169 +4640,212 @@ export default function QuotationItemsTable({
       (row) => row.itemId || row.description || row.qty || row.price,
     )?.length || 0;
 
+  const currentUser = useSelector((state) => state.auth?.user);
+
+  const discountPolicy = useSelector(
+    (state) => state.quotations?.discountPolicy,
+  );
+
+  console.log("CURRENT POLICY =", discountPolicy);
+  console.log("CURRENT ROLE =", currentUser?.role);
+
+  const maxDiscount = getDiscountLimit(currentUser?.role, discountPolicy);
+
   const [skuQuery, setSkuQuery] = useState("");
   const [skuResults, setSkuResults] = useState([]);
   const [showSkuDropdown, setShowSkuDropdown] = useState(false);
 
   const formatAmount = (value) => {
     const amount = Number(value || 0);
-    return formatINR(Math.round(amount)).replace(".00", "");
+
+    return Math.round(amount).toLocaleString("en-IN");
   };
 
-  return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-visible rounded-[28px] border border-slate-200/70 bg-white shadow-[0_20px_50px_rgba(55,48,107,0.08)]">
-      {/* HEADER */}
-      <div className="relative z-[50] overflow-visible border-b border-slate-100/80 px-4 py-3 lg:px-6">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_70%_at_80%_-10%,rgba(199,210,254,0.15),transparent_70%)]" />
-        <div className="relative flex flex-row items-center gap-4">
-          <div className="flex shrink-0 items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 ring-1 ring-indigo-100">
-              <Sparkles className="h-4 w-4 text-indigo-500" />
-            </div>
-            <div className="hidden lg:block">
-              <h2 className="text-base font-black tracking-tight text-[#37306B]">
-                Item Breakdown
-              </h2>
-              <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400 font-bold">
-                Master Data Library
-              </p>
-            </div>
-          </div>
+  const formatIndianNumber = (value) => {
+    if (value === null || value === undefined || value === "") return "";
 
-          <div className="relative flex min-w-0 flex-1 items-center gap-2">
-            <div className="relative flex-1">
-              <div className="flex items-center gap-2.5 rounded-2xl border border-slate-200/80 bg-slate-50/80 px-4 py-2 transition-all focus-within:border-[#37306B]/40 focus-within:bg-white focus-within:shadow-md">
-                <PackageSearch className="h-4.5 w-4.5 text-slate-400" />
-                <input
-                  type="text"
-                  value={skuQuery}
-                  placeholder="Search SKU, name, make..."
-                  onChange={async (e) => {
-                    const value = e.target.value;
-                    setSkuQuery(value);
-                    if (!value.trim()) {
-                      setSkuResults([]);
-                      setShowSkuDropdown(false);
-                      return;
+    return Number(value).toLocaleString("en-IN");
+  };
+
+  // ADD BELOW THIS
+  const installationTotal =
+    Number(form?.installationQty || 0) *
+    Number(form?.installationUnitPrice || 0) *
+    (1 - Number(form?.installationDiscount || 0) / 100);
+
+  return (
+    <>
+      <div className="flex min-h-0 flex-1 flex-col overflow-visible rounded-[28px] border border-slate-200/70 bg-white shadow-[0_20px_50px_rgba(55,48,107,0.08)]">
+        {/* HEADER */}
+        <div className="relative z-[50] overflow-visible border-b border-slate-100/80 px-4 py-3 lg:px-6">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_70%_at_80%_-10%,rgba(199,210,254,0.15),transparent_70%)]" />
+          <div className="relative flex flex-row items-center gap-4">
+            <div className="flex shrink-0 items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 ring-1 ring-indigo-100">
+                <Sparkles className="h-4 w-4 text-indigo-500" />
+              </div>
+              <div className="hidden lg:block">
+                <h2 className="text-base font-black tracking-tight text-[#37306B]">
+                  Item Breakdown
+                </h2>
+                <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400 font-bold">
+                  Master Data Library
+                </p>
+              </div>
+            </div>
+
+            <div className="relative flex min-w-0 flex-1 items-center gap-2">
+              <div className="relative flex-1">
+                <div
+                  className={`flex items-center gap-2.5 rounded-2xl border px-4 py-2 transition-all ${
+                    skuSearchLocked
+                      ? "border-slate-200 bg-slate-100/80 opacity-70"
+                      : "border-slate-200/80 bg-slate-50/80 focus-within:border-[#37306B]/40 focus-within:bg-white focus-within:shadow-md"
+                  }`}
+                >
+                  <PackageSearch className="h-4.5 w-4.5 text-slate-400" />
+                  <input
+                    type="text"
+                    value={skuQuery}
+                    disabled={skuSearchLocked}
+                    placeholder={
+                      skuSearchLocked
+                        ? "Search Log ID first to unlock SKU search"
+                        : "Search SKU, name, make..."
                     }
-                    try {
-                      const res = await API.get("/items/search", {
-                        params: { q: value },
-                      });
-                      const normalized = (res.data || []).filter(
-                        (item) => !item.parentId,
-                      );
-                      setSkuResults(normalized);
-                      setShowSkuDropdown(true);
-                    } catch (err) {
-                      console.error("SKU search failed:", err);
-                    }
-                  }}
-                  className="w-full border-0 bg-transparent p-0 text-[14px] font-bold text-slate-700 outline-none placeholder:text-slate-400 focus:ring-0"
-                />
+                    onChange={async (e) => {
+                      if (skuSearchLocked) return;
+
+                      const value = e.target.value;
+                      setSkuQuery(value);
+
+                      if (!value.trim()) {
+                        setSkuResults([]);
+                        setShowSkuDropdown(false);
+                        return;
+                      }
+
+                      try {
+                        const res = await API.get("/items/search", {
+                          params: { q: value },
+                        });
+
+                        const normalized = (res.data || []).filter(
+                          (item) => !item.parentId,
+                        );
+
+                        setSkuResults(normalized);
+                        setShowSkuDropdown(true);
+                      } catch (err) {
+                        console.error("SKU search failed:", err);
+                      }
+                    }}
+                    className={`w-full border-0 bg-transparent p-0 text-[14px] font-bold outline-none focus:ring-0 ${
+                      skuSearchLocked
+                        ? "cursor-not-allowed text-slate-300 placeholder:text-slate-300"
+                        : "text-slate-700 placeholder:text-slate-400"
+                    }`}
+                  />
+                </div>
+
+                {showSkuDropdown && skuResults.length > 0 && (
+                  <div
+                    className="absolute left-0 top-[calc(100%+8px)] z-[9999] flex w-[450px] flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xl backdrop-blur-xl"
+                    style={{ maxHeight: "min(400px, 60vh)" }}
+                  >
+                    <div className="flex-1 overflow-y-auto p-1 scrollbar-thin">
+                      {skuResults.map((item) => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => {
+                            const children = item.children || [];
+                            const hasParentPrice =
+                              Number(item.basePrice || item.price || 0) > 0;
+                            const hasBillableChildren = children.some(
+                              (c) => Number(c.basePrice || c.price || 0) > 0,
+                            );
+                            const pricingMode = hasBillableChildren
+                              ? hasParentPrice
+                                ? "parent_with_children"
+                                : "children_only"
+                              : "spec_rows";
+
+                            addItem({
+                              itemId: item.id,
+                              sku: item.sku || "",
+                              category: item.category || "",
+                              description: item.description || "",
+                              make: item.make || "",
+                              mfgPartNo: item.mfgPartNo || "",
+                              uom: item.uom || "",
+                              qty: 1,
+                              price: hasParentPrice
+                                ? Number(item.basePrice || item.price || 0)
+                                : 0,
+                              discount: Number(item.discount || 0),
+                              pricingMode,
+                              subItems: children,
+                              selectedSubItems:
+                                pricingMode === "children_only" ||
+                                pricingMode === "parent_with_children"
+                                  ? children.map((c) => ({
+                                      ...c,
+                                      itemId: c.id,
+                                      qty: Number(c.baseQty || c.qty || 1),
+                                      price: Number(
+                                        c.basePrice || c.price || 0,
+                                      ),
+                                    }))
+                                  : [],
+                            });
+                            setSkuQuery("");
+                            setSkuResults([]);
+                            setShowSkuDropdown(false);
+                          }}
+                          className="group flex w-full flex-col rounded-xl px-3 py-2 text-left hover:bg-indigo-50/50"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-mono text-[11px] font-black text-indigo-600">
+                              {item.sku}
+                            </span>
+                            <span className="text-[10px] font-bold text-emerald-600">
+                              {formatAmount(item.basePrice)}
+                            </span>
+                          </div>
+                          <div className="truncate text-[12px] font-medium text-slate-700">
+                            {item.name}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {showSkuDropdown && skuResults.length > 0 && (
-                <div
-                  className="absolute left-0 top-[calc(100%+8px)] z-[9999] flex w-[450px] flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xl backdrop-blur-xl"
-                  style={{ maxHeight: "min(400px, 60vh)" }}
-                >
-                  <div className="flex-1 overflow-y-auto p-1 scrollbar-thin">
-                    {skuResults.map((item) => (
-                      <button
-                        key={item.id}
-                        type="button"
-                        onClick={() => {
-                          const children = item.children || [];
-                          const hasParentPrice =
-                            Number(item.basePrice || item.price || 0) > 0;
-                          const hasBillableChildren = children.some(
-                            (c) => Number(c.basePrice || c.price || 0) > 0,
-                          );
-                          const pricingMode = hasBillableChildren
-                            ? hasParentPrice
-                              ? "parent_with_children"
-                              : "children_only"
-                            : "spec_rows";
-
-                          addItem({
-                            itemId: item.id,
-                            sku: item.sku || "",
-                            category: item.category || "",
-                            description: item.description || "",
-                            make: item.make || "",
-                            mfgPartNo: item.mfgPartNo || "",
-                            uom: item.uom || "",
-                            qty: 1,
-                            price: hasParentPrice
-                              ? Number(item.basePrice || item.price || 0)
-                              : 0,
-                            discount: Number(item.discount || 0),
-                            pricingMode,
-                            subItems: children,
-                            selectedSubItems:
-                              pricingMode === "children_only" ||
-                              pricingMode === "parent_with_children"
-                                ? children.map((c) => ({
-                                    ...c,
-                                    itemId: c.id,
-                                    qty: Number(c.baseQty || c.qty || 1),
-                                    price: Number(c.basePrice || c.price || 0),
-                                  }))
-                                : [],
-                          });
-                          setSkuQuery("");
-                          setSkuResults([]);
-                          setShowSkuDropdown(false);
-                        }}
-                        className="group flex w-full flex-col rounded-xl px-3 py-2 text-left hover:bg-indigo-50/50"
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="font-mono text-[11px] font-black text-indigo-600">
-                            {item.sku}
-                          </span>
-                          <span className="text-[10px] font-bold text-emerald-600">
-                            {formatAmount(item.basePrice)}
-                          </span>
-                        </div>
-                        <div className="truncate text-[12px] font-medium text-slate-700">
-                          {item.name}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <button
+                onClick={resetItems}
+                className="inline-flex h-8 items-center gap-1.5 rounded-xl border border-rose-100 bg-rose-50 px-3 text-[10px] font-black uppercase tracking-wider text-rose-600 transition-colors hover:bg-rose-100"
+              >
+                <Trash2 className="h-3 w-3" />
+                Reset
+              </button>
             </div>
 
-            <button
-              onClick={resetItems}
-              className="inline-flex h-8 items-center gap-1.5 rounded-xl border border-rose-100 bg-rose-50 px-3 text-[10px] font-black uppercase tracking-wider text-rose-600 transition-colors hover:bg-rose-100"
-            >
-              <Trash2 className="h-3 w-3" />
-              Reset
-            </button>
-          </div>
-
-          <div className="flex shrink-0 items-center gap-2">
-            <Metric
-              label="Subtotal"
-              value={formatAmount(totals?.subtotal || 0)}
-              accent="default"
-            />
-            <Metric
-              label="Total"
-              value={formatAmount(totals?.grandTotal || 0)}
-              accent="emerald"
-            />
+            <div className="flex shrink-0 items-center gap-2">
+              <Metric
+                label="Subtotal"
+                value={formatAmount(totals?.subtotal || 0)}
+                accent="default"
+              />
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* TABLE */}
-      <div className="relative z-[1] flex min-h-0 flex-1 flex-col overflow-hidden rounded-b-[28px] border-t border-slate-100/70 bg-white">
-        <div
-          className="
+        {/* TABLE */}
+        <div className="relative z-[1] flex min-h-0 flex-1 flex-col overflow-hidden rounded-b-[28px] border-t border-slate-100/70 bg-white">
+          <div
+            className="
             flex-1
             overflow-x-auto
             overflow-y-auto
@@ -4776,654 +4854,804 @@ export default function QuotationItemsTable({
             scrollbar-track-slate-100
             hover:scrollbar-thumb-slate-400
           "
-          style={{
-            scrollbarWidth: "thin",
-            scrollbarColor: "#94a3b8 #e2e8f0",
-          }}
-        >
-          <table
-            className="w-full table-fixed border-separate border-spacing-0 text-sm"
             style={{
-              borderCollapse: "separate",
-              borderSpacing: "0",
-              minWidth: "1380px",
+              scrollbarWidth: "thin",
+              scrollbarColor: "#94a3b8 #e2e8f0",
             }}
           >
-            <colgroup>
-              <col style={{ width: "140px" }} /> {/* CATEGORY */}
-              <col style={{ width: "120px" }} /> {/* SKU */}
-              <col style={{ width: "280px" }} /> {/* DESCRIPTION */}
-              <col style={{ width: "120px" }} /> {/* MAKE */}
-              <col style={{ width: "130px" }} /> {/* MFG PN */}
-              <col style={{ width: "70px" }} /> {/* QTY */}
-              <col style={{ width: "70px" }} /> {/* UOM */}
-              <col style={{ width: "120px" }} /> {/* PRICE */}
-              <col style={{ width: "90px" }} /> {/* DISCOUNT */}
-              <col style={{ width: "130px" }} /> {/* TOTAL */}
-              <col style={{ width: "170px" }} /> {/* REMARKS */}
-              <col style={{ width: "60px" }} /> {/* DELETE */}
-            </colgroup>
+            <table
+              className="w-full table-fixed border-separate border-spacing-0 text-sm"
+              style={{
+                borderCollapse: "separate",
+                borderSpacing: "0",
+                minWidth: "180px",
+              }}
+            >
+              <colgroup>
+                <col style={{ width: "120px" }} /> {/* CATEGORY */}
+                <col style={{ width: "105px" }} /> {/* SKU */}
+                <col style={{ width: "260px" }} /> {/* DESCRIPTION */}
+                <col style={{ width: "110px" }} /> {/* MAKE */}
+                <col style={{ width: "110px" }} /> {/* MFG PN */}
+                <col style={{ width: "65px" }} /> {/* QTY */}
+                <col style={{ width: "65px" }} /> {/* UOM */}
+                <col style={{ width: "125px" }} /> {/* UNIT PRICE */}
+                <col style={{ width: "85px" }} /> {/* DISC */}
+                <col style={{ width: "130px" }} /> {/* FINAL PRICE */}
+                <col style={{ width: "120px" }} /> {/* REMARKS */}
+                <col style={{ width: "55px" }} /> {/* DELETE */}
+              </colgroup>
 
-            <thead className="sticky top-0 z-[20] bg-slate-50/95 backdrop-blur-xl">
-              <tr>
-                {[
-                  { label: "Category" },
-                  { label: "SKU" },
-                  { label: "Description" },
+              <thead className="sticky top-0 z-[20] bg-slate-50/95 backdrop-blur-xl">
+                <tr>
+                  {[
+                    { label: "Category" },
+                    { label: "SKU" },
+                    { label: "Description" },
 
-                  { label: "Make" },
-                  { label: "Mfg PN" },
+                    { label: "Make" },
+                    { label: "Mfg PN" },
 
-                  { label: "Qty", cls: "text-center" },
-                  { label: "UOM", cls: "text-center" },
+                    { label: "Qty", cls: "text-center" },
+                    { label: "UOM", cls: "text-center" },
 
-                  { label: "Unit Price", cls: "text-right" },
-                  { label: "Disc %", cls: "text-right" },
-                  { label: "Final Price", cls: "text-right" },
+                    { label: "Unit Price (INR)", cls: "text-right" },
+                    { label: "Disc %", cls: "text-right" },
+                    { label: "Final Price (INR)", cls: "text-right" },
 
-                  { label: "Remarks" },
-                  { label: "Del", cls: "text-center" },
-                ].map(({ label, cls = "" }) => (
-                  <th
-                    key={label}
-                    className={`border-b border-r border-slate-200/60 bg-white px-3 py-3 text-left text-[11px] font-black uppercase tracking-[0.2em] text-[#37306B]/60 backdrop-blur-md whitespace-nowrap last:border-r-0 ${cls}`}
-                  >
-                    {label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-
-            <tbody className="[&_tr:last-child_td]:border-b-0">
-              {totals.rows.map((row, index) => {
-                const selectedItem = itemsList.find(
-                  (i) => String(i.id) === String(row.itemId),
-                );
-
-                const hasDiscount = Number(row.discount || 0) > 0;
-
-                const pricingMode =
-                  formItems[index]?.pricingMode ||
-                  ((formItems[index]?.subItems || []).some(
-                    (sub) => Number(sub.basePrice || sub.price || 0) > 0,
-                  )
-                    ? Number(row.price || 0) > 0
-                      ? "parent_with_children"
-                      : "children_only"
-                    : "spec_rows");
-
-                const isSelectableGroup =
-                  pricingMode === "parent_with_children" ||
-                  pricingMode === "children_only";
-
-                return (
-                  <FragmentWrapper key={`row-${index}`}>
-                    {/* MAIN ROW */}
-                    <tr
-                      className={`group border-b border-slate-100/70 transition-all duration-200 ${
-                        hasDiscount
-                          ? "bg-gradient-to-r from-amber-50/50 via-amber-50/20 to-transparent hover:from-amber-50/80 hover:via-amber-50/35"
-                          : "bg-white hover:bg-gradient-to-r hover:from-indigo-50/20 hover:via-slate-50/30 hover:to-transparent"
-                      }`}
+                    { label: "Remarks" },
+                    { label: "Del", cls: "text-center" },
+                  ].map(({ label, cls = "" }) => (
+                    <th
+                      key={label}
+                      className={`border-b border-r border-slate-200/60 bg-white px-3 py-3 text-left text-[11px] font-black uppercase tracking-[0.2em] text-[#37306B]/60 backdrop-blur-md whitespace-nowrap last:border-r-0 ${cls}`}
                     >
-                      {/* CATEGORY */}
-                      <td className="align-top border-b border-r border-slate-100/70 px-2 py-1.5">
-                        <div className="flex min-h-[40px] flex-col justify-center text-[11px] font-bold text-slate-700">
-                          {selectedItem?.category ? (
-                            <span className="inline-block rounded-md bg-slate-100 px-2 py-1 leading-tight ring-1 ring-slate-200/80 whitespace-normal break-words">
-                              {selectedItem.category}
+                      {label}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+
+              <tbody className="[&_tr:last-child_td]:border-b-0">
+                {totals.rows.map((row, index) => {
+                  const selectedItem = itemsList.find(
+                    (i) => String(i.id) === String(row.itemId),
+                  );
+
+                  const hasDiscount = Number(row.discount || 0) > 0;
+
+                  const pricingMode =
+                    formItems[index]?.pricingMode ||
+                    ((formItems[index]?.subItems || []).some(
+                      (sub) => Number(sub.basePrice || sub.price || 0) > 0,
+                    )
+                      ? Number(row.price || 0) > 0
+                        ? "parent_with_children"
+                        : "children_only"
+                      : "spec_rows");
+
+                  const isSelectableGroup =
+                    pricingMode === "parent_with_children" ||
+                    pricingMode === "children_only";
+
+                  const isSpecRows =
+                    pricingMode === "spec_rows" &&
+                    selectedItem?.category?.toLowerCase() === "test platform" &&
+                    !formItems[index]?.subItems?.some(
+                      (sub) => Number(sub.basePrice || sub.price || 0) > 0,
+                    );
+
+                  return (
+                    <FragmentWrapper key={`row-${index}`}>
+                      {/* MAIN ROW */}
+                      <tr
+                        className={`group border-b border-slate-100/70 transition-all duration-200 ${
+                          hasDiscount
+                            ? "bg-gradient-to-r from-amber-50/50 via-amber-50/20 to-transparent hover:from-amber-50/80 hover:via-amber-50/35"
+                            : "bg-white hover:bg-gradient-to-r hover:from-indigo-50/20 hover:via-slate-50/30 hover:to-transparent"
+                        }`}
+                      >
+                        {/* CATEGORY */}
+                        <td className="align-top border-b border-r border-slate-100/70 px-2 py-1.5">
+                          <div className="flex min-h-[40px] flex-col justify-center text-[11px] font-bold text-slate-700">
+                            {selectedItem?.category ? (
+                              <span className="inline-block rounded-md bg-slate-100 px-2 py-1 leading-tight ring-1 ring-slate-200/80 whitespace-normal break-words">
+                                {selectedItem.category}
+                              </span>
+                            ) : (
+                              <span className="text-slate-300">—</span>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* SKU */}
+                        <td className="align-top border-b border-r border-slate-100/70 px-3 py-3">
+                          <div className="flex min-h-[44px] items-center gap-1.5 px-1">
+                            <div className="h-6 w-[2px] rounded-full bg-[#37306B]/20" />
+                            <span className="truncate font-mono text-[14px] font-bold tracking-tight text-slate-700">
+                              {selectedItem?.sku || "—"}
                             </span>
-                          ) : (
-                            <span className="text-slate-300">—</span>
-                          )}
-                        </div>
-                      </td>
+                          </div>
+                        </td>
 
-                      {/* SKU */}
-                      <td className="align-top border-b border-r border-slate-100/70 px-3 py-3">
-                        <div className="flex min-h-[44px] items-center gap-1.5 px-1">
-                          <div className="h-6 w-[2px] rounded-full bg-[#37306B]/20" />
-                          <span className="truncate font-mono text-[14px] font-bold tracking-tight text-slate-700">
-                            {selectedItem?.sku || "—"}
-                          </span>
-                        </div>
-                      </td>
+                        {/* DESCRIPTION */}
+                        <td className="align-top border-b border-r border-slate-100/70 px-3 py-3">
+                          <div className="min-h-[44px] max-w-[270px] p-1 text-[14px] font-bold leading-relaxed text-slate-900 whitespace-pre-wrap break-words">
+                            {row.description || (
+                              <span className="text-slate-300 italic font-normal">
+                                No description provided
+                              </span>
+                            )}
+                          </div>
+                        </td>
 
-                      {/* DESCRIPTION */}
-                      <td className="align-top border-b border-r border-slate-100/70 px-3 py-3">
-                        <div className="min-h-[44px] max-w-[270px] p-1 text-[14px] font-bold leading-relaxed text-slate-900 whitespace-pre-wrap break-words">
-                          {row.description || (
-                            <span className="text-slate-300 italic font-normal">
-                              No description provided
+                        {/* MAKE */}
+                        <td className="align-top border-b border-r border-slate-100/70 px-2 py-2">
+                          <div className="flex min-h-[44px] items-center text-[13px] font-semibold text-slate-700">
+                            {selectedItem?.make || "—"}
+                          </div>
+                        </td>
+
+                        {/* MFG PN */}
+                        <td className="align-top border-b border-r border-slate-100/70 px-2 py-2">
+                          <div className="flex min-h-[44px] items-center">
+                            <span className="rounded-md bg-slate-100 px-2 py-1 font-mono text-[11px] text-slate-600">
+                              {selectedItem?.mfgPartNo || "—"}
                             </span>
-                          )}
-                        </div>
-                      </td>
+                          </div>
+                        </td>
 
-                      {/* MAKE */}
-                      <td className="align-top border-b border-r border-slate-100/70 px-2 py-2">
-                        <div className="flex min-h-[44px] items-center text-[13px] font-semibold text-slate-700">
-                          {selectedItem?.make || "—"}
-                        </div>
-                      </td>
-
-                      {/* MFG PN */}
-                      <td className="align-top border-b border-r border-slate-100/70 px-2 py-2">
-                        <div className="flex min-h-[44px] items-center">
-                          <span className="rounded-md bg-slate-100 px-2 py-1 font-mono text-[11px] text-slate-600">
-                            {selectedItem?.mfgPartNo || "—"}
-                          </span>
-                        </div>
-                      </td>
-
-                      {/* QTY */}
-                      <td className="align-top whitespace-normal break-words border-b border-r border-slate-100/70 px-3 py-3">
-                        <CellLabel>Quantity</CellLabel>
-                        <input
-                          type="number"
-                          min="1"
-                          value={
-                            Number.isFinite(Number(row.qty)) ? row.qty : ""
-                          }
-                          onChange={(e) =>
-                            updateItem(index, "qty", e.target.value)
-                          }
-                          onBlur={() => autoSave(formItems)}
-                          className={`${inputBase} h-10 px-3 text-right tabular-nums`}
-                        />
-                      </td>
-
-                      {/* UOM */}
-                      <td className="align-top border-b border-r border-slate-100/70 px-2 py-2">
-                        <div className="flex h-10 items-center justify-center text-[13px] font-medium text-slate-600">
-                          {selectedItem?.uom || "—"}
-                        </div>
-                      </td>
-
-                      <td className="align-top whitespace-normal break-words border-b border-r border-slate-100/70 px-3 py-3">
-                        <CellLabel>Unit Price</CellLabel>
-                        <div className="flex h-10 w-full items-center justify-end px-2 text-[14px] font-black tabular-nums text-slate-800">
-                          {formatAmount(Math.round(Number(row.price || 0)))}
-                        </div>
-                      </td>
-
-                      <td className="align-top whitespace-normal break-words border-b border-r border-slate-100/70 px-3 py-3">
-                        <CellLabel>Discount</CellLabel>
-                        <div className="relative">
+                        {/* QTY */}
+                        <td className="align-top whitespace-normal break-words border-b border-r border-slate-100/70 px-3 py-3">
+                          <CellLabel>Quantity</CellLabel>
                           <input
                             type="number"
-                            min="0"
-                            max="100"
+                            min="1"
                             value={
-                              Number.isFinite(Number(row.discount))
-                                ? row.discount
-                                : ""
+                              Number.isFinite(Number(row.qty)) ? row.qty : ""
                             }
                             onChange={(e) =>
-                              updateItem(index, "discount", e.target.value)
+                              updateItem(index, "qty", e.target.value)
                             }
                             onBlur={() => autoSave(formItems)}
-                            className={`${inputBase} h-10 py-2 pl-3 pr-7 text-right tabular-nums text-amber-600`}
+                            className={`${inputBase} h-10 px-3 text-right tabular-nums`}
                           />
-                          <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[11px] font-black text-amber-400/70">
-                            %
-                          </span>
-                        </div>
-                      </td>
+                        </td>
 
-                      <td className="align-top whitespace-normal break-words border-b border-r border-slate-100/70 px-2 py-3">
-                        <CellLabel>Final Price</CellLabel>
-                        <div className="flex h-10 items-center justify-end rounded-xl bg-[#37306B]/5 px-3 py-1 font-black tabular-nums text-[14px] text-[#37306B] ring-1 ring-[#37306B]/10 shadow-sm">
-                          {formatAmount(
-                            Math.round(
-                              Number(row.qty || 1) *
-                                Number(row.price || 0) *
-                                (1 - Number(row.discount || 0) / 100),
-                            ),
-                          )}
-                        </div>
-                      </td>
+                        {/* UOM */}
+                        <td className="align-top border-b border-r border-slate-100/70 px-2 py-2">
+                          <div className="flex h-10 items-center justify-center text-[13px] font-medium text-slate-600">
+                            {selectedItem?.uom || "—"}
+                          </div>
+                        </td>
 
-                      {/* REMARKS */}
-                      <td className="align-top whitespace-normal break-words border-b border-r border-slate-100/70 px-1.5 py-1">
-                        <textarea
-                          rows={1}
-                          value={row.remarks ?? ""}
-                          onChange={(e) => {
-                            updateItem(index, "remarks", e.target.value);
-                            e.target.style.height = "auto";
-                            e.target.style.height =
-                              e.target.scrollHeight + "px";
-                          }}
-                          onBlur={() => autoSave(formItems)}
-                          onFocus={(e) => {
-                            e.target.style.height = "auto";
-                            e.target.style.height =
-                              e.target.scrollHeight + "px";
-                          }}
-                          className="w-full resize-none border-0 bg-transparent p-2 text-[13px] leading-relaxed text-slate-700 outline-none placeholder:text-slate-400 focus:ring-0 overflow-hidden font-medium"
-                          placeholder="Add internal notes…"
-                        />
-                        {Number(row.discount || 0) > 0 &&
-                          !row.remarks?.trim() && (
-                            <span className="mt-1.5 flex items-center gap-1 text-[10px] font-bold text-rose-500">
-                              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-rose-400" />
-                              Required
+                        <td className="align-top whitespace-normal break-words border-b border-r border-slate-100/70 px-3 py-3">
+                          <CellLabel>Unit Price</CellLabel>
+                          <div className="flex h-10 w-full items-center justify-end px-2 text-[14px] font-black tabular-nums text-slate-800">
+                            {formatAmount(Math.round(Number(row.price || 0)))}
+                          </div>
+                        </td>
+
+                        <td className="align-top border-b border-r border-slate-100/70 px-2 py-2">
+                          <CellLabel>Discount</CellLabel>
+
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={
+                                row.discount === 0 || row.discount === "0"
+                                  ? ""
+                                  : Number.isFinite(Number(row.discount))
+                                    ? row.discount
+                                    : ""
+                              }
+                              onChange={(e) =>
+                                updateItem(index, "discount", e.target.value)
+                              }
+                              onBlur={() => autoSave(formItems)}
+                              className={`${inputBase} h-10 min-w-0 flex-1 px-2 text-right tabular-nums text-amber-600`}
+                            />
+
+                            <span className="shrink-0 text-[11px] font-bold text-slate-400">
+                              %
                             </span>
-                          )}
-                      </td>
+                          </div>
 
-                      {/* DELETE */}
-                      <td className="align-top whitespace-normal break-words border-b border-r border-slate-100/70 px-2 py-1.5 text-center last:border-r-0">
-                        <button
-                          onClick={() => removeItem(index)}
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-rose-100 bg-gradient-to-br from-rose-50 to-rose-100/50 text-rose-400 shadow-sm transition-all duration-200 hover:border-rose-200 hover:from-rose-100 hover:to-rose-200/60 hover:text-rose-600 hover:shadow-[0_4px_12px_rgba(239,68,68,0.15)] active:scale-95"
-                          aria-label="Remove row"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </td>
-                    </tr>
+                          {/* <div className="mt-1 text-center text-[9px] font-bold uppercase tracking-[0.12em] text-slate-400">
+                            Max {maxDiscount}
+                          </div> */}
+                        </td>
 
-                    {/* SUB-ITEM ROWS */}
-                    {formItems[index]?.subItems?.length > 0 &&
-                      formItems[index].subItems.map((sub) => {
-                        const selected = isSelectableGroup
-                          ? formItems[index].selectedSubItems.find(
-                              (s) => s.id === (sub.id || sub.itemId),
-                            )
-                          : null;
+                        <td className="align-top whitespace-normal break-words border-b border-r border-slate-100/70 px-2 py-3">
+                          <CellLabel>Final Price</CellLabel>
+                          <div className="flex h-10 items-center justify-end rounded-xl bg-[#37306B]/5 px-3 py-1 font-black tabular-nums text-[14px] text-[#37306B] ring-1 ring-[#37306B]/10 shadow-sm">
+                            {formatAmount(
+                              Math.round(
+                                Number(row.qty || 1) *
+                                  Number(row.price || 0) *
+                                  (1 - Number(row.discount || 0) / 100),
+                              ),
+                            )}
+                          </div>
+                        </td>
 
-                        const checked = isSelectableGroup ? !!selected : true;
+                        {/* REMARKS */}
+                        <td className="align-top whitespace-normal break-words border-b border-r border-slate-100/70 px-1.5 py-1">
+                          <textarea
+                            rows={1}
+                            value={row.remarks ?? ""}
+                            onChange={(e) => {
+                              updateItem(index, "remarks", e.target.value);
+                              e.target.style.height = "auto";
+                              e.target.style.height =
+                                e.target.scrollHeight + "px";
+                            }}
+                            onBlur={() => autoSave(formItems)}
+                            onFocus={(e) => {
+                              e.target.style.height = "auto";
+                              e.target.style.height =
+                                e.target.scrollHeight + "px";
+                            }}
+                            className="w-full resize-none border-0 bg-transparent p-2 text-[13px] leading-relaxed text-slate-700 outline-none placeholder:text-slate-400 focus:ring-0 overflow-hidden font-medium"
+                            placeholder="Add internal notes…"
+                          />
+                          {Number(row.discount || 0) > 0 &&
+                            !row.remarks?.trim() && (
+                              <span className="mt-1.5 flex items-center gap-1 text-[10px] font-bold text-rose-500">
+                                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-rose-400" />
+                                Required
+                              </span>
+                            )}
+                        </td>
 
-                        const qty = selected?.qty || 1;
-                        const price =
-                          selected?.price ?? sub.basePrice ?? sub.price ?? 0;
-                        const discount = selected?.discount || 0;
-                        const lineTotal = qty * price * (1 - discount / 100);
-
-                        return (
-                          <tr
-                            key={sub.id}
-                            className={`border-b border-slate-100/60 transition-all duration-200 ${
-                              checked
-                                ? "bg-gradient-to-r from-indigo-50/60 via-indigo-50/25 to-transparent hover:from-indigo-100/50 hover:via-indigo-50/35"
-                                : "bg-slate-50/30 hover:bg-slate-50/60"
-                            }`}
+                        {/* DELETE */}
+                        <td className="align-top whitespace-normal break-words border-b border-r border-slate-100/70 px-2 py-1.5 text-center last:border-r-0">
+                          <button
+                            onClick={() => removeItem(index)}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-rose-100 bg-gradient-to-br from-rose-50 to-rose-100/50 text-rose-400 shadow-sm transition-all duration-200 hover:border-rose-200 hover:from-rose-100 hover:to-rose-200/60 hover:text-rose-600 hover:shadow-[0_4px_12px_rgba(239,68,68,0.15)] active:scale-95"
+                            aria-label="Remove row"
                           >
-                            {/* CATEGORY + CHECKBOX / STATIC */}
-                            <td className="align-top whitespace-normal break-words border-b border-r border-slate-100/70 px-2 py-1.5">
-                              <div className="flex items-start gap-2">
-                                {isSelectableGroup ? (
-                                  <input
-                                    type="checkbox"
-                                    checked={checked}
-                                    onChange={() => toggleSubItem(index, sub)}
-                                    className="mt-1 h-4 w-4 cursor-pointer rounded border-slate-300 text-indigo-600 accent-indigo-600 focus:ring-indigo-500 focus:ring-offset-0"
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+
+                      {/* SUB-ITEM ROWS */}
+                      {formItems[index]?.subItems?.length > 0 &&
+                        formItems[index].subItems.map((sub) => {
+                          const selected = isSelectableGroup
+                            ? formItems[index].selectedSubItems.find(
+                                (s) => s.id === (sub.id || sub.itemId),
+                              )
+                            : null;
+
+                          const checked = isSelectableGroup ? !!selected : true;
+
+                          const qty = selected?.qty || 1;
+                          const price =
+                            selected?.price ?? sub.basePrice ?? sub.price ?? 0;
+                          const discount = selected?.discount || 0;
+                          const lineTotal = qty * price * (1 - discount / 100);
+
+                          return (
+                            <tr
+                              key={sub.id}
+                              className={`border-b border-slate-100/60 transition-all duration-200 ${
+                                checked
+                                  ? "bg-gradient-to-r from-indigo-50/60 via-indigo-50/25 to-transparent hover:from-indigo-100/50 hover:via-indigo-50/35"
+                                  : "bg-slate-50/30 hover:bg-slate-50/60"
+                              }`}
+                            >
+                              {/* CATEGORY + CHECKBOX / STATIC */}
+                              <td className="align-top whitespace-normal break-words border-b border-r border-slate-100/70 px-2 py-1.5">
+                                <div className="flex items-start gap-2">
+                                  {isSelectableGroup ? (
+                                    <input
+                                      type="checkbox"
+                                      checked={checked}
+                                      onChange={() => toggleSubItem(index, sub)}
+                                      className="mt-1 h-4 w-4 cursor-pointer rounded border-slate-300 text-indigo-600 accent-indigo-600 focus:ring-indigo-500 focus:ring-offset-0"
+                                    />
+                                  ) : null}
+
+                                  <div className="min-w-0 pt-0.5">
+                                    <div
+                                      className={`inline-flex items-center rounded-lg border px-3 py-1 text-[12px] font-semibold tracking-tight ${
+                                        checked || !isSelectableGroup
+                                          ? "border-slate-200 bg-slate-100 text-slate-700"
+                                          : "border-slate-100 bg-slate-50 text-slate-300"
+                                      }`}
+                                    >
+                                      {sub.category || "—"}
+                                    </div>
+                                    <div
+                                      className={`mt-0.5 text-[11px] font-semibold ${
+                                        checked || !isSelectableGroup
+                                          ? "text-indigo-500/80"
+                                          : "text-slate-300"
+                                      }`}
+                                    >
+                                      {sub.uom || "Sub item"}
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+
+                              {/* SKU */}
+                              <td className="align-top whitespace-normal break-words border-b border-r border-slate-100/70 px-3 py-2.5">
+                                <div className="flex min-h-[30px] items-center gap-2">
+                                  <div
+                                    className={`h-6 w-[2.5px] rounded-full ${
+                                      checked || !isSelectableGroup
+                                        ? "bg-[#37306B]/30"
+                                        : "bg-slate-150"
+                                    }`}
                                   />
-                                ) : null}
-
-                                <div className="min-w-0 pt-0.5">
-                                  <div
-                                    className={`text-[13px] font-bold uppercase tracking-tight ${
+                                  <span
+                                    className={`whitespace-nowrap font-mono text-[13px] font-bold ${
                                       checked || !isSelectableGroup
-                                        ? "text-slate-800"
+                                        ? "text-slate-600"
                                         : "text-slate-300"
                                     }`}
                                   >
-                                    {sub.category || "—"}
-                                  </div>
-                                  <div
-                                    className={`mt-0.5 text-[11px] font-semibold ${
-                                      checked || !isSelectableGroup
-                                        ? "text-indigo-500/80"
-                                        : "text-slate-300"
-                                    }`}
-                                  >
-                                    {sub.uom || "Sub item"}
-                                  </div>
+                                    {sub.sku || "—"}
+                                  </span>
                                 </div>
-                              </div>
-                            </td>
+                              </td>
 
-                            {/* SKU */}
-                            <td className="align-top whitespace-normal break-words border-b border-r border-slate-100/70 px-3 py-2.5">
-                              <div className="flex min-h-[30px] items-center gap-2">
-                                <div
-                                  className={`h-6 w-[2.5px] rounded-full ${
-                                    checked || !isSelectableGroup
-                                      ? "bg-[#37306B]/30"
-                                      : "bg-slate-150"
-                                  }`}
-                                />
-                                <span
-                                  className={`whitespace-nowrap font-mono text-[13px] font-bold ${
-                                    checked || !isSelectableGroup
-                                      ? "text-slate-600"
-                                      : "text-slate-300"
-                                  }`}
-                                >
-                                  {sub.sku || "—"}
-                                </span>
-                              </div>
-                            </td>
-
-                            {/* DESCRIPTION */}
-                            <td className="align-top whitespace-normal break-words border-b border-r border-slate-100/70 px-2 py-1.5">
-                              {isSelectableGroup ? (
-                                <textarea
-                                  rows={2}
-                                  value={
-                                    formItems[index].selectedSubItems.find(
-                                      (s) => s.id === (sub.id || sub.itemId),
-                                    )?.description ??
-                                    sub.description ??
-                                    ""
-                                  }
-                                  disabled={!checked}
-                                  onChange={(e) =>
-                                    updateSubItem(
-                                      index,
-                                      sub.id,
-                                      "description",
-                                      e.target.value,
-                                    )
-                                  }
-                                  onBlur={() => autoSave(formItems)}
-                                  className={`min-h-[68px] w-full resize-y rounded-xl border px-2 py-1.5 text-[12px] leading-5 outline-none transition-all duration-200 ${
-                                    checked ? subInputEnabled : disabledInput
-                                  }`}
-                                  placeholder="Description…"
-                                />
-                              ) : (
-                                <div className="min-h-[68px] whitespace-pre-wrap rounded-xl border border-transparent px-2 py-1.5 text-[14px] leading-relaxed font-medium text-slate-800">
-                                  {sub.description || "—"}
-                                </div>
-                              )}
-                            </td>
-
-                            {/* MAKE */}
-                            <td className="align-top border-b border-r border-slate-100/70 px-2 py-1.5">
-                              <div
-                                className={`flex min-h-[68px] items-center px-2 text-[13px] font-medium ${
-                                  checked || !isSelectableGroup
-                                    ? "text-slate-600"
-                                    : "text-slate-300"
-                                }`}
-                              >
-                                {sub.make || "—"}
-                              </div>
-                            </td>
-
-                            {/* MFG PN */}
-                            <td className="align-top border-b border-r border-slate-100/70 px-2 py-1.5">
-                              <div className="flex min-h-[68px] items-center px-2">
-                                <span
-                                  className={`rounded-md px-2 py-1 font-mono text-[11px] ${
-                                    checked || !isSelectableGroup
-                                      ? "bg-slate-100 text-slate-600"
-                                      : "bg-transparent text-slate-300"
-                                  }`}
-                                >
-                                  {sub.mfgPartNo || "—"}
-                                </span>
-                              </div>
-                            </td>
-
-                            {/* QTY */}
-                            <td className="align-top whitespace-normal break-words border-b border-r border-slate-100/70 px-2 py-1.5">
-                              {isSelectableGroup ? (
-                                <input
-                                  type="number"
-                                  min="1"
-                                  value={
-                                    checked
-                                      ? qty === 0
-                                        ? ""
-                                        : qty
-                                      : sub.baseQty || 1
-                                  }
-                                  disabled={!checked}
-                                  onChange={(e) =>
-                                    updateSubItem(
-                                      index,
-                                      sub.id,
-                                      "qty",
-                                      e.target.value,
-                                    )
-                                  }
-                                  onBlur={() => autoSave(formItems)}
-                                  className={`h-9 w-full rounded-xl border px-2 text-right text-[14px] font-bold tabular-nums outline-none transition-all duration-200 ${
-                                    checked ? subInputEnabled : disabledInput
-                                  }`}
-                                />
-                              ) : (
-                                <div className="flex h-9 items-center justify-center rounded-xl px-2 text-[14px] font-bold text-slate-300">
-                                  —
-                                </div>
-                              )}
-                            </td>
-
-                            {/* UOM */}
-                            <td className="align-top border-b border-r border-slate-100/70 px-2 py-1.5">
-                              <div
-                                className={`flex h-9 items-center justify-center text-[13px] font-medium ${
-                                  checked || !isSelectableGroup
-                                    ? "text-slate-600"
-                                    : "text-slate-300"
-                                }`}
-                              >
-                                {sub.uom || "—"}
-                              </div>
-                            </td>
-
-                            {/* PRICE */}
-                            <td className="align-top whitespace-normal break-words border-b border-r border-slate-100/70 px-2 py-1.5">
-                              {isSelectableGroup ? (
-                                <input
-                                  type="number"
-                                  min="0"
-                                  value={
-                                    checked
-                                      ? price === 0
-                                        ? ""
-                                        : price
-                                      : sub.basePrice || 0
-                                  }
-                                  readOnly
-                                  tabIndex={-1}
-                                  className={`h-9 w-full rounded-xl border px-2 text-right text-[14px] font-black tabular-nums outline-none ${
-                                    checked
-                                      ? "cursor-not-allowed border-slate-200/70 bg-slate-100/80 text-slate-500 shadow-inner"
-                                      : disabledInput
-                                  }`}
-                                />
-                              ) : (
-                                <div className="flex h-9 items-center justify-center rounded-xl px-2 text-[12px] font-medium text-slate-300">
-                                  —
-                                </div>
-                              )}
-                            </td>
-
-                            {/* DISCOUNT */}
-                            <td className="align-top whitespace-normal break-words border-b border-r border-slate-100/70 px-2 py-1.5">
-                              {isSelectableGroup ? (
-                                <div className="relative">
-                                  <input
-                                    type="number"
-                                    min="0"
-                                    max="100"
+                              {/* DESCRIPTION */}
+                              <td className="align-top whitespace-normal break-words border-b border-r border-slate-100/70 px-2 py-1.5">
+                                {isSelectableGroup ? (
+                                  <textarea
+                                    rows={2}
                                     value={
-                                      checked
-                                        ? Number.isFinite(discount)
-                                          ? discount
-                                          : ""
-                                        : 0
+                                      formItems[index].selectedSubItems.find(
+                                        (s) => s.id === (sub.id || sub.itemId),
+                                      )?.description ??
+                                      sub.description ??
+                                      ""
                                     }
                                     disabled={!checked}
                                     onChange={(e) =>
                                       updateSubItem(
                                         index,
                                         sub.id,
-                                        "discount",
+                                        "description",
                                         e.target.value,
                                       )
                                     }
                                     onBlur={() => autoSave(formItems)}
-                                    className={`h-9 w-full rounded-xl border py-2 pl-2 pr-6 text-right text-[14px] font-bold tabular-nums outline-none transition-all duration-200 ${
+                                    className={`min-h-[68px] w-full resize-y rounded-xl border px-2 py-1.5 text-[12px] leading-5 outline-none transition-all duration-200 ${
                                       checked ? subInputEnabled : disabledInput
                                     }`}
+                                    placeholder="Description…"
                                   />
-                                  {checked && (
-                                    <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-slate-400">
-                                      %
-                                    </span>
-                                  )}
-                                </div>
-                              ) : (
-                                <div className="flex h-9 items-center justify-center rounded-xl px-2 text-[12px] font-medium text-slate-300">
-                                  —
-                                </div>
-                              )}
-                            </td>
+                                ) : (
+                                  <div className="min-h-[68px] whitespace-pre-wrap rounded-xl border border-transparent px-2 py-1.5 text-[14px] leading-relaxed font-medium text-slate-800">
+                                    {sub.name && (
+                                      <div className="mb-3 font-semibold text-slate-900">
+                                        {sub.name}
+                                      </div>
+                                    )}
 
-                            {/* LINE TOTAL */}
-                            <td className="align-top whitespace-normal break-words border-b border-r border-slate-100/70 px-2 py-1.5">
-                              {isSelectableGroup ? (
-                                <div
-                                  className={`flex h-9 items-center justify-end rounded-xl px-3 text-[14px] font-black tabular-nums transition-all duration-200 ${
-                                    checked
-                                      ? "bg-gradient-to-br from-emerald-50 to-teal-50/50 text-emerald-700 ring-1 ring-emerald-200/60 shadow-[0_2px_6px_rgba(16,185,129,0.08)]"
-                                      : "bg-transparent text-slate-200"
-                                  }`}
-                                >
-                                  {checked
-                                    ? formatAmount(lineTotal)
-                                    : formatAmount(0)}
-                                </div>
-                              ) : (
-                                <div className="flex h-9 items-center justify-center rounded-xl px-3 text-[14px] font-black tabular-nums text-slate-300">
-                                  —
-                                </div>
-                              )}
-                            </td>
-
-                            {/* REMARKS */}
-                            <td className="align-top whitespace-normal break-words border-b border-r border-slate-100/70 px-2 py-1.5">
-                              {isSelectableGroup ? (
-                                <textarea
-                                  rows={2}
-                                  value={
-                                    formItems[index].selectedSubItems.find(
-                                      (s) => s.id === (sub.id || sub.itemId),
-                                    )?.remarks ?? ""
-                                  }
-                                  disabled={!checked}
-                                  onChange={(e) =>
-                                    updateSubItem(
-                                      index,
-                                      sub.id,
-                                      "remarks",
-                                      e.target.value,
-                                    )
-                                  }
-                                  onBlur={() => autoSave(formItems)}
-                                  className={`min-h-[50px] w-full resize-none rounded-xl border px-2 py-1.5 text-[13px] font-medium leading-relaxed outline-none transition-all duration-200 overflow-hidden ${
-                                    checked ? subInputEnabled : disabledInput
-                                  }`}
-                                  placeholder="Notes…"
-                                />
-                              ) : (
-                                <div className="flex min-h-[50px] items-center rounded-xl px-2.5 text-[12px] text-slate-300">
-                                  —
-                                </div>
-                              )}
-                            </td>
-
-                            {/* DELETE */}
-                            <td className="align-top whitespace-normal break-words border-b border-r border-slate-100/70 px-2 py-1.5 text-center last:border-r-0">
-                              {isSelectableGroup && checked ? (
-                                <button
-                                  onClick={() => toggleSubItem(index, sub)}
-                                  className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-rose-100 bg-gradient-to-br from-rose-50 to-rose-100/50 text-rose-400 shadow-sm transition-all duration-150 hover:border-rose-200 hover:from-rose-100 hover:to-rose-200/60 hover:text-rose-600 hover:shadow-[0_4px_12px_rgba(239,68,68,0.15)] active:scale-95"
-                                  aria-label="Remove sub item"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </button>
-                              ) : (
-                                <span className="text-[10px] text-slate-200">
-                                  —
-                                </span>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })}
-
-                    {/* GROUP TOTAL ROW */}
-                    {isSelectableGroup &&
-                      formItems[index]?.selectedSubItems?.length > 0 && (
-                        <tr className="border-b border-indigo-100/50 bg-gradient-to-r from-indigo-50/80 via-indigo-50/40 to-slate-50/20">
-                          <td colSpan={9} className="px-3 py-2.5.5">
-                            <div className="flex items-center justify-center gap-4">
-                              <div className="whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.32em] text-indigo-500">
-                                GROUP TOTAL
-                              </div>
-
-                              <div className="flex items-center justify-center rounded-xl bg-gradient-to-br from-indigo-100/90 via-indigo-100/70 to-violet-100/50 px-4 py-2 text-sm font-bold tabular-nums text-indigo-800 ring-1 ring-indigo-200/70 shadow-[0_4px_12px_rgba(99,102,241,0.14),inset_0_1px_0_rgba(255,255,255,0.6)]">
-                                {formatAmount(
-                                  (() => {
-                                    const parentTotal =
-                                      Number(row.qty || 1) *
-                                      Number(row.price || 0) *
-                                      (1 - Number(row.discount || 0) / 100);
-
-                                    const subTotal = formItems[
-                                      index
-                                    ].selectedSubItems.reduce((sum, sub) => {
-                                      const qty = Number(
-                                        sub.qty || sub.baseQty || 1,
-                                      );
-
-                                      const price = Number(
-                                        sub.price || sub.basePrice || 0,
-                                      );
-
-                                      const discount = Number(
-                                        sub.discount || 0,
-                                      );
-
-                                      return (
-                                        sum + qty * price * (1 - discount / 100)
-                                      );
-                                    }, 0);
-
-                                    return parentTotal + subTotal;
-                                  })(),
+                                    <div className="whitespace-pre-wrap">
+                                      {sub.description || "—"}
+                                    </div>
+                                  </div>
                                 )}
-                              </div>
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                  </FragmentWrapper>
-                );
-              })}
-            </tbody>
-          </table>
+                              </td>
+
+                              {/* MAKE */}
+                              {!isSpecRows ? (
+                                <>
+                                  {/* MAKE */}
+                                  <td className="align-top border-b border-r border-slate-100/70 px-2 py-1.5">
+                                    <div
+                                      className={`flex min-h-[68px] items-center px-2 text-[13px] font-medium ${
+                                        checked || !isSelectableGroup
+                                          ? "text-slate-600"
+                                          : "text-slate-300"
+                                      }`}
+                                    >
+                                      {sub.make || "—"}
+                                    </div>
+                                  </td>
+
+                                  {/* MFG PN */}
+                                  <td className="align-top border-b border-r border-slate-100/70 px-2 py-1.5">
+                                    <div className="flex min-h-[68px] items-center px-2">
+                                      <span
+                                        className={`rounded-md px-2 py-1 font-mono text-[11px] ${
+                                          checked || !isSelectableGroup
+                                            ? "bg-slate-100 text-slate-600"
+                                            : "bg-transparent text-slate-300"
+                                        }`}
+                                      >
+                                        {sub.mfgPartNo || "—"}
+                                      </span>
+                                    </div>
+                                  </td>
+
+                                  {/* QTY */}
+                                  <td className="align-top border-b border-r border-slate-100/70 px-2 py-1.5">
+                                    {isSelectableGroup ? (
+                                      <input
+                                        type="number"
+                                        min="1"
+                                        value={
+                                          checked
+                                            ? qty === 0
+                                              ? ""
+                                              : qty
+                                            : sub.baseQty || 1
+                                        }
+                                        disabled={!checked}
+                                        onChange={(e) =>
+                                          updateSubItem(
+                                            index,
+                                            sub.id,
+                                            "qty",
+                                            e.target.value,
+                                          )
+                                        }
+                                        onBlur={() => autoSave(formItems)}
+                                        className={`h-9 w-full rounded-xl border px-2 text-right text-[14px] font-bold tabular-nums outline-none transition-all duration-200 ${
+                                          checked
+                                            ? subInputEnabled
+                                            : disabledInput
+                                        }`}
+                                      />
+                                    ) : (
+                                      <div className="flex h-9 items-center justify-center rounded-xl px-2 text-[14px] font-bold text-slate-300">
+                                        —
+                                      </div>
+                                    )}
+                                  </td>
+
+                                  {/* UOM */}
+                                  <td className="align-top border-b border-r border-slate-100/70 px-2 py-1.5">
+                                    <div
+                                      className={`flex h-9 items-center justify-center text-[13px] font-medium ${
+                                        checked || !isSelectableGroup
+                                          ? "text-slate-600"
+                                          : "text-slate-300"
+                                      }`}
+                                    >
+                                      {sub.uom || "—"}
+                                    </div>
+                                  </td>
+
+                                  {/* PRICE */}
+                                  <td className="align-top border-b border-r border-slate-100/70 px-2 py-1.5">
+                                    {isSelectableGroup ? (
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        value={
+                                          checked
+                                            ? price === 0
+                                              ? ""
+                                              : price
+                                            : sub.basePrice || 0
+                                        }
+                                        readOnly
+                                        tabIndex={-1}
+                                        className={`h-9 w-full rounded-xl border px-2 text-right text-[14px] font-black tabular-nums outline-none ${
+                                          checked
+                                            ? "cursor-not-allowed border-slate-200/70 bg-slate-100/80 text-slate-500 shadow-inner"
+                                            : disabledInput
+                                        }`}
+                                      />
+                                    ) : (
+                                      <div className="flex h-9 items-center justify-center rounded-xl px-2 text-[12px] font-medium text-slate-300">
+                                        —
+                                      </div>
+                                    )}
+                                  </td>
+
+                                  {/* DISCOUNT */}
+                                  <td className="align-top border-b border-r border-slate-100/70 px-2 py-1.5">
+                                    {isSelectableGroup ? (
+                                      <div>
+                                        <div className="flex items-center gap-1.5">
+                                          <input
+                                            type="number"
+                                            min="0"
+                                            max="100"
+                                            value={
+                                              checked
+                                                ? discount === 0 ||
+                                                  discount === "0"
+                                                  ? ""
+                                                  : Number.isFinite(discount)
+                                                    ? discount
+                                                    : ""
+                                                : ""
+                                            }
+                                            disabled={!checked}
+                                            onChange={(e) =>
+                                              updateSubItem(
+                                                index,
+                                                sub.id,
+                                                "discount",
+                                                e.target.value,
+                                              )
+                                            }
+                                            onBlur={() => autoSave(formItems)}
+                                            className={`h-9 min-w-0 flex-1 rounded-xl border px-2 text-right text-[14px] font-bold tabular-nums outline-none transition-all duration-200 ${
+                                              checked
+                                                ? subInputEnabled
+                                                : disabledInput
+                                            }`}
+                                          />
+
+                                          {checked && (
+                                            <span className="shrink-0 text-[10px] font-semibold text-slate-400">
+                                              %
+                                            </span>
+                                          )}
+                                        </div>
+
+                                        {/* <div className="mt-1 text-center text-[9px] font-bold uppercase tracking-[0.12em] text-slate-400">
+                                          Max {maxDiscount}
+                                        </div> */}
+                                      </div>
+                                    ) : (
+                                      <div className="flex h-9 items-center justify-center rounded-xl px-2 text-[12px] font-medium text-slate-300">
+                                        —
+                                      </div>
+                                    )}
+                                  </td>
+
+                                  {/* LINE TOTAL */}
+                                  <td className="align-top border-b border-r border-slate-100/70 px-2 py-1.5">
+                                    {isSelectableGroup ? (
+                                      <div
+                                        className={`flex h-9 items-center justify-end rounded-xl px-3 text-[14px] font-black tabular-nums transition-all duration-200 ${
+                                          checked
+                                            ? "bg-gradient-to-br from-emerald-50 to-teal-50/50 text-emerald-700 ring-1 ring-emerald-200/60 shadow-[0_2px_6px_rgba(16,185,129,0.08)]"
+                                            : "bg-transparent text-slate-200"
+                                        }`}
+                                      >
+                                        {checked
+                                          ? formatAmount(lineTotal)
+                                          : formatAmount(0)}
+                                      </div>
+                                    ) : (
+                                      <div className="flex h-9 items-center justify-center rounded-xl px-3 text-[14px] font-black tabular-nums text-slate-300">
+                                        —
+                                      </div>
+                                    )}
+                                  </td>
+
+                                  {/* REMARKS */}
+                                  <td className="align-top border-b border-r border-slate-100/70 px-2 py-1.5">
+                                    {isSelectableGroup ? (
+                                      <textarea
+                                        rows={2}
+                                        value={
+                                          formItems[
+                                            index
+                                          ].selectedSubItems.find(
+                                            (s) =>
+                                              s.id === (sub.id || sub.itemId),
+                                          )?.remarks ?? ""
+                                        }
+                                        disabled={!checked}
+                                        onChange={(e) =>
+                                          updateSubItem(
+                                            index,
+                                            sub.id,
+                                            "remarks",
+                                            e.target.value,
+                                          )
+                                        }
+                                        onBlur={() => autoSave(formItems)}
+                                        className={`min-h-[50px] w-full resize-none rounded-xl border px-2 py-1.5 text-[13px] font-medium leading-relaxed outline-none transition-all duration-200 overflow-hidden ${
+                                          checked
+                                            ? subInputEnabled
+                                            : disabledInput
+                                        }`}
+                                        placeholder="Notes…"
+                                      />
+                                    ) : null}
+                                  </td>
+
+                                  {/* DELETE */}
+                                  <td className="align-top border-b border-r border-slate-100/70 px-2 py-1.5 text-center last:border-r-0">
+                                    {isSelectableGroup && checked ? (
+                                      <button
+                                        onClick={() =>
+                                          toggleSubItem(index, sub)
+                                        }
+                                        className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-rose-100 bg-gradient-to-br from-rose-50 to-rose-100/50 text-rose-400"
+                                      >
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                      </button>
+                                    ) : null}
+                                  </td>
+                                </>
+                              ) : (
+                                <td
+                                  colSpan={9}
+                                  className="border-b border-r border-slate-100/70 px-0 py-0 last:border-r-0"
+                                />
+                              )}
+                            </tr>
+                          );
+                        })}
+                    </FragmentWrapper>
+                  );
+                })}
+
+                {/* COMMERCIAL SUMMARY */}
+                <tr className="border-t-2 border-slate-300 bg-slate-50">
+                  <td
+                    colSpan={10}
+                    className="border-b border-r border-slate-200 px-4 py-4 text-left font-black text-slate-800"
+                  >
+                    Total Quotation Value
+                  </td>
+
+                  <td
+                    colSpan={2}
+                    className="border-b border-slate-200 px-4 py-4 text-right text-[24px] font-black text-[#37306B]"
+                  >
+                    {formatAmount(totals?.subtotal || 0)}
+                  </td>
+                </tr>
+
+                {/* P & F */}
+                <tr className="bg-white">
+                  <td
+                    colSpan={10}
+                    className="border-b border-r border-slate-200 px-4 py-4 font-bold text-slate-700"
+                  >
+                    P & F
+                  </td>
+
+                  <td
+                    colSpan={2}
+                    className="border-b border-slate-200 px-3 py-3"
+                  >
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={formatIndianNumber(form?.packingForwardingCharges)}
+                      onChange={(e) =>
+                        updateField(
+                          "packingForwardingCharges",
+                          e.target.value.replace(/[^\d]/g, ""),
+                        )
+                      }
+                      className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-right text-sm font-black outline-none focus:border-indigo-500"
+                      placeholder="0"
+                    />
+                  </td>
+                </tr>
+
+                {/* INSTALLATION & COMMISSIONING */}
+                <tr className="bg-white">
+                  <td
+                    colSpan={5}
+                    className="border-b border-r border-slate-200 px-4 py-4 font-bold text-slate-700"
+                  >
+                    Installation & Commissioning Training
+                  </td>
+
+                  {/* QTY */}
+                  <td className="border-b border-r border-slate-200 px-2 py-3">
+                    <input
+                      type="number"
+                      value={form?.installationQty || ""}
+                      onChange={(e) =>
+                        updateField("installationQty", e.target.value)
+                      }
+                      className="w-full border-0 bg-transparent text-center text-sm font-black outline-none"
+                    />
+                  </td>
+
+                  {/* UOM */}
+                  <td className="border-b border-r border-slate-200 px-2 py-3">
+                    <input
+                      type="text"
+                      value={form?.installationUom || ""}
+                      onChange={(e) =>
+                        updateField("installationUom", e.target.value)
+                      }
+                      className="w-full border-0 bg-transparent text-center text-sm font-black outline-none"
+                    />
+                  </td>
+
+                  {/* UNIT PRICE */}
+                  <td className="border-b border-r border-slate-200 px-2 py-3">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={formatIndianNumber(form?.installationUnitPrice)}
+                      onChange={(e) =>
+                        updateField(
+                          "installationUnitPrice",
+                          e.target.value.replace(/[^\d]/g, ""),
+                        )
+                      }
+                      className="w-full border-0 bg-transparent text-right text-sm font-black outline-none"
+                    />
+                  </td>
+
+                  {/* DISC */}
+                  <td className="border-b border-r border-slate-200 px-2 py-3">
+                    <div className="flex items-center justify-end gap-1">
+                      <input
+                        type="number"
+                        value={form?.installationDiscount || ""}
+                        onChange={(e) =>
+                          updateField("installationDiscount", e.target.value)
+                        }
+                        className="w-full border-0 bg-transparent text-right text-sm font-black outline-none"
+                      />
+
+                      <span className="text-xs font-bold text-slate-500">
+                        %
+                      </span>
+                    </div>
+                  </td>
+
+                  {/* FINAL */}
+                  <td className="border-b border-r border-slate-200 px-3 py-3 text-right font-black text-emerald-700">
+                    {formatAmount(installationTotal)}
+                  </td>
+
+                  {/* REMARKS */}
+                  <td className="border-b border-r border-slate-200 px-2 py-3">
+                    <input
+                      type="text"
+                      value={form?.installationRemarks || ""}
+                      onChange={(e) =>
+                        updateField("installationRemarks", e.target.value)
+                      }
+                      className="w-full border-0 bg-transparent text-sm outline-none"
+                      placeholder="Remarks"
+                    />
+                  </td>
+
+                  {/* EMPTY */}
+                  <td className="border-b border-slate-200 px-2 py-3" />
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
-      {/* FOOTER */}
-      <div className="border-t border-slate-100/80 bg-gradient-to-r from-slate-50/70 via-white/50 to-slate-50/30 px-3 py-2.5 sm:px-5 lg:px-6">
-        <div className="flex items-center justify-between gap-2.5 text-[11px] text-slate-400">
-          <span>All values update automatically as you edit the rows.</span>
-          <span className="hidden sm:inline">
-            Only selected sub-items are editable.
-          </span>
+      {/* GRAND TOTAL ROW */}
+      <div className="border-t border-slate-200 bg-slate-50">
+        <div className="flex items-center justify-between px-6 py-4">
+          <div>
+            <div className="text-[11px] font-black uppercase tracking-[0.28em] text-slate-500">
+              Grand Total
+            </div>
+
+            <div className="mt-0.5 text-xs font-medium text-slate-400">
+              Inclusive of P & F and I & C / Training
+            </div>
+          </div>
+
+          <div className="text-right text-[32px] font-black leading-none tracking-tight text-[#312E81]">
+            ₹{" "}
+            {formatAmount(
+              Number(totals?.grandTotal || 0) +
+                Number(form?.packingForwardingCharges || 0) +
+                Number(form?.installationQty || 0) *
+                  Number(form?.installationUnitPrice || 0) *
+                  (1 - Number(form?.installationDiscount || 0) / 100),
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 

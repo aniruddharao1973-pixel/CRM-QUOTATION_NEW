@@ -1506,20 +1506,16 @@ export function ProposalPDF({ quotation, totals }) {
     const qty = cleanNumber(row.qty);
     const price = cleanNumber(row.unitPrice);
     const discount = cleanNumber(row.discount);
+
     return sum + qty * price * (1 - discount / 100);
   }, 0);
 
-  const gstRate = 18;
+  const packingCharges = cleanNumber(quotation?.packingForwardingCharges || 0);
 
-  const gstAmount = subtotal * (gstRate / 100);
+  const installationCharges = cleanNumber(quotation?.installationCharges || 0);
 
-  const grandTotal = subtotal + gstAmount;
-
-  const packingCharges = 50000;
-
-  const installationCharges = 100000;
-
-  const finalGrandTotal = grandTotal + packingCharges + installationCharges;
+  // ✅ FINAL GRAND TOTAL
+  const grandTotal = subtotal + packingCharges + installationCharges;
 
   pricingRows.push(
     {
@@ -1571,7 +1567,7 @@ export function ProposalPDF({ quotation, totals }) {
       unitPrice: "",
       discount: "",
       gst: "",
-      total: formatCurrency(finalGrandTotal),
+      total: formatCurrency(grandTotal),
 
       // ✅ custom flag
       isGrandTotal: true,

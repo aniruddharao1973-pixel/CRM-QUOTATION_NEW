@@ -305,9 +305,25 @@ export const createQuotationController = async (req, res) => {
 
     const quotation = await createQuotation({
       ...normalizedBody,
-      userId: req.user.id,
-    });
 
+      // 🔥 COMMERCIAL SUMMARY
+      packingForwardingCharges: Number(req.body.packingForwardingCharges || 0),
+
+      installationDescription: req.body.installationDescription || "",
+
+      installationQty: Number(req.body.installationQty || 0),
+
+      installationUom: req.body.installationUom || "",
+
+      installationUnitPrice: Number(req.body.installationUnitPrice || 0),
+
+      installationDiscount: Number(req.body.installationDiscount || 0),
+
+      installationRemarks: req.body.installationRemarks || "",
+
+      userId: req.user.id,
+      currentUserRole: req.user.role,
+    });
     res.status(201).json(quotation);
   } catch (error) {
     console.error("❌ Create quotation error:", error);
@@ -475,6 +491,18 @@ export const updateQuotationController = async (req, res) => {
       terms,
       items,
       headerDiscount = 0,
+
+      // 🔥 NEW
+      // 🔥 COMMERCIAL SUMMARY
+      packingForwardingCharges = 0,
+
+      installationDescription = "",
+      installationQty = 0,
+      installationUom = "",
+      installationUnitPrice = 0,
+      installationDiscount = 0,
+      installationRemarks = "",
+
       userId,
     } = req.body;
 
@@ -492,9 +520,23 @@ export const updateQuotationController = async (req, res) => {
       terms,
       items: normalizedItems,
       headerDiscount,
-      userId: req.user.id, // ✅ ADD THIS
-    });
 
+      // 🔥 NEW
+      // 🔥 COMMERCIAL SUMMARY
+      packingForwardingCharges,
+
+      installationDescription,
+      installationQty,
+      installationUom,
+      installationUnitPrice,
+      installationDiscount,
+      installationRemarks,
+
+      userId: req.user.id,
+
+      // 🔥 NEW
+      currentUserRole: req.user.role,
+    });
     res.json(result);
   } catch (error) {
     console.error("❌ Update quotation error:", error);
@@ -672,5 +714,77 @@ export const rejectQuotationController = async (req, res) => {
   } catch (error) {
     console.error("❌ Reject quotation error:", error);
     res.status(500).json({ message: "Failed to reject quotation" });
+  }
+};
+
+/* ================= GET DISCOUNT POLICY ================= */
+export const getDiscountPolicyController = async (req, res) => {
+  try {
+    let policy = await prisma.discountPolicy.findFirst();
+
+    // ✅ auto-create default policy
+    if (!policy) {
+      policy = await prisma.discountPolicy.create({
+        data: {
+          salesRepMax: 5,
+          managerMax: 20,
+          adminMax: 100,
+        },
+      });
+    }
+
+    res.json(policy);
+  } catch (error) {
+    console.error("❌ Get discount policy error:", error);
+
+    res.status(500).json({
+      message: "Failed to fetch discount policy",
+    });
+  }
+};
+
+/* ================= UPDATE DISCOUNT POLICY ================= */
+export const updateDiscountPolicyController = async (req, res) => {
+  try {
+    const { salesRepMax, managerMax, adminMax } = req.body;
+
+    let policy = await prisma.discountPolicy.findFirst();
+
+    // ✅ create if not exists
+    if (!policy) {
+      policy = await prisma.discountPolicy.create({
+        data: {
+          salesRepMax: Number(salesRepMax ?? 5),
+          managerMax: Number(managerMax ?? 20),
+          adminMax: Number(adminMax ?? 100),
+
+          updatedById: req.user.id,
+        },
+      });
+
+      return res.json(policy);
+    }
+
+    // ✅ update existing
+    const updated = await prisma.discountPolicy.update({
+      where: {
+        id: policy.id,
+      },
+      data: {
+        salesRepMax: Number(salesRepMax),
+        managerMax: Number(managerMax),
+        adminMax: Number(adminMax),
+
+        updatedById: req.user.id,
+      },
+    });
+
+    res.json(updated);
+  } catch (error) {
+    console.error("❌ Update discount policy error:", error);
+
+    res.status(500).json({
+      message: "Failed to update discount policy",
+    });
   }
 };

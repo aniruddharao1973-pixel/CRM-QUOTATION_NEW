@@ -14,6 +14,25 @@ const normalizeQuotation = (q) => {
 
   return {
     ...q,
+
+    // 🔥 COMMERCIAL SUMMARY NORMALIZATION
+    // 🔥 COMMERCIAL SUMMARY NORMALIZATION
+    packingForwardingCharges: Number(q.packingForwardingCharges || 0),
+
+    installationDescription: q.installationDescription || "",
+
+    installationQty: Number(q.installationQty || 0),
+
+    installationUom: q.installationUom || "",
+
+    installationUnitPrice: Number(q.installationUnitPrice || 0),
+
+    installationDiscount: Number(q.installationDiscount || 0),
+
+    installationRemarks: q.installationRemarks || "",
+
+    grandTotal: Number(q.grandTotal || 0),
+
     items: (q.items || []).map((it) => ({
       ...it,
 
@@ -199,6 +218,36 @@ export const fetchQuotationHistory = createAsyncThunk(
   },
 );
 
+/* ================= GET DISCOUNT POLICY ================= */
+export const fetchDiscountPolicy = createAsyncThunk(
+  "quotations/fetchDiscountPolicy",
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await API.get("/quotations/discount-policy");
+      return normalize(res);
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data || "Fetch discount policy failed",
+      );
+    }
+  },
+);
+
+/* ================= UPDATE DISCOUNT POLICY ================= */
+export const updateDiscountPolicy = createAsyncThunk(
+  "quotations/updateDiscountPolicy",
+  async (data, { rejectWithValue }) => {
+    try {
+      const res = await API.put("/quotations/discount-policy", data);
+      return normalize(res);
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data || "Update discount policy failed",
+      );
+    }
+  },
+);
+
 /* =========================================================
    ✅ SLICE
 ========================================================= */
@@ -209,7 +258,14 @@ const quotationSlice = createSlice({
     list: [],
     selected: null,
 
-    history: [], // 🔥 NEW
+    history: [],
+
+    // 🔥 NEW
+    discountPolicy: {
+      salesRepMax: 5,
+      managerMax: 20,
+      adminMax: 100,
+    },
 
     loading: false,
     error: null,
@@ -368,6 +424,38 @@ const quotationSlice = createSlice({
           : [];
       })
       .addCase(fetchQuotationHistory.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      /* ================= FETCH DISCOUNT POLICY ================= */
+      .addCase(fetchDiscountPolicy.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(fetchDiscountPolicy.fulfilled, (state, action) => {
+        state.loading = false;
+
+        state.discountPolicy = action.payload || {
+          salesRepMax: 5,
+          managerMax: 20,
+          adminMax: 100,
+        };
+      })
+      .addCase(fetchDiscountPolicy.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      /* ================= UPDATE DISCOUNT POLICY ================= */
+      .addCase(updateDiscountPolicy.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(updateDiscountPolicy.fulfilled, (state, action) => {
+        state.loading = false;
+
+        state.discountPolicy = action.payload;
+      })
+      .addCase(updateDiscountPolicy.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })

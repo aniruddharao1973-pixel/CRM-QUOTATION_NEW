@@ -6,9 +6,31 @@ const GST_RATE = 0.18;
 const CGST_RATE = 0.09;
 const SGST_RATE = 0.09;
 
+const getDiscountLimits = async (tx) => {
+  let policy = await tx.discountPolicy.findFirst();
+
+  // ✅ AUTO CREATE DEFAULT POLICY
+  if (!policy) {
+    policy = await tx.discountPolicy.create({
+      data: {
+        salesRepMax: 5,
+        managerMax: 20,
+        adminMax: 100,
+      },
+    });
+  }
+
+  return {
+    SALES_REP: policy.salesRepMax,
+    MANAGER: policy.managerMax,
+    ADMIN: policy.adminMax,
+  };
+};
+
 export const createQuotation = async (data) => {
   const {
     quotationNumber,
+    quotationType = "QUOTATION",
     accountId,
     dealId,
     issueDate,
@@ -16,7 +38,21 @@ export const createQuotation = async (data) => {
     items,
     notes,
     terms,
-    headerDiscount = 0, // 🔥 NEW
+    headerDiscount = 0,
+
+    // 🔥 NEW COMMERCIAL SUMMARY
+    // 🔥 COMMERCIAL SUMMARY
+    packingForwardingCharges = 0,
+
+    installationDescription = "",
+    installationQty = 0,
+    installationUom = "",
+    installationUnitPrice = 0,
+    installationDiscount = 0,
+    installationRemarks = "",
+
+    // 🔥 NEW
+    currentUserRole,
   } = data;
 
   /* ================= VALIDATION ================= */
@@ -39,10 +75,13 @@ export const createQuotation = async (data) => {
   const quotationNo = quotationNumber || generatedQuotationNo;
   return await prisma.$transaction(async (tx) => {
     /* ================= 1️⃣ CREATE QUOTATION ================= */
+    // 🔥 FETCH DB DISCOUNT POLICY
+    const DISCOUNT_LIMITS = await getDiscountLimits(tx);
     const quotation = await tx.quotation.create({
       data: {
         // createdBy: current.createdBy,
         quotationNo: quotationNo,
+        quotationType,
 
         // 🔥 ADD THIS
         version: 1,
@@ -103,6 +142,16 @@ export const createQuotation = async (data) => {
 
       const price = Number(item.price ?? master.basePrice ?? 0);
       const discount = Number(item.discount || 0);
+
+      // 🔥 ROLE DISCOUNT VALIDATION
+      const allowedDiscount = DISCOUNT_LIMITS[currentUserRole] ?? 0;
+
+      if (discount > allowedDiscount) {
+        throw new Error(
+          `${currentUserRole} can only give maximum ${allowedDiscount}% discount`,
+        );
+      }
+
       if (discount > 0 && !item.remarks?.trim()) {
         throw new Error(
           `Remarks required when discount is applied (Item: ${master.name})`,
@@ -235,7 +284,18 @@ export const createQuotation = async (data) => {
     const sgst = taxableValue * SGST_RATE;
 
     const taxTotal = cgst + sgst;
-    const grandTotal = taxableValue + taxTotal;
+
+    // 🔥 COMMERCIAL SUMMARY
+    // 🔥 COMMERCIAL SUMMARY
+    const packingCharges = Number(packingForwardingCharges || 0);
+
+    const installationCost =
+      Number(installationQty || 0) *
+      Number(installationUnitPrice || 0) *
+      (1 - Number(installationDiscount || 0) / 100);
+
+    const grandTotal =
+      taxableValue + taxTotal + packingCharges + installationCost;
 
     /* ================= 4️⃣ UPDATE TOTALS ================= */
     const updatedQuotation = await tx.quotation.update({
@@ -244,6 +304,18 @@ export const createQuotation = async (data) => {
         subtotal,
         discountTotal: quotationDiscount,
         taxTotal,
+
+        // 🔥 NEW
+        // 🔥 COMMERCIAL SUMMARY
+        packingForwardingCharges: packingCharges,
+
+        installationDescription,
+        installationQty: Number(installationQty || 0),
+        installationUom,
+        installationUnitPrice: Number(installationUnitPrice || 0),
+        installationDiscount: Number(installationDiscount || 0),
+        installationRemarks,
+
         grandTotal,
       },
       include: {
@@ -269,6 +341,20 @@ export const updateQuotation = async (id, data) => {
     notes,
     terms,
     headerDiscount = 0,
+
+    // 🔥 NEW COMMERCIAL SUMMARY
+    // 🔥 COMMERCIAL SUMMARY
+    packingForwardingCharges = 0,
+
+    installationDescription = "",
+    installationQty = 0,
+    installationUom = "",
+    installationUnitPrice = 0,
+    installationDiscount = 0,
+    installationRemarks = "",
+
+    // 🔥 NEW
+    currentUserRole,
   } = data;
 
   if (!items || items.length === 0) {
@@ -277,6 +363,8 @@ export const updateQuotation = async (id, data) => {
 
   return await prisma.$transaction(async (tx) => {
     /* ================= 1️⃣ GET CURRENT ================= */
+    // 🔥 FETCH DB DISCOUNT POLICY
+    const DISCOUNT_LIMITS = await getDiscountLimits(tx);
     const current = await tx.quotation.findUnique({
       where: { id },
       include: {
@@ -352,6 +440,15 @@ export const updateQuotation = async (id, data) => {
       const price = Number(item.price ?? master.basePrice ?? 0);
       const discount = Number(item.discount || 0);
 
+      // 🔥 ROLE DISCOUNT VALIDATION
+      const allowedDiscount = DISCOUNT_LIMITS[currentUserRole] ?? 0;
+
+      if (discount > allowedDiscount) {
+        throw new Error(
+          `${currentUserRole} can only give maximum ${allowedDiscount}% discount`,
+        );
+      }
+
       if (discount > 0 && !item.remarks?.trim()) {
         throw new Error(
           `Remarks required when discount is applied (Item: ${master.name})`,
@@ -426,13 +523,24 @@ export const updateQuotation = async (id, data) => {
 
     /* ================= 6️⃣ UPDATE TOTALS ================= */
     const quotationDiscount = Number(headerDiscount || 0);
+
     const taxableValue = Math.max(0, subtotal - quotationDiscount);
 
     const cgst = taxableValue * CGST_RATE;
     const sgst = taxableValue * SGST_RATE;
 
     const taxTotal = cgst + sgst;
-    const grandTotal = taxableValue + taxTotal;
+
+    // 🔥 COMMERCIAL SUMMARY
+    const packingCharges = Number(packingForwardingCharges || 0);
+
+    const installationCost =
+      Number(installationQty || 0) *
+      Number(installationUnitPrice || 0) *
+      (1 - Number(installationDiscount || 0) / 100);
+
+    const grandTotal =
+      taxableValue + taxTotal + packingCharges + installationCost;
 
     const finalQuotation = await tx.quotation.update({
       where: { id: quotation.id },
@@ -440,6 +548,18 @@ export const updateQuotation = async (id, data) => {
         subtotal,
         discountTotal: quotationDiscount,
         taxTotal,
+
+        // 🔥 NEW
+        // 🔥 COMMERCIAL SUMMARY
+        packingForwardingCharges: packingCharges,
+
+        installationDescription,
+        installationQty: Number(installationQty || 0),
+        installationUom,
+        installationUnitPrice: Number(installationUnitPrice || 0),
+        installationDiscount: Number(installationDiscount || 0),
+        installationRemarks,
+
         grandTotal,
       },
       include: {

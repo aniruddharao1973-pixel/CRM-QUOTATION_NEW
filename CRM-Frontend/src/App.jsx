@@ -277,21 +277,27 @@ function App() {
     // Join room
     socket.emit("join", user.id);
 
-    // 🔔 Listen for notifications
-    socket.on("notification", (data) => {
+    // 🔔 Notification handler
+    const handleNotification = (data) => {
       console.log("🔔 New Notification:", data);
 
       // Add to Redux
       dispatch(addNotification(data));
 
-      // Optional: toast popup
-      toast.success(data.title || "New Notification");
-    });
+      // ✅ Prevent duplicate notification toasts
+      toast.success(data.title || "New Notification", {
+        id: "socket-notification",
+      });
+    };
+
+    // ✅ Prevent duplicate listeners
+    socket.off("notification", handleNotification);
+    socket.on("notification", handleNotification);
 
     return () => {
-      socket.off("notification");
+      socket.off("notification", handleNotification);
     };
-  }, [user, dispatch]);
+  }, [user?.id, dispatch]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);

@@ -73,6 +73,7 @@ dealAssignments    DealAssignment[]
 contactAssignments ContactAssignment[]
 accountAssignments AccountAssignment[]
 quotationApprovals QuotationApproval[]
+updatedDiscountPolicies DiscountPolicy[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -513,6 +514,26 @@ enum QuotationStatus {
   REJECTED
 }
 
+enum QuotationType {
+  BUDGETARY
+  QUOTATION
+  FIRM
+}
+
+model DiscountPolicy {
+  id String @id @default(uuid())
+
+  salesRepMax Float @default(5)
+  managerMax  Float @default(20)
+  adminMax    Float @default(100)
+
+  updatedById String?
+  updatedBy   User? @relation(fields: [updatedById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model Reminder {
   id          String  @id @default(uuid())
   title       String
@@ -946,6 +967,8 @@ model Quotation {
 
   quotationNo   String
 
+  quotationType QuotationType @default(QUOTATION)
+
   version       Int
   isLatest      Boolean  @default(true)
 
@@ -962,10 +985,22 @@ model Quotation {
 
   status QuotationStatus @default(DRAFT)
 
-  subtotal       Float @default(0)
-  discountTotal  Float @default(0)
-  taxTotal       Float @default(0)
-  grandTotal     Float @default(0)
+subtotal       Float @default(0)
+discountTotal  Float @default(0)
+taxTotal       Float @default(0)
+
+// 🔥 COMMERCIAL SUMMARY
+packingForwardingCharges Float @default(0)
+
+// 🔥 INSTALLATION / TRAINING ROW
+installationDescription String?
+installationQty         Float @default(0)
+installationUom         String?
+installationUnitPrice   Float @default(0)
+installationDiscount    Float @default(0)
+installationRemarks     String?
+
+grandTotal Float @default(0)
 
   notes String? @db.Text
   terms String? @db.Text

@@ -559,7 +559,433 @@
 //   );
 // }
 
+// // src/features/items/ItemDetail.jsx
+// import { useParams, useNavigate } from "react-router-dom";
+// import { useSelector } from "react-redux";
+// import {
+//   ChevronLeft,
+//   Pencil,
+//   Trash2,
+//   Package,
+//   Tag,
+//   DollarSign,
+//   Calendar,
+//   FileText,
+//   Wrench,
+//   Hash,
+//   Ruler,
+//   BadgeCheck,
+//   Clock3,
+//   Layers,
+//   Sparkles,
+//   Building2,
+// } from "lucide-react";
+// import { formatINR } from "../quotations/quotationUtils";
+
+// export default function ItemDetail() {
+//   const { id } = useParams();
+//   const navigate = useNavigate();
+
+//   const { list } = useSelector((state) => state.items);
+
+//   function findItemRecursive(items, targetId) {
+//     for (const item of items) {
+//       if (item.id === targetId) return item;
+
+//       if (item.children?.length) {
+//         const found = findItemRecursive(item.children, targetId);
+//         if (found) return found;
+//       }
+//     }
+//     return null;
+//   }
+
+//   const item = findItemRecursive(list, id);
+//   const childCount = item?.children?.length || 0;
+
+//   if (!item) {
+//     return (
+//       <div className="min-h-[calc(100vh-64px)] bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,0.10),_transparent_24%),radial-gradient(circle_at_top_right,_rgba(14,165,233,0.10),_transparent_22%),linear-gradient(to_bottom,_#f8fafc,_#f8fafc,_#eef2ff_120%)] px-3 py-4 sm:px-5 sm:py-5">
+//         <div className="mx-auto flex min-h-[calc(100vh-96px)] w-full max-w-[1700px] items-center justify-center">
+//           <div className="w-full max-w-xl rounded-[28px] border border-white/70 bg-white/90 p-8 text-center shadow-[0_12px_40px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:p-10">
+//             <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-3xl bg-slate-100 text-slate-400">
+//               <Package className="h-8 w-8" />
+//             </div>
+//             <h3 className="text-2xl font-black tracking-tight text-slate-900">
+//               Item not found
+//             </h3>
+//             <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
+//               The item you are looking for does not exist or has been removed.
+//             </p>
+//             <button
+//               onClick={() => navigate(-1)}
+//               className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(79,70,229,0.26)] transition hover:bg-indigo-700"
+//             >
+//               <ChevronLeft className="h-4 w-4" />
+//               Go back
+//             </button>
+//           </div>
+//         </div>
+//       </div>
+//     );
+//   }
+
+//   return (
+//     <div className="min-h-[calc(100vh-64px)] bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,0.10),_transparent_24%),radial-gradient(circle_at_top_right,_rgba(14,165,233,0.10),_transparent_22%),linear-gradient(to_bottom,_#f8fafc,_#f8fafc,_#eef2ff_120%)] px-3 py-4 sm:px-5 sm:py-5">
+//       <div className="mx-auto w-full max-w-[1700px] space-y-5">
+//         {/* HERO */}
+//         <div className="overflow-hidden rounded-[28px] border border-white/70 bg-white/85 shadow-[0_12px_40px_rgba(15,23,42,0.06)] backdrop-blur-xl">
+//           <div className="relative px-5 py-5 sm:px-6 lg:px-7">
+//             <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(99,102,241,0.06),transparent_35%,rgba(16,185,129,0.05)_72%,transparent)]" />
+
+//             <div className="relative flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+//               <div className="min-w-0">
+//                 <button
+//                   onClick={() => navigate(-1)}
+//                   className="mb-4 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 shadow-sm transition hover:border-slate-300 hover:text-slate-900"
+//                 >
+//                   <ChevronLeft className="h-4 w-4" />
+//                   Back to Items
+//                 </button>
+
+//                 <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-indigo-700">
+//                   <Sparkles className="h-3.5 w-3.5" />
+//                   Item Details
+//                 </div>
+
+//                 <div className="flex items-start gap-4">
+//                   <div className="rounded-2xl bg-indigo-50 p-3 text-indigo-700 ring-1 ring-inset ring-indigo-100">
+//                     <Package className="h-6 w-6" />
+//                   </div>
+
+//                   <div className="min-w-0">
+//                     <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">
+//                       {item.sku || "-"}
+//                     </h1>
+
+//                     <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-500">
+//                       {/* <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 font-mono text-xs font-semibold text-slate-700 shadow-sm">
+//                         <Tag className="h-3.5 w-3.5 text-slate-400" />
+//                         {item.sku || "-"}
+//                       </span> */}
+
+//                       <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">
+//                         <BadgeCheck className="h-3.5 w-3.5" />
+//                         Active
+//                       </span>
+
+//                       {childCount > 0 && (
+//                         <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
+//                           <Layers className="h-3.5 w-3.5" />
+//                           {childCount} child item{childCount > 1 ? "s" : ""}
+//                         </span>
+//                       )}
+//                     </div>
+//                   </div>
+//                 </div>
+//               </div>
+
+//               <div className="flex flex-col gap-3 sm:flex-row">
+//                 <button
+//                   onClick={() => navigate(`/items/${id}/edit`)}
+//                   className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-600 to-violet-600 px-5 text-sm font-bold text-white shadow-[0_12px_30px_rgba(79,70,229,0.28)] transition hover:from-indigo-700 hover:via-indigo-700 hover:to-violet-700 hover:shadow-[0_16px_34px_rgba(79,70,229,0.34)]"
+//                 >
+//                   <Pencil className="h-4 w-4" />
+//                   Edit Item
+//                 </button>
+
+//                 <button className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-white px-5 text-sm font-semibold text-rose-600 shadow-sm transition hover:border-rose-300 hover:bg-rose-50">
+//                   <Trash2 className="h-4 w-4" />
+//                   Delete
+//                 </button>
+//               </div>
+//             </div>
+//           </div>
+//         </div>
+
+//         {/* MAIN GRID */}
+//         <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+//           {/* LEFT */}
+//           <div className="space-y-6">
+//             {/* OVERVIEW */}
+//             <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_14px_45px_rgba(15,23,42,0.05)]">
+//               <div className="border-b border-slate-100 bg-[linear-gradient(135deg,rgba(99,102,241,0.08),rgba(255,255,255,0.95))] px-5 py-5 sm:px-6">
+//                 <div className="flex items-start gap-4">
+//                   <div className="rounded-2xl bg-indigo-50 p-3 text-indigo-700 ring-1 ring-inset ring-indigo-100">
+//                     <FileText className="h-6 w-6" />
+//                   </div>
+//                   <div>
+//                     <h2 className="text-xl font-bold tracking-tight text-slate-900">
+//                       Item Overview
+//                     </h2>
+//                     <p className="mt-1 text-sm text-slate-500">
+//                       Master data summary for quotations, pricing, and catalog
+//                       usage.
+//                     </p>
+//                   </div>
+//                 </div>
+//               </div>
+
+//               <div className="p-5 sm:p-6">
+//                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+//                   <div className="space-y-5">
+//                     <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-5">
+//                       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+//                         <InfoTile label="SKU" value={item.sku} mono />
+//                         <InfoTile label="Category" value={item.category} />
+//                         <InfoTile label="Make" value={item.make} />
+//                         <InfoTile
+//                           label="Mfg Part No"
+//                           value={item.mfgPartNo}
+//                           mono
+//                         />
+//                         <InfoTile label="UOM" value={item.uom} />
+//                       </div>
+//                     </div>
+
+//                     <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+//                       <div className="mb-4 flex items-center gap-2">
+//                         <div className="rounded-xl bg-indigo-50 p-2 text-indigo-700">
+//                           <FileText className="h-4 w-4" />
+//                         </div>
+//                         <div>
+//                           <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-slate-500">
+//                             Description
+//                           </h3>
+//                         </div>
+//                       </div>
+//                       <div className="rounded-2xl border border-slate-100 bg-slate-50/70">
+//                         <div className="max-h-[420px] overflow-y-auto px-4 py-3">
+//                           {item.description ? (
+//                             <div className="space-y-2">
+//                               {item.description
+//                                 .split(/\r?\n|,/)
+//                                 .map((line) => line.trim())
+//                                 .filter(Boolean)
+//                                 .map((line, index) => (
+//                                   <div
+//                                     key={index}
+//                                     className="flex items-start gap-3 rounded-xl border border-slate-100 bg-white px-3 py-2 shadow-sm"
+//                                   >
+//                                     <div className="mt-[7px] h-1.5 w-1.5 rounded-full bg-indigo-500" />
+
+//                                     <p className="flex-1 text-sm leading-6 text-slate-700">
+//                                       {line}
+//                                     </p>
+//                                   </div>
+//                                 ))}
+//                             </div>
+//                           ) : (
+//                             <p className="text-sm text-slate-500">
+//                               No description provided.
+//                             </p>
+//                           )}
+//                         </div>
+//                       </div>
+//                     </div>
+
+//                     <div className="rounded-[24px] border border-amber-100 bg-amber-50/70 p-5">
+//                       <div className="mb-4 flex items-center gap-2">
+//                         <div className="rounded-xl bg-amber-100 p-2 text-amber-700">
+//                           <FileText className="h-4 w-4" />
+//                         </div>
+//                         <div>
+//                           <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-slate-500">
+//                             Default Remarks
+//                           </h3>
+//                         </div>
+//                       </div>
+//                       <p className="whitespace-pre-wrap rounded-2xl border border-amber-100 bg-white px-4 py-4 text-sm leading-7 text-slate-700 shadow-sm">
+//                         {item.defaultRemarks || "No remarks"}
+//                       </p>
+//                     </div>
+//                   </div>
+
+//                   <div className="space-y-5">
+//                     <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+//                       <div className="mb-4 flex items-center gap-2">
+//                         <DollarSign className="h-5 w-5 text-slate-500" />
+//                         <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-slate-500">
+//                           Pricing
+//                         </h3>
+//                       </div>
+
+//                       <div className="rounded-[24px] bg-gradient-to-br from-indigo-600 via-indigo-600 to-violet-600 p-5 text-white shadow-[0_14px_30px_rgba(79,70,229,0.24)]">
+//                         <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-indigo-100">
+//                           Base Price
+//                         </div>
+//                         <div className="mt-2 text-4xl font-black tracking-tight">
+//                           {formatINR(item.basePrice || 0)}
+//                         </div>
+//                         <p className="mt-2 text-sm text-indigo-100/90">
+//                           Excluding taxes and discounts.
+//                         </p>
+//                       </div>
+//                     </div>
+
+//                     <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+//                       <div className="mb-4 flex items-center gap-2">
+//                         <Calendar className="h-5 w-5 text-slate-500" />
+//                         <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-slate-500">
+//                           Timeline
+//                         </h3>
+//                       </div>
+
+//                       <div className="space-y-4">
+//                         <TimelineRow
+//                           icon={<Clock3 className="h-4 w-4" />}
+//                           label="Created"
+//                           value={
+//                             item.createdAt
+//                               ? new Date(item.createdAt).toLocaleString(
+//                                   "en-IN",
+//                                   {
+//                                     dateStyle: "medium",
+//                                     timeStyle: "short",
+//                                   },
+//                                 )
+//                               : "-"
+//                           }
+//                         />
+//                         <div className="h-px bg-slate-100" />
+//                         <TimelineRow
+//                           icon={<Clock3 className="h-4 w-4" />}
+//                           label="Last Updated"
+//                           value={
+//                             item.updatedAt
+//                               ? new Date(item.updatedAt).toLocaleString(
+//                                   "en-IN",
+//                                   {
+//                                     dateStyle: "medium",
+//                                     timeStyle: "short",
+//                                   },
+//                                 )
+//                               : "-"
+//                           }
+//                         />
+//                       </div>
+//                     </div>
+
+//                     <div className="rounded-[24px] border border-slate-200 bg-slate-900 p-5 text-white shadow-[0_14px_30px_rgba(15,23,42,0.22)]">
+//                       <div className="mb-4 flex items-center gap-2">
+//                         <BadgeCheck className="h-5 w-5 text-emerald-400" />
+//                         <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-slate-300">
+//                           Quick Stats
+//                         </h3>
+//                       </div>
+
+//                       <div className="space-y-3">
+//                         <StatRow label="Status" value="Active" />
+//                         <StatRow
+//                           label="Category"
+//                           value={item.category || "-"}
+//                         />
+//                         <StatRow label="Children" value={String(childCount)} />
+//                       </div>
+//                     </div>
+//                   </div>
+//                 </div>
+//               </div>
+//             </section>
+//           </div>
+
+//           {/* RIGHT */}
+//           <aside className="space-y-5 xl:sticky xl:top-6 xl:self-start">
+//             <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_14px_45px_rgba(15,23,42,0.05)]">
+//               <div className="border-b border-slate-100 bg-[linear-gradient(135deg,rgba(79,70,229,0.10),rgba(255,255,255,0.95))] px-5 py-5">
+//                 <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-slate-500">
+//                   Snapshot
+//                 </h3>
+//                 <p className="mt-1 text-sm text-slate-500">
+//                   Quick glance at pricing and structure.
+//                 </p>
+//               </div>
+
+//               <div className="space-y-3 p-5">
+//                 <SummaryCard
+//                   label="Base Price"
+//                   value={formatINR(item.basePrice || 0)}
+//                 />
+//                 <SummaryCard label="SKU" value={item.sku || "-"} mono />
+//                 <SummaryCard label="Category" value={item.category || "-"} />
+//                 <SummaryCard label="Make" value={item.make || "-"} />
+//                 <SummaryCard
+//                   label="Mfg Part No"
+//                   value={item.mfgPartNo || "-"}
+//                   mono
+//                 />
+//                 <SummaryCard label="UOM" value={item.uom || "-"} />
+//               </div>
+//             </section>
+//           </aside>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
+
+// /* ================= HELPER COMPONENTS ================= */
+
+// function InfoTile({ label, value, mono = false }) {
+//   return (
+//     <div className="rounded-2xl border border-white/70 bg-white px-4 py-4 shadow-sm">
+//       <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
+//         {label}
+//       </div>
+//       <div
+//         className={`mt-2 text-sm font-semibold text-slate-900 ${
+//           mono ? "font-mono" : ""
+//         }`}
+//       >
+//         {value || "-"}
+//       </div>
+//     </div>
+//   );
+// }
+
+// function SummaryCard({ label, value, mono = false }) {
+//   return (
+//     <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-4 shadow-sm">
+//       <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
+//         {label}
+//       </div>
+//       <div
+//         className={`mt-1.5 text-sm font-semibold text-slate-900 ${
+//           mono ? "font-mono" : ""
+//         }`}
+//       >
+//         {value || "-"}
+//       </div>
+//     </div>
+//   );
+// }
+
+// function TimelineRow({ icon, label, value }) {
+//   return (
+//     <div className="flex items-start justify-between gap-4">
+//       <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
+//         <span className="text-slate-400">{icon}</span>
+//         {label}
+//       </div>
+//       <div className="max-w-[55%] text-right text-sm font-semibold leading-6 text-slate-900">
+//         {value}
+//       </div>
+//     </div>
+//   );
+// }
+
+// function StatRow({ label, value }) {
+//   return (
+//     <div className="flex items-center justify-between gap-4">
+//       <span className="text-sm text-slate-300">{label}</span>
+//       <span className="text-sm font-semibold text-white">{value}</span>
+//     </div>
+//   );
+// }
+
 // src/features/items/ItemDetail.jsx
+
+import { useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
@@ -571,27 +997,66 @@ import {
   DollarSign,
   Calendar,
   FileText,
-  Wrench,
-  Hash,
-  Ruler,
   BadgeCheck,
   Clock3,
   Layers,
-  Sparkles,
-  Building2,
 } from "lucide-react";
 import { formatINR } from "../quotations/quotationUtils";
+
+function InfoCard({ label, value, mono = false }) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white px-3 py-3 transition-colors hover:border-violet-200">
+      <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-violet-500">
+        {label}
+      </div>
+      <div
+        className={`mt-1 text-sm font-medium text-slate-900 ${
+          mono ? "font-mono" : ""
+        }`}
+      >
+        {value || "-"}
+      </div>
+    </div>
+  );
+}
+
+function SectionTitle({ icon: Icon, title, subtitle }) {
+  return (
+    <div className="flex items-start gap-3">
+      <div className="mt-0.5 rounded-lg border border-violet-100 bg-violet-50 text-violet-700 p-2">
+        <Icon className="h-4 w-4" />
+      </div>
+      <div>
+        <h3 className="text-sm font-semibold text-slate-900 tracking-tight">
+          {title}
+        </h3>
+        {subtitle ? (
+          <p className="mt-0.5 text-xs leading-5 text-slate-500">{subtitle}</p>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function MetaRow({ label, value }) {
+  return (
+    <div className="flex items-center justify-between gap-4 border-b border-slate-100 py-2 last:border-b-0">
+      <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-slate-500">
+        {label}
+      </span>
+      <span className="text-sm font-medium text-slate-900">{value || "-"}</span>
+    </div>
+  );
+}
 
 export default function ItemDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-
   const { list } = useSelector((state) => state.items);
 
   function findItemRecursive(items, targetId) {
     for (const item of items) {
-      if (item.id === targetId) return item;
-
+      if (String(item.id) === String(targetId)) return item;
       if (item.children?.length) {
         const found = findItemRecursive(item.children, targetId);
         if (found) return found;
@@ -601,17 +1066,28 @@ export default function ItemDetail() {
   }
 
   const item = findItemRecursive(list, id);
-  const childCount = item?.children?.length || 0;
+
+  const childItems = useMemo(() => item?.children || [], [item]);
+
+  const childCount = childItems.length;
+
+  const totalChildValue = useMemo(() => {
+    return childItems.reduce((sum, child) => {
+      return sum + Number(child.basePrice || 0);
+    }, 0);
+  }, [childItems]);
+
+  const totalValue = Number(item?.basePrice || 0) + totalChildValue;
 
   if (!item) {
     return (
-      <div className="min-h-[calc(100vh-64px)] bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,0.10),_transparent_24%),radial-gradient(circle_at_top_right,_rgba(14,165,233,0.10),_transparent_22%),linear-gradient(to_bottom,_#f8fafc,_#f8fafc,_#eef2ff_120%)] px-3 py-4 sm:px-5 sm:py-5">
-        <div className="mx-auto flex min-h-[calc(100vh-96px)] w-full max-w-[1700px] items-center justify-center">
-          <div className="w-full max-w-xl rounded-[28px] border border-white/70 bg-white/90 p-8 text-center shadow-[0_12px_40px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:p-10">
-            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-3xl bg-slate-100 text-slate-400">
-              <Package className="h-8 w-8" />
+      <div className="min-h-[calc(100vh-64px)] bg-slate-50 px-3 py-3 sm:px-4 sm:py-4">
+        <div className="mx-auto flex min-h-[calc(100vh-96px)] max-w-[1400px] items-center justify-center">
+          <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-500">
+              <Package className="h-7 w-7" />
             </div>
-            <h3 className="text-2xl font-black tracking-tight text-slate-900">
+            <h3 className="text-xl font-semibold text-slate-900">
               Item not found
             </h3>
             <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
@@ -619,7 +1095,7 @@ export default function ItemDetail() {
             </p>
             <button
               onClick={() => navigate(-1)}
-              className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(79,70,229,0.26)] transition hover:bg-indigo-700"
+              className="mt-6 inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
             >
               <ChevronLeft className="h-4 w-4" />
               Go back
@@ -630,355 +1106,285 @@ export default function ItemDetail() {
     );
   }
 
+  const descriptionText = (item.description || "").trim();
+  const childRows = childItems.filter(
+    (c) => c?.sku || c?.name || c?.description,
+  );
+
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,0.10),_transparent_24%),radial-gradient(circle_at_top_right,_rgba(14,165,233,0.10),_transparent_22%),linear-gradient(to_bottom,_#f8fafc,_#f8fafc,_#eef2ff_120%)] px-3 py-4 sm:px-5 sm:py-5">
-      <div className="mx-auto w-full max-w-[1700px] space-y-5">
-        {/* HERO */}
-        <div className="overflow-hidden rounded-[28px] border border-white/70 bg-white/85 shadow-[0_12px_40px_rgba(15,23,42,0.06)] backdrop-blur-xl">
-          <div className="relative px-5 py-5 sm:px-6 lg:px-7">
-            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(99,102,241,0.06),transparent_35%,rgba(16,185,129,0.05)_72%,transparent)]" />
+    <div className="min-h-[calc(100vh-64px)] bg-slate-50 px-3 py-3 sm:px-4 sm:py-4">
+      <div className="mx-auto w-full max-w-[1600px] space-y-3">
+        {/* TOP BAR */}
+        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex min-w-0 items-center gap-3">
+              <button
+                onClick={() => navigate(-1)}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
 
-            <div className="relative flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
               <div className="min-w-0">
-                <button
-                  onClick={() => navigate(-1)}
-                  className="mb-4 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 shadow-sm transition hover:border-slate-300 hover:text-slate-900"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  Back to Items
-                </button>
-
-                <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-indigo-700">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Item Details
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="truncate text-lg font-semibold text-slate-900">
+                    {item.sku || "-"}
+                  </h1>
+                  {item.category ? (
+                    <span className="inline-flex items-center rounded-full border border-violet-100 bg-violet-50 px-2.5 py-1 text-[11px] font-medium text-violet-700">
+                      {item.category}
+                    </span>
+                  ) : null}
+                  {childCount > 0 ? (
+                    <span className="inline-flex items-center rounded-full border border-violet-100 bg-violet-50/60 px-2.5 py-1 text-[11px] font-medium text-violet-700">
+                      <Layers className="mr-1 h-3.5 w-3.5" />
+                      {childCount} child item{childCount > 1 ? "s" : ""}
+                    </span>
+                  ) : null}
                 </div>
-
-                <div className="flex items-start gap-4">
-                  <div className="rounded-2xl bg-indigo-50 p-3 text-indigo-700 ring-1 ring-inset ring-indigo-100">
-                    <Package className="h-6 w-6" />
-                  </div>
-
-                  <div className="min-w-0">
-                    <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">
-                      {item.sku || "-"}
-                    </h1>
-
-                    <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-500">
-                      {/* <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 font-mono text-xs font-semibold text-slate-700 shadow-sm">
-                        <Tag className="h-3.5 w-3.5 text-slate-400" />
-                        {item.sku || "-"}
-                      </span> */}
-
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">
-                        <BadgeCheck className="h-3.5 w-3.5" />
-                        Active
-                      </span>
-
-                      {childCount > 0 && (
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
-                          <Layers className="h-3.5 w-3.5" />
-                          {childCount} child item{childCount > 1 ? "s" : ""}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                {/* <p className="mt-1 truncate text-sm text-slate-500">
+                  {item.name || "Unnamed item"}
+                </p> */}
               </div>
+            </div>
 
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <button
-                  onClick={() => navigate(`/items/${id}/edit`)}
-                  className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-600 to-violet-600 px-5 text-sm font-bold text-white shadow-[0_12px_30px_rgba(79,70,229,0.28)] transition hover:from-indigo-700 hover:via-indigo-700 hover:to-violet-700 hover:shadow-[0_16px_34px_rgba(79,70,229,0.34)]"
-                >
-                  <Pencil className="h-4 w-4" />
-                  Edit Item
-                </button>
-
-                <button className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-white px-5 text-sm font-semibold text-rose-600 shadow-sm transition hover:border-rose-300 hover:bg-rose-50">
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
-              </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => navigate(`/items/${id}/edit`)}
+                className="inline-flex h-9 items-center gap-2 rounded-lg bg-violet-700 px-3.5 text-sm font-medium text-white hover:bg-violet-800 transition-colors"
+              >
+                <Pencil className="h-4 w-4" />
+                Edit
+              </button>
+              <button
+                onClick={() => navigate(-1)}
+                className="inline-flex h-9 items-center gap-2 rounded-lg bg-violet-700 px-3.5 text-sm font-medium text-white hover:bg-violet-800 transition-colors"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete
+              </button>
             </div>
           </div>
         </div>
 
-        {/* MAIN GRID */}
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+        {/* MAIN */}
+        <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1fr)_320px]">
           {/* LEFT */}
-          <div className="space-y-6">
+          <div className="space-y-3">
             {/* OVERVIEW */}
-            <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_14px_45px_rgba(15,23,42,0.05)]">
-              <div className="border-b border-slate-100 bg-[linear-gradient(135deg,rgba(99,102,241,0.08),rgba(255,255,255,0.95))] px-5 py-5 sm:px-6">
-                <div className="flex items-start gap-4">
-                  <div className="rounded-2xl bg-indigo-50 p-3 text-indigo-700 ring-1 ring-inset ring-indigo-100">
-                    <FileText className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold tracking-tight text-slate-900">
-                      Item Overview
-                    </h2>
-                    <p className="mt-1 text-sm text-slate-500">
-                      Master data summary for quotations, pricing, and catalog
-                      usage.
-                    </p>
-                  </div>
-                </div>
-              </div>
+            <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <SectionTitle
+                icon={Package}
+                title="Item Overview"
+                subtitle="Core master data used in quotations, catalog, and pricing."
+              />
 
-              <div className="p-5 sm:p-6">
-                <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-                  <div className="space-y-5">
-                    <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-5">
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                        <InfoTile label="SKU" value={item.sku} mono />
-                        <InfoTile label="Category" value={item.category} />
-                        <InfoTile label="Make" value={item.make} />
-                        <InfoTile
-                          label="Mfg Part No"
-                          value={item.mfgPartNo}
-                          mono
-                        />
-                        <InfoTile label="UOM" value={item.uom} />
-                      </div>
-                    </div>
-
-                    <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-                      <div className="mb-4 flex items-center gap-2">
-                        <div className="rounded-xl bg-indigo-50 p-2 text-indigo-700">
-                          <FileText className="h-4 w-4" />
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-slate-500">
-                            Description
-                          </h3>
-                        </div>
-                      </div>
-                      <div className="rounded-2xl border border-slate-100 bg-slate-50/70">
-                        <div className="max-h-[420px] overflow-y-auto px-4 py-3">
-                          {item.description ? (
-                            <div className="space-y-2">
-                              {item.description
-                                .split(/\r?\n|,/)
-                                .map((line) => line.trim())
-                                .filter(Boolean)
-                                .map((line, index) => (
-                                  <div
-                                    key={index}
-                                    className="flex items-start gap-3 rounded-xl border border-slate-100 bg-white px-3 py-2 shadow-sm"
-                                  >
-                                    <div className="mt-[7px] h-1.5 w-1.5 rounded-full bg-indigo-500" />
-
-                                    <p className="flex-1 text-sm leading-6 text-slate-700">
-                                      {line}
-                                    </p>
-                                  </div>
-                                ))}
-                            </div>
-                          ) : (
-                            <p className="text-sm text-slate-500">
-                              No description provided.
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="rounded-[24px] border border-amber-100 bg-amber-50/70 p-5">
-                      <div className="mb-4 flex items-center gap-2">
-                        <div className="rounded-xl bg-amber-100 p-2 text-amber-700">
-                          <FileText className="h-4 w-4" />
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-slate-500">
-                            Default Remarks
-                          </h3>
-                        </div>
-                      </div>
-                      <p className="whitespace-pre-wrap rounded-2xl border border-amber-100 bg-white px-4 py-4 text-sm leading-7 text-slate-700 shadow-sm">
-                        {item.defaultRemarks || "No remarks"}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-5">
-                    <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-                      <div className="mb-4 flex items-center gap-2">
-                        <DollarSign className="h-5 w-5 text-slate-500" />
-                        <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-slate-500">
-                          Pricing
-                        </h3>
-                      </div>
-
-                      <div className="rounded-[24px] bg-gradient-to-br from-indigo-600 via-indigo-600 to-violet-600 p-5 text-white shadow-[0_14px_30px_rgba(79,70,229,0.24)]">
-                        <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-indigo-100">
-                          Base Price
-                        </div>
-                        <div className="mt-2 text-4xl font-black tracking-tight">
-                          {formatINR(item.basePrice || 0)}
-                        </div>
-                        <p className="mt-2 text-sm text-indigo-100/90">
-                          Excluding taxes and discounts.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-                      <div className="mb-4 flex items-center gap-2">
-                        <Calendar className="h-5 w-5 text-slate-500" />
-                        <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-slate-500">
-                          Timeline
-                        </h3>
-                      </div>
-
-                      <div className="space-y-4">
-                        <TimelineRow
-                          icon={<Clock3 className="h-4 w-4" />}
-                          label="Created"
-                          value={
-                            item.createdAt
-                              ? new Date(item.createdAt).toLocaleString(
-                                  "en-IN",
-                                  {
-                                    dateStyle: "medium",
-                                    timeStyle: "short",
-                                  },
-                                )
-                              : "-"
-                          }
-                        />
-                        <div className="h-px bg-slate-100" />
-                        <TimelineRow
-                          icon={<Clock3 className="h-4 w-4" />}
-                          label="Last Updated"
-                          value={
-                            item.updatedAt
-                              ? new Date(item.updatedAt).toLocaleString(
-                                  "en-IN",
-                                  {
-                                    dateStyle: "medium",
-                                    timeStyle: "short",
-                                  },
-                                )
-                              : "-"
-                          }
-                        />
-                      </div>
-                    </div>
-
-                    <div className="rounded-[24px] border border-slate-200 bg-slate-900 p-5 text-white shadow-[0_14px_30px_rgba(15,23,42,0.22)]">
-                      <div className="mb-4 flex items-center gap-2">
-                        <BadgeCheck className="h-5 w-5 text-emerald-400" />
-                        <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-slate-300">
-                          Quick Stats
-                        </h3>
-                      </div>
-
-                      <div className="space-y-3">
-                        <StatRow label="Status" value="Active" />
-                        <StatRow
-                          label="Category"
-                          value={item.category || "-"}
-                        />
-                        <StatRow label="Children" value={String(childCount)} />
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <div className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-4">
+                <InfoCard label="SKU" value={item.sku} mono />
+                <InfoCard label="Category" value={item.category} />
+                <InfoCard label="Name" value={item.name} />
+                <InfoCard label="Make" value={item.make} />
+                <InfoCard label="Mfg Part No" value={item.mfgPartNo} mono />
+                <InfoCard label="UOM" value={item.uom} />
+                <InfoCard label="Children" value={String(childCount)} />
+                <InfoCard label="Status" value="Active" />
               </div>
             </section>
+
+            {/* DESCRIPTION */}
+            <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <SectionTitle
+                icon={FileText}
+                title="Description"
+                subtitle="Stored description and specification text."
+              />
+
+              <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                {descriptionText ? (
+                  <pre className="whitespace-pre-wrap break-words text-sm leading-6 text-slate-700 font-sans">
+                    {descriptionText}
+                  </pre>
+                ) : (
+                  <p className="text-sm text-slate-500">
+                    No description provided.
+                  </p>
+                )}
+              </div>
+            </section>
+
+            {/* SUB ITEMS */}
+            {childRows.length > 0 && (
+              <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <SectionTitle
+                  icon={Layers}
+                  title="Sub Items"
+                  subtitle="Linked child items under this master record."
+                />
+
+                <div className="mt-4 overflow-hidden rounded-xl border border-slate-200">
+                  <table className="w-full border-collapse">
+                    <thead className="bg-slate-50">
+                      <tr className="border-b border-slate-200">
+                        <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                          SKU
+                        </th>
+                        <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                          Description
+                        </th>
+                        <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                          Make
+                        </th>
+                        <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                          Mfg PN
+                        </th>
+                        <th className="px-3 py-2 text-center text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                          UOM
+                        </th>
+                        <th className="px-3 py-2 text-right text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                          Price
+                        </th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {childRows.map((child, index) => (
+                        <tr
+                          key={child.id || index}
+                          className="border-b border-slate-100 last:border-b-0"
+                        >
+                          <td className="px-3 py-2 align-top">
+                            <span className="inline-flex rounded-full border border-violet-100 bg-violet-50 px-2 py-1 font-mono text-[11px] text-violet-700">
+                              {child.sku || "—"}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2 align-top">
+                            <div className="text-sm font-medium text-slate-800">
+                              {child.name || "Unnamed child"}
+                            </div>
+                            {child.description ? (
+                              <div className="mt-1 whitespace-pre-wrap text-[12px] leading-5 text-slate-500">
+                                {child.description}
+                              </div>
+                            ) : null}
+                          </td>
+                          <td className="px-3 py-2 align-top text-sm text-slate-600">
+                            {child.make || "—"}
+                          </td>
+                          <td className="px-3 py-2 align-top">
+                            <span className="inline-flex rounded-md border border-slate-200 bg-slate-50 px-2 py-1 font-mono text-[11px] text-slate-700">
+                              {child.mfgPartNo || "—"}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2 align-top text-center text-sm text-slate-600">
+                            {child.uom || "—"}
+                          </td>
+                          <td className="px-3 py-2 align-top text-right text-sm font-medium text-slate-900">
+                            {formatINR(child.basePrice || 0)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            )}
           </div>
 
           {/* RIGHT */}
-          <aside className="space-y-5 xl:sticky xl:top-6 xl:self-start">
-            <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_14px_45px_rgba(15,23,42,0.05)]">
-              <div className="border-b border-slate-100 bg-[linear-gradient(135deg,rgba(79,70,229,0.10),rgba(255,255,255,0.95))] px-5 py-5">
-                <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-slate-500">
-                  Snapshot
-                </h3>
-                <p className="mt-1 text-sm text-slate-500">
-                  Quick glance at pricing and structure.
-                </p>
+          <aside className="space-y-3">
+            {/* PRICING */}
+            <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <SectionTitle
+                icon={DollarSign}
+                title="Pricing"
+                subtitle="Current item and combined structure value."
+              />
+
+              <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-4">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  Base Price
+                </div>
+                <div className="mt-1 text-2xl font-semibold text-violet-700">
+                  {formatINR(item.basePrice || 0)}
+                </div>
+                <div className="mt-3 h-px bg-slate-200" />
+                <MetaRow
+                  label="Child Value"
+                  value={formatINR(totalChildValue)}
+                />
+                <MetaRow label="Combined Value" value={formatINR(totalValue)} />
+              </div>
+            </section>
+
+            {/* TIMELINE */}
+            <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <SectionTitle
+                icon={Calendar}
+                title="Timeline"
+                subtitle="Record creation and latest update."
+              />
+
+              <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2">
+                <MetaRow
+                  label="Created"
+                  value={
+                    item.createdAt
+                      ? new Date(item.createdAt).toLocaleString("en-IN", {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        })
+                      : "-"
+                  }
+                />
+                <MetaRow
+                  label="Updated"
+                  value={
+                    item.updatedAt
+                      ? new Date(item.updatedAt).toLocaleString("en-IN", {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        })
+                      : "-"
+                  }
+                />
+              </div>
+            </section>
+
+            {/* QUICK FACTS */}
+            <section className="rounded-2xl border border-violet-900/20 bg-gradient-to-br from-violet-900 to-indigo-950 p-4 text-white shadow-sm">
+              <div className="flex items-center gap-2">
+                <BadgeCheck className="h-4 w-4 text-slate-300" />
+                <h3 className="text-sm font-semibold">Quick Facts</h3>
               </div>
 
-              <div className="space-y-3 p-5">
-                <SummaryCard
-                  label="Base Price"
-                  value={formatINR(item.basePrice || 0)}
-                />
-                <SummaryCard label="SKU" value={item.sku || "-"} mono />
-                <SummaryCard label="Category" value={item.category || "-"} />
-                <SummaryCard label="Make" value={item.make || "-"} />
-                <SummaryCard
-                  label="Mfg Part No"
-                  value={item.mfgPartNo || "-"}
-                  mono
-                />
-                <SummaryCard label="UOM" value={item.uom || "-"} />
+              <div className="mt-4 space-y-2">
+                <div className="flex items-center justify-between gap-3 border-b border-white/10 py-2">
+                  <span className="text-[11px] uppercase tracking-[0.16em] text-slate-400">
+                    Status
+                  </span>
+                  <span className="text-sm text-white">Active</span>
+                </div>
+                <div className="flex items-center justify-between gap-3 border-b border-white/10 py-2">
+                  <span className="text-[11px] uppercase tracking-[0.16em] text-slate-400">
+                    Category
+                  </span>
+                  <span className="text-sm text-white">
+                    {item.category || "-"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-3 border-b border-white/10 py-2">
+                  <span className="text-[11px] uppercase tracking-[0.16em] text-slate-400">
+                    Children
+                  </span>
+                  <span className="text-sm text-white">
+                    {String(childCount)}
+                  </span>
+                </div>
               </div>
             </section>
           </aside>
         </div>
       </div>
-    </div>
-  );
-}
-
-/* ================= HELPER COMPONENTS ================= */
-
-function InfoTile({ label, value, mono = false }) {
-  return (
-    <div className="rounded-2xl border border-white/70 bg-white px-4 py-4 shadow-sm">
-      <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
-        {label}
-      </div>
-      <div
-        className={`mt-2 text-sm font-semibold text-slate-900 ${
-          mono ? "font-mono" : ""
-        }`}
-      >
-        {value || "-"}
-      </div>
-    </div>
-  );
-}
-
-function SummaryCard({ label, value, mono = false }) {
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-4 shadow-sm">
-      <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
-        {label}
-      </div>
-      <div
-        className={`mt-1.5 text-sm font-semibold text-slate-900 ${
-          mono ? "font-mono" : ""
-        }`}
-      >
-        {value || "-"}
-      </div>
-    </div>
-  );
-}
-
-function TimelineRow({ icon, label, value }) {
-  return (
-    <div className="flex items-start justify-between gap-4">
-      <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
-        <span className="text-slate-400">{icon}</span>
-        {label}
-      </div>
-      <div className="max-w-[55%] text-right text-sm font-semibold leading-6 text-slate-900">
-        {value}
-      </div>
-    </div>
-  );
-}
-
-function StatRow({ label, value }) {
-  return (
-    <div className="flex items-center justify-between gap-4">
-      <span className="text-sm text-slate-300">{label}</span>
-      <span className="text-sm font-semibold text-white">{value}</span>
     </div>
   );
 }
